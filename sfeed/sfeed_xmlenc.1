@@ -1,0 +1,24 @@
+.Dd March 15, 2020
+.Dt SFEED_XMLENC 1
+.Os
+.Sh NAME
+.Nm sfeed_xmlenc
+.Nd get text\-encoding from XML
+.Sh SYNOPSIS
+.Nm
+.Sh DESCRIPTION
+.Nm
+reads XML data from stdin and writes the found text\-encoding to stdout.
+It translates the characters to lowercase and strips control characters.
+.Sh EXIT STATUS
+.Ex -std
+.Sh EXAMPLES
+Get text\-encoding from xkcd Atom feed:
+.Bd -literal
+curl -s -L http://www.xkcd.com/atom.xml | sfeed_xmlenc
+.Ed
+.Sh SEE ALSO
+.Xr sfeed_update 1 ,
+.Xr sh 1
+.Sh AUTHORS
+.An Hiltjo Posthuma Aq Mt hiltjo@codemadness.org

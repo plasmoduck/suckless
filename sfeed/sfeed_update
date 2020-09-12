@@ -1,0 +1,198 @@
+#!/bin/sh
+# update feeds, merge with old feeds.
+# NOTE: assumes "sfeed_*" executables are in $PATH.
+
+# defaults
+sfeedpath="$HOME/.sfeed/feeds"
+
+# used for processing feeds concurrently: wait until ${maxjobs} amount of
+# feeds are finished at a time.
+maxjobs=8
+
+# load config (evaluate shellscript).
+# loadconfig(configfile)
+loadconfig() {
+	# allow to specify config via argv[1].
+	if [ "$1" != "" ]; then
+		# get absolute path of config file.
+		config=$(readlink -f "$1")
+	else
+		# default config location.
+		config="$HOME/.sfeed/sfeedrc"
+	fi
+
+	# config is loaded here to be able to override $sfeedpath or functions.
+	if [ -r "${config}" ]; then
+		. "${config}"
+	else
+		echo "Configuration file \"${config}\" does not exist or is not readable." >&2
+		echo "See sfeedrc.example for an example." >&2
+		exit 1
+	fi
+}
+
+# log(name, s)
+log() {
+	printf '[%s] %-50.50s %s\n' "$(date +'%H:%M:%S')" "$1" "$2" >&2
+}
+
+# fetch a feed via HTTP/HTTPS etc.
+# fetch(name, url, feedfile)
+fetch() {
+	# fail on redirects, hide User-Agent, timeout is 15 seconds.
+	curl -L --max-redirs 0 -H "User-Agent:" -f -s -m 15 \
+		"$2" 2>/dev/null
+}
+
+# convert encoding from one encoding to another.
+# convertencoding(from, to)
+convertencoding() {
+	if [ "$1" != "" ] && [ "$2" != "" ] && [ "$1" != "$2" ]; then
+		iconv -cs -f "$1" -t "$2" 2> /dev/null
+	else
+		# else no convert, just output
+		cat
+	fi
+}
+
+# filter fields.
+# filter(name)
+filter() {
+	cat
+}
+
+# merge raw files: unique sort by id, title, link.
+# merge(name, oldfile, newfile)
+merge() {
+	sort -t '	' -u -k6,6 -k2,2 -k3,3 "$2" "$3" 2>/dev/null
+}
+
+# order by timestamp (descending).
+# order(name)
+order() {
+	sort -t '	' -k1rn,1
+}
+
+# fetch and parse feed.
+# feed(name, feedurl, [basesiteurl], [encoding])
+feed() {
+	# wait until ${maxjobs} are finished: will stall the queue if an item
+	# is slow, but it is portable.
+	[ ${signo} -ne 0 ] && return
+	[ $((curjobs % maxjobs)) -eq 0 ] && wait
+	[ ${signo} -ne 0 ] && return
+	curjobs=$((curjobs + 1))
+
+	(name="$1"
+	filename="$(printf '%s' "$1" | tr '/' '_')"
+	feedurl="$2"
+	basesiteurl="$3"
+	encoding="$4"
+
+	sfeedfile="${sfeedpath}/${filename}"
+	tmpfeedfile="${sfeedtmpdir}/${filename}"
+
+	if ! fetch "${name}" "${feedurl}" "${sfeedfile}" > "${tmpfeedfile}.fetch"; then
+		log "${name}" "FAIL (FETCH)"
+		return
+	fi
+
+	# try to detect encoding (if not specified). if detecting the encoding fails assume utf-8.
+	[ "${encoding}" = "" ] && encoding=$(sfeed_xmlenc < "${tmpfeedfile}.fetch")
+
+	if ! convertencoding "${encoding}" "utf-8" < "${tmpfeedfile}.fetch" > "${tmpfeedfile}.utf8"; then
+		log "${name}" "FAIL (ENCODING)"
+		return
+	fi
+	rm -f "${tmpfeedfile}.fetch"
+
+	if ! sfeed "${basesiteurl}" < "${tmpfeedfile}.utf8" > "${tmpfeedfile}.tsv"; then
+		log "${name}" "FAIL (CONVERT)"
+		return
+	fi
+	rm -f "${tmpfeedfile}.utf8"
+
+	if ! filter "${name}" < "${tmpfeedfile}.tsv" > "${tmpfeedfile}.filter"; then
+		log "${name}" "FAIL (FILTER)"
+		return
+	fi
+	rm -f "${tmpfeedfile}.tsv"
+
+	# new feed data is empty: no need for below stages.
+	if [ ! -s "${tmpfeedfile}.filter" ]; then
+		log "${name}" "OK"
+		return
+	fi
+
+	# if file does not exist yet "merge" with /dev/null.
+	if [ -e "${sfeedfile}" ]; then
+		oldfile="${sfeedfile}"
+	else
+		oldfile="/dev/null"
+	fi
+
+	if ! merge "${name}" "${oldfile}" "${tmpfeedfile}.filter" > "${tmpfeedfile}.merge"; then
+		log "${name}" "FAIL (MERGE)"
+		return
+	fi
+	rm -f "${tmpfeedfile}.filter"
+
+	if ! order "${name}" < "${tmpfeedfile}.merge" > "${tmpfeedfile}.order"; then
+		log "${name}" "FAIL (ORDER)"
+		return
+	fi
+	rm -f "${tmpfeedfile}.merge"
+
+	# copy
+	if ! cp "${tmpfeedfile}.order" "${sfeedfile}"; then
+		log "${name}" "FAIL (COPY)"
+		return
+	fi
+	rm -f "${tmpfeedfile}.order"
+
+	# OK
+	log "${name}" "OK"
+	) &
+}
+
+cleanup() {
+	# remove temporary directory with feed files.
+	rm -rf "${sfeedtmpdir}"
+}
+
+sighandler() {
+	signo="$1"
+	# ignore TERM signal for myself.
+	trap -- "" TERM
+	# kill all running childs >:D
+	kill -TERM -$$
+}
+
+feeds() {
+	echo "Configuration file \"${config}\" is invalid or does not contain a \"feeds\" function." >&2
+	echo "See sfeedrc.example for an example." >&2
+}
+
+# job counter.
+curjobs=0
+# signal number received for parent.
+signo=0
+# SIGINT: signal to interrupt parent.
+trap -- "sighandler 2" "INT"
+# SIGTERM: signal to terminate parent.
+trap -- "sighandler 15" "TERM"
+# load config file.
+loadconfig "$1"
+# fetch feeds and store in temporary directory.
+sfeedtmpdir="$(mktemp -d '/tmp/sfeed_XXXXXX')"
+# make sure path exists.
+mkdir -p "${sfeedpath}"
+# fetch feeds specified in config file.
+feeds
+# wait till all feeds are fetched (concurrently).
+[ ${signo} -eq 0 ] && wait
+# cleanup temporary files etc.
+cleanup
+# on signal SIGINT and SIGTERM exit with signal number + 128.
+[ ${signo} -ne 0 ] && exit $((signo+128))
+exit 0

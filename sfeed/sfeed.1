@@ -1,0 +1,61 @@
+.Dd March 15, 2020
+.Dt SFEED 1
+.Os
+.Sh NAME
+.Nm sfeed
+.Nd RSS and Atom parser
+.Sh SYNOPSIS
+.Nm
+.Op Ar baseurl
+.Sh DESCRIPTION
+.Nm
+reads RSS or Atom feed data (XML) from stdin.
+It writes the feed data in a TAB-separated format to stdout.
+A
+.Ar baseurl
+can be specified if the links in the feed are relative urls.
+It is recommended to always have absolute urls in your feeds.
+.Sh TAB-SEPARATED FORMAT FIELDS
+The items are output per line in a TSV-like format.
+.Pp
+The fields: title, id, author are not allowed to have newlines and TABs, all
+whitespace characters are replaced by a single space character.
+Control characters are removed.
+.Pp
+The content field can contain newlines and is escaped.
+TABs, newlines and '\\' are escaped with '\\', so it becomes: '\\t', '\\n'
+and '\\\\'.
+Other whitespace characters except spaces are removed.
+Control characters are removed.
+.Pp
+The order and content of the fields are:
+.Bl -tag -width 17n
+.It timestamp
+UNIX timestamp in UTC+0, empty if missing or on parse failure.
+.It title
+Title text, HTML code in titles is ignored and is treated as plain-text.
+.It link
+Absolute url, unsafe characters are encoded.
+.It content
+Content, can have plain-text or HTML code depending on the content-type field.
+.It content-type
+"html" or "plain".
+.It id
+RSS item GUID or Atom id.
+.It author
+Item author.
+.It enclosure
+Item, first enclosure.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh SEE ALSO
+.Xr sfeed_plain 1 ,
+.Xr sfeed 5
+.Sh AUTHORS
+.An Hiltjo Posthuma Aq Mt hiltjo@codemadness.org
+.Sh CAVEATS
+If a timezone is not in the RFC-822 or RFC-3339 format it is not supported and
+the UNIX timestamp is interpreted as UTC+0.
+.Pp
+HTML in titles is treated as plain-text.

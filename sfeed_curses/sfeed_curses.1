@@ -1,0 +1,194 @@
+.Dd August 7, 2020
+.Dt SFEED_CURSES 1
+.Os
+.Sh NAME
+.Nm sfeed_curses
+.Nd curses UI for viewing items
+.Sh SYNOPSIS
+.Nm
+.Op Ar file...
+.Sh DESCRIPTION
+.Nm
+formats feed data (TSV) from
+.Xr sfeed 1
+from stdin or
+.Ar file
+into a UI.
+If one or more
+.Ar file
+are specified, the basename of the
+.Ar file
+is used as the feed name in the output.
+It will also show a sidebar with the feeds.
+If no
+.Ar file
+parameters are specified and so the data is read from stdin the feed name
+is empty.
+There will be no sidebar visible by default when reading from stdin.
+.Pp
+Items with a timestamp from the last day compared to the system time at the
+time of formatting are marked as new.
+.Pp
+.Nm
+aligns the output.
+Make sure the environment variable
+.Ev LC_CTYPE
+is set to a UTF-8 locale, so it can determine the proper column-width
+per rune, using
+.Xr mbtowc 3
+and
+.Xr wcwidth 3 .
+.Sh KEYBINDS
+.Bl -tag -width Ds
+.It k, arrow up
+Select previous item.
+.It j, arrow down
+Select next item.
+.It h, arrow left
+Focus pane to the left.
+.It l, arrow right
+Focus pane to the right.
+.It TAB
+Cycle focused pane (feeds, items).
+.It g
+Go to first item.
+.It G
+Go to last item.
+.It page up, ^B
+Scroll 1 page up.
+.It page down, ^F, SPACE
+Scroll 1 page down.
+.It /
+Prompt for new search and search forward.
+.It ?
+Prompt for new search and search backward.
+.It n
+Search forward with the previous input search term.
+.It N
+Search backward with the previous input search term.
+.It ^L
+Redraw screen.
+.It R
+Reload all feed files as specified on startup when not read from stdin.
+.It m
+Toggle mouse mode.
+.It s
+Toggle showing the feeds pane sidebar.
+.It t
+Toggle showing only feeds with new items in the sidebar.
+.It a, e, @
+Plumb url of attachment/enclosure.
+The url is passed as a parameter to the program specified in
+.Ev SFEED_PLUMBER .
+.It o, newline
+Feeds pane: load feed and its items.
+Items pane: plumb current item url.
+The url is passed as a parameter to the program specified in
+.Ev SFEED_PLUMBER .
+.It c, p, |
+Pipe TAB-Separated Value line to a program.
+The line is piped to the program specified in
+.Ev SFEED_PIPER .
+.It y
+Pipe the TAB-Separated Value for yanking the url.
+The line is piped to the program specified in
+.Ev SFEED_YANKER .
+.It E
+Pipe the TAB-Separated Value for yanking the enclosure.
+The line is piped to the program specified in
+.Ev SFEED_YANKER .
+.It r
+Mark item as read.
+This will only work when
+.Ev SFEED_URL_FILE
+is set.
+.It u
+Mark item as unread.
+This will only work when
+.Ev SFEED_URL_FILE
+is set.
+.It f
+Mark all items of the current loaded feed as read.
+This will only work when
+.Ev SFEED_URL_FILE
+is set.
+.It F
+Mark all items of the current loaded feed as unread.
+This will only work when
+.Ev SFEED_URL_FILE
+is set.
+.It q, EOF
+Quit
+.El
+.Sh MOUSE ACTIONS
+When mouse-mode is enabled the below actions are available.
+.Bl -tag -width Ds
+.It left-click
+Feeds pane: load feed and it's items.
+Items pane: select item, when already selected plumb it.
+.It right-click
+Feeds pane: select item, but do not load feed.
+Items pane: plumb clicked item.
+.It scroll up
+Scroll 1 page up.
+.It scroll down
+Scroll 1 page down.
+.El
+.Sh SIGNALS
+.Bl -tag -width Ds
+.It SIGHUP
+Reload all feed files as specified on startup when not read from stdin.
+.It SIGINT, SIGTERM
+Quit
+.It SIGWINCH
+Resize the pane dimensions relative to the terminal size.
+.El
+.Sh ENVIRONMENT VARIABLES
+.Bl -tag -width Ds
+.It Ev SFEED_PIPER
+A program where the TAB-Separated Value line is piped to.
+By default this is "sfeed_content".
+.It Ev SFEED_PLUMBER
+A program that received the url or enclosure url as a parameter.
+By default this is "xdg-open".
+.It Ev SFEED_URL_FILE
+If this variable is set this file will be used if an item is new/unread or
+read, instead of checking the timestamp, which is the default.
+The format is a plain-text file with a list of read urls, one url per line.
+This url is matched on the link field as specified in
+.Xr sfeed 5 .
+.It Ev SFEED_MARK_READ
+A program to mark items as read if
+.Ev SFEED_URL_FILE
+is also set, if unset the program used is "sfeed_markread read".
+The marked items are piped to the program.
+The program is expected to merge items in a safe/transactional manner.
+The program should return the exit status 0 on succeed or non-zero on failure.
+.It Ev SFEED_MARK_UNREAD
+A program to mark items as unread if
+.Ev SFEED_URL_FILE
+is also set, if unset the program used is "sfeed_markread unread".
+The marked items are piped to the program.
+The program is expected to merge items in a safe/transactional manner.
+The program should return the exit status 0 on succeed or non-zero on failure.
+.It Ev SFEED_YANKER
+A program where the url or enclosure is piped to for yanking it to the
+clipboard.
+By default this is "xclip -r".
+.It Ev SFEED_FEED_PATH
+This variable is set by
+.Nm
+when a feed is set or changed.
+If the data is read from stdin this variable is unset.
+It can be used by the plumb or pipe program for scripting purposes.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh SEE ALSO
+.Xr sfeed 1 ,
+.Xr sfeed_markread 1 ,
+.Xr sfeed_plain 1 ,
+.Xr xclip 1 ,
+.Xr sfeed 5
+.Sh AUTHORS
+.An Hiltjo Posthuma Aq Mt hiltjo@codemadness.org

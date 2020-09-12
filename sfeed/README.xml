@@ -1,0 +1,80 @@
+XML parser
+----------
+
+A small XML parser.
+
+
+Dependencies
+------------
+
+- C compiler (C99).
+
+
+Features
+--------
+
+- Relatively small parser.
+- Pretty simple API.
+- Pretty fast.
+- Portable
+- No dynamic memory allocation.
+
+
+Supports
+--------
+
+- Tags in short-form (<img src="lolcat.jpg" title="Meow" />).
+- Tag attributes.
+- Short attributes without an explicity set value (<input type="checkbox" checked />).
+- Comments
+- CDATA sections.
+- Helper function (xml_entitytostr) to convert XML 1.0 / HTML 2.0 named entities
+  and numeric entities to UTF-8.
+- Reading XML from a fd, string buffer or implement a custom reader:
+  see: XMLParser.getnext or GETNEXT() macro.
+
+
+Caveats
+-------
+
+- It is not a compliant XML parser.
+- Performance: data is buffered even if a handler is not set: to make parsing
+  faster change this code from xml.c.
+- The XML is not checked for errors so it will continue parsing XML data, this
+  is by design.
+- Internally fixed-size buffers are used, callbacks like XMLParser.xmldata are
+  called multiple times for the same tag if the data size is bigger than the
+  internal buffer size (sizeof(XMLParser.data)). To differentiate between new
+  calls for data you can use the xml*start and xml*end handlers.
+- It does not handle XML white-space rules for tag data. The raw values
+  including white-space is passed. This is useful in some cases, like for
+  HTML <pre> tags.
+- The XML specification has no limits on tag and attribute names. For
+  simplicity/sanity sake this XML parser takes some liberties. Tag and
+  attribute names are truncated.
+- Entity expansions are not parsed aswell as DOCTYPE, ATTLIST etc.
+
+
+Files used
+----------
+
+xml.c and xml.h
+
+
+Interface / API
+---------------
+
+Should be trivial, see xml.c and xml.h and the examples below.
+
+
+Examples
+--------
+
+sfeed_opml_import.c or sfeed_web.c or sfeed_xmlenc.c
+
+
+License
+-------
+
+ISC, see LICENSE file.
+

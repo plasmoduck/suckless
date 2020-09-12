@@ -1,0 +1,27 @@
+#!/bin/sh
+filename="$1"
+shift
+ext=$(basename "$filename" | grep -o '\..[^\.]*$')
+convert=""
+
+if test x"$ext" = x".jpg"; then
+	convert="jpg2ff"
+elif test x"$ext" = x".png"; then
+	convert="png2ff"
+elif test x"$ext" = x".gif"; then
+	convert="gif2ff"
+elif test x"$ext" = x".ff"; then
+	convert="cat"
+elif test x"$ext" = x".bz2"; then
+	convert="bzip2 -dc"
+elif test x"$ext" = x".gz"; then
+	convert="gzip -dc"
+elif test x"$ext" = x".xz"; then
+	convert="xz -dc"
+else
+	echo "unknown extension \"$ext\"" >&2
+fi
+
+if test x"$convert" != x""; then
+	$convert < "$filename" | lel -t "$filename" "$@"
+fi

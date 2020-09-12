@@ -1,0 +1,21 @@
+[ ] improve lel-open to support multiple files.
+[ ] zooming
+	[ ] improve performance (cull only the visible part?), use XGetImage() ?
+	[ ] improve zoomfact "steps".
+[ ] mouse support.
+	[ ] mouse move panning.
+	[x] mouse scroll zooming.
+[ ] scale
+	[ ] use XPutPixel for byte-order safety ?
+[ ] improve README.
+[ ] write man page.
+	[ ] convert to mandoc.
+	[ ] lel.1
+	[ ] lel-open.1
+[?] for pictures which use an alpha mask use a checked pattern, similar to:
+    http://www.modejong.com/blog/Media/Ghost_TransparentBG_400x300.jpg
+[?] improve key lookup code.
+[?] project name change.
+[?] add support for more color depths (< 24).
+[?] add command mode or shell support for viewing
+    images in a directory (output key to stdout might be enough?).

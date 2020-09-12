@@ -1,0 +1,28 @@
+#!/bin/sh
+# usage: $0 <read|unread>
+# input is the read / unread url per line.
+
+if test -z "$SFEED_URL_FILE"; then
+	echo "\$SFEED_URL_FILE must be set" >&2
+	exit 1
+fi
+
+case "$1" in
+read)
+	cat >> "$SFEED_URL_FILE";;
+unread)
+	tmp=$(mktemp)
+	trap "rm -f $tmp" EXIT
+	LC_CTYPE=C awk -F '\t' '
+	{ FILENR += (FNR == 1)	}
+	FILENR == 1 { urls[$0] = 1 }
+	FILENR == 2 { if (!urls[$0]) { print $0 } }
+	END { exit(FILENR != 2) }' \
+		"/dev/stdin" "$SFEED_URL_FILE" > "$tmp" && \
+		mv "$tmp" "$SFEED_URL_FILE"
+	;;
+*)
+	echo "$0 <read|unread>" >&2
+	exit 1
+	;;
+esac

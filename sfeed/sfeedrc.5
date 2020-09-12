@@ -1,0 +1,141 @@
+.Dd February 4, 2020
+.Dt SFEEDRC 5
+.Os
+.Sh NAME
+.Nm sfeedrc
+.Nd sfeed_update(1) configuration file
+.Sh DESCRIPTION
+.Nm
+is the configuration file for
+.Xr sfeed_update 1 .
+.Sh VARIABLES
+.Bl -tag -width Ds
+.It Va sfeedpath
+can be set for the directory to store the TAB-separated feed files.
+The default is
+.Pa $HOME/.sfeed/feeds .
+.It Va maxjobs
+can be used to change the amount of concurrent
+.Fn feed
+jobs.
+The default is 8.
+.El
+.Sh FUNCTIONS
+.Bl -tag -width Ds
+.It Fn feeds
+This function is the required "main" entry-point function called from
+.Xr sfeed_update 1 .
+.It Fn feed "name" "feedurl" "basesiteurl" "encoding"
+Inside the
+.Fn feeds
+function feeds can be defined by calling the
+.Fn feed
+function, its arguments are:
+.Bl -tag -width Ds
+.It Fa name
+Name of the feed, this is also used as the filename for the TAB-separated
+feed file.
+The feedname cannot contain '/' characters, they will be replaced with '_'.
+.It Fa feedurl
+Url to fetch the RSS/Atom data from, usually a HTTP or HTTPS url.
+.It Op Fa basesiteurl
+Baseurl of the feed links.
+This argument allows to fix relative item links.
+.Pp
+According to the RSS and Atom specification feeds should always have absolute
+urls, however this is not always the case in practise.
+.It Op Fa encoding
+Feeds are decoded from this name to UTF-8, the name should be a usable
+character-set for the
+.Xr iconv 1
+tool.
+.El
+.El
+.Sh OVERRIDE FUNCTIONS
+Because
+.Xr sfeed_update 1
+is a shellscript each function can be overridden to change its behaviour,
+notable functions are:
+.Bl -tag -width Ds
+.It Fn fetch "name" "url" "feedfile"
+Fetch feed from url and writes data to stdout, its arguments are:
+.Bl -tag -width Ds
+.It Fa name
+Specified name in configuration file (useful for logging).
+.It Fa url
+Url to fetch.
+.It Fa feedfile
+Used feedfile (useful for comparing modification times).
+.El
+.Pp
+By default the tool
+.Xr curl 1
+is used.
+.It Fn convertencoding "from" "to"
+Convert from text-encoding to another and writes it to stdout, its arguments
+are:
+.Bl -tag -width Ds
+.It Fa from
+From text-encoding.
+.It Fa to
+To text-encoding.
+.El
+.Pp
+By default the tool
+.Xr iconv 1
+is used.
+.It Fn filter "name"
+Filter
+.Xr sfeed 5
+data from stdin, write to stdout, its arguments are:
+.Bl -tag -width Ds
+.It Fa name
+Feed name.
+.El
+.It Fn merge "name" "oldfile" "newfile"
+Merge data of oldfile with newfile and writes it to stdout, its arguments are:
+.Bl -tag -width Ds
+.It Fa name
+Feed name.
+.It Fa oldfile
+Old file.
+.It Fa newfile
+New file.
+.El
+.It Fn order "name"
+Sort
+.Xr sfeed 5
+data from stdin, write to stdout, its arguments are:
+.Bl -tag -width Ds
+.It Fa name
+Feed name.
+.El
+.El
+.Sh EXAMPLES
+An example configuration file is included named sfeedrc.example and also
+shown below:
+.Bd -literal
+#sfeedpath="$HOME/.sfeed/feeds"
+
+# list of feeds to fetch:
+feeds() {
+	# feed <name> <feedurl> [basesiteurl] [encoding]
+	feed "codemadness" "https://www.codemadness.nl/atom.xml"
+	feed "explosm" "http://feeds.feedburner.com/Explosm"
+	feed "golang github releases" "https://github.com/golang/go/releases.atom"
+	feed "linux kernel" "https://www.kernel.org/feeds/kdist.xml" "https://www.kernel.org"
+	feed "reddit openbsd" "https://old.reddit.com/r/openbsd/.rss"
+	feed "slashdot" "http://rss.slashdot.org/Slashdot/slashdot" "http://slashdot.org"
+	feed "tweakers" "http://feeds.feedburner.com/tweakers/mixed" "http://tweakers.net" "iso-8859-1"
+	# get youtube Atom feed: curl -s -L 'https://www.youtube.com/user/gocoding/videos' | sfeed_web | cut -f 1
+	feed "youtube golang" "https://www.youtube.com/feeds/videos.xml?channel_id=UCO3LEtymiLrgvpb59cNsb8A"
+	feed "xkcd" "https://xkcd.com/atom.xml" "https://xkcd.com"
+}
+.Ed
+.Sh SEE ALSO
+.Xr curl 1 ,
+.Xr iconv 1 ,
+.Xr sfeed_update 1 ,
+.Xr sh 1
+.Sh AUTHORS
+.An Hiltjo Posthuma Aq Mt hiltjo@codemadness.org

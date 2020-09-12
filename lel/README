@@ -1,0 +1,42 @@
+lel - simple X11 image viewer
+=============================
+
+lel is a simple X11 image viewer. It reads images (in the farbfeld format)
+from either stdin or from a list of command-line arguments and displays them
+in an X11 window.
+
+
+Features
+--------
+
+- view modes:
+  - original image size.
+  - stretch image to window, keep aspect ratio.
+  - stretch image to window, don't keep aspect ratio.
+- keybinds
+- zooming
+- panning
+
+
+Dependencies
+------------
+
+- libX11
+
+
+Optional (run-time) dependencies
+--------------------------------
+- farbfeld: https://git.suckless.org/farbfeld/
+
+
+Compile:
+--------
+
+$ make
+# make install
+
+
+Known issues:
+-------------
+
+See TODO file.

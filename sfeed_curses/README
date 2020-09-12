@@ -1,0 +1,185 @@
+sfeed_curses
+------------
+
+sfeed_curses is a curses UI front-end for sfeed.
+
+It shows the TAB-separated feed items in a graphical command-line UI. The
+interface has a look inspired by the mutt mail client. It has a sidebar panel
+for the feeds, a panel with a listing of the items and a small statusbar for
+the selected item/url. Some functions like searching and scrolling are
+integrated in the interface itself.
+
+
+Build and install
+-----------------
+
+$ make
+# make install
+
+
+Usage
+-----
+
+Like the format programs included in sfeed you can run it like this:
+
+	sfeed_curses ~/.sfeed/feeds/*
+
+... or by reading from stdin:
+
+	sfeed_curses < ~/.sfeed/feeds/xkcd
+
+By default sfeed_curses marks the items of the last day as new/bold. To manage
+read/unread items in a different way a plain-text file with a list of the read
+urls can be used. To enable this behaviour the path to this file can be
+specified by setting the environment variable $SFEED_URL_FILE to the url file:
+
+	SFEED_URL_FILE=~/.sfeed/urls sfeed_curses ~/.sfeed/feeds/*
+
+There is an shellscript "sfeed_markread" to process the read and unread items.
+See the man page for more detailed information.
+
+
+Dependencies
+------------
+
+- C compiler (C99).
+- libc (recommended: C99 and POSIX >= 200809).
+- curses (typically ncurses).
+
+
+Optional dependencies
+---------------------
+
+- POSIX make(1) for Makefile.
+- mandoc for documentation: https://mdocml.bsd.lv/
+
+
+Run-time dependencies
+---------------------
+
+- A (POSIX) shell.
+- A terminal (emulator) supporting UTF-8 and the used capabilities.
+
+
+Optional run-time dependencies
+------------------------------
+
+- xclip for yanking the url or enclosure. See $SFEED_YANKER to change it.
+- xdg-open, used as a plumber by default. See $SFEED_PLUMBER to change it.
+- awk, used by the sfeed_content and sfeed_markread script.
+  See the ENVIRONMENT VARIABLES section in the man page to change it.
+- lynx, used by the sfeed_content script to convert HTML content.
+  See the ENVIRONMENT VARIABLES section in the man page to change it.
+
+
+OS tested
+---------
+
+- Linux (compilers: clang, gcc, tcc, libc: glibc, musl).
+- OpenBSD (clang, gcc).
+- NetBSD
+- Windows (cygwin gcc + mintty).
+- HaikuOS (works, but requires [v]dprintf implementation).
+
+
+Known terminal issues
+---------------------
+
+Below lists some bugs or missing features in terminals that are found while
+testing.  Some of them might be fixed already upstream:
+
+- cygwin + mintty: the xterm mouse-encoding of the mouse position is broken for
+  scrolling.
+- HaikuOS terminal: the xterm mouse-encoding of the mouse button number of the
+  middle-button, right-button is incorrect / reversed.
+- putty: the full reset attribute (ESC c, typically `rs1`) does not reset the
+  window title.
+
+
+Color themes
+------------
+
+/* newsboat-like (blue, yellow) */
+#define THEME_ITEM_NORMAL()           do {                          } while(0)
+#define THEME_ITEM_FOCUS()            do {                          } while(0)
+#define THEME_ITEM_BOLD()             do { attrmode(ATTR_BOLD_ON);  } while(0)
+#define THEME_ITEM_SELECTED()         do { ttywrite("\x1b[93;44m"); } while(0) /* bright yellow fg, blue bg */
+#define THEME_SCROLLBAR_FOCUS()       do { ttywrite("\x1b[34m");    } while(0) /* blue fg */
+#define THEME_SCROLLBAR_NORMAL()      do { ttywrite("\x1b[34m");    } while(0)
+#define THEME_SCROLLBAR_TICK_FOCUS()  do { ttywrite("\x1b[44m");    } while(0) /* blue bg */
+#define THEME_SCROLLBAR_TICK_NORMAL() do { ttywrite("\x1b[44m");    } while(0)
+#define THEME_STATUSBAR()             do { attrmode(ATTR_BOLD_ON); ttywrite("\x1b[93;44m"); } while(0)
+#define THEME_INPUT_LABEL()           do {                          } while(0)
+#define THEME_INPUT_NORMAL()          do {                          } while(0)
+
+
+/* TempleOS-like (for fun and god) */
+/* set true-color foreground / background, Terry would've preferred ANSI */
+#define SETFGCOLOR(r,g,b)    ttywritef("\x1b[38;2;%d;%d;%dm", r, g, b)
+#define SETBGCOLOR(r,g,b)    ttywritef("\x1b[48;2;%d;%d;%dm", r, g, b)
+
+#define THEME_ITEM_NORMAL()           do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
+#define THEME_ITEM_FOCUS()            do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
+#define THEME_ITEM_BOLD()             do { attrmode(ATTR_BOLD_ON); SETFGCOLOR(0xaa, 0x00, 0x00); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
+#define THEME_ITEM_SELECTED()         do { attrmode(ATTR_REVERSE_ON); } while(0)
+#define THEME_SCROLLBAR_FOCUS()       do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
+#define THEME_SCROLLBAR_NORMAL()      do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
+#define THEME_SCROLLBAR_TICK_FOCUS()  do { SETBGCOLOR(0x00, 0x00, 0xaa); SETFGCOLOR(0xff, 0xff, 0xff); } while(0)
+#define THEME_SCROLLBAR_TICK_NORMAL() do { SETBGCOLOR(0x00, 0x00, 0xaa); SETFGCOLOR(0xff, 0xff, 0xff); } while(0)
+#define THEME_STATUSBAR()             do { ttywrite("\x1b[6m"); SETBGCOLOR(0x00, 0x00, 0xaa); SETFGCOLOR(0xff, 0xff, 0xff); } while(0) /* blink statusbar */
+#define THEME_INPUT_LABEL()           do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
+#define THEME_INPUT_NORMAL()          do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
+
+#undef SCROLLBAR_SYMBOL_BAR
+#define SCROLLBAR_SYMBOL_BAR  "\xe2\x95\x91" /* symbol: "double vertical" */
+
+
+Running custom commands inside the program
+------------------------------------------
+
+Running commands inside the program can be useful for example to sync items or
+mark all items across all feeds as read. It can be comfortable to have a
+keybind for this inside the program to perform a scripted action and then
+reload the feeds by sending the signal SIGHUP.
+
+In the input handling code you can then add a case:
+
+	case 'M':
+		forkexec((char *[]) { "markallread.sh", NULL });
+		break;
+
+or
+
+	case 'S':
+		forkexec((char *[]) { "syncnews.sh", NULL });
+		break;
+
+The specified script should be in $PATH or an absolute path.
+
+Example of a `markallread.sh` shellscript to mark all urls as read:
+
+	#!/bin/sh
+	# mark all items/urls as read.
+
+	tmp=$(mktemp)
+	(cat ~/.sfeed/urls; cut -f 3 ~/.sfeed/feeds/*) | \
+	awk '!x[$0]++' > "$tmp" &&
+	mv "$tmp" ~/.sfeed/urls &&
+	pkill -SIGHUP sfeed_curses # reload feeds.
+
+Example of a `sync.sh` shellscript to update the feeds and reload them:
+
+	#!/bin/sh
+	sfeed_update && pkill -SIGHUP sfeed_curses
+
+
+License
+-------
+
+ISC, see LICENSE file.
+
+
+Author
+------
+
+Hiltjo Posthuma <hiltjo@codemadness.org>

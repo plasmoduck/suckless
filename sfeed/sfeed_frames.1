@@ -1,0 +1,43 @@
+.Dd March 15, 2020
+.Dt SFEED_FRAMES 1
+.Os
+.Sh NAME
+.Nm sfeed_frames
+.Nd format feed data to HTML with frames
+.Sh SYNOPSIS
+.Nm
+.Op Ar file...
+.Sh DESCRIPTION
+.Nm
+formats feed data (TSV) from
+.Xr sfeed 1
+to HTML.
+It reads TSV data from stdin or
+.Ar file
+and writes HTML files for the frameset to the current directory.
+If no
+.Ar file
+parameters are specified and therefore the data is read from stdin then the
+menu.html file is not written.
+.Pp
+Items with a timestamp from the last day compared to the system time at the
+time of formatting are counted and marked as new.
+.Sh FILES WRITTEN
+.Bl -tag -width 13n
+.It index.html
+The main HTML file referencing to the frames items.html and menu.html.
+.It items.html
+The items frame contains all the item HTML links to the remote content.
+.It menu.html
+The menu frame which contains navigation "anchor" links to the feed names in
+items.html.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh SEE ALSO
+.Xr sfeed 1 ,
+.Xr sfeed_html 1 ,
+.Xr sfeed_plain 1 ,
+.Xr sfeed 5
+.Sh AUTHORS
+.An Hiltjo Posthuma Aq Mt hiltjo@codemadness.org

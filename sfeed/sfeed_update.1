@@ -1,0 +1,70 @@
+.Dd March 15, 2020
+.Dt SFEED_UPDATE 1
+.Os
+.Sh NAME
+.Nm sfeed_update
+.Nd update feeds and merge with old feeds
+.Sh SYNOPSIS
+.Nm
+.Op Ar sfeedrc
+.Sh DESCRIPTION
+.Nm
+writes TAB-separated feed files and merges new items with the items in any
+existing files.
+The items are stored in one file per feed in the directory
+.Pa $HOME/.sfeed/feeds
+by default.
+The directory can be changed in the
+.Xr sfeedrc 5
+file.
+.Sh OPTIONS
+.Bl -tag -width 17n
+.It Ar sfeedrc
+Config file.
+The default is
+.Pa $HOME/.sfeed/sfeedrc .
+.El
+.Sh FILES READ
+.Bl -tag -width 17n
+.It Ar sfeedrc
+This file is evaluated as a shellscript in
+.Nm .
+See also the
+.Xr sfeedrc 5
+man page for a detailed description of the format and an example file.
+.El
+.Sh FILES WRITTEN
+.Bl -tag -width 17n
+.It feedname
+TAB-separated
+.Xr sfeed 5
+format containing all items per feed.
+The
+.Nm
+script merges new items with this file.
+The feedname cannot contain '/' characters, they will be replaced with '_'.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh EXAMPLES
+To update your feeds and format them in various formats:
+.Bd -literal
+# Update
+sfeed_update "configfile"
+# Plain-text list
+sfeed_plain $HOME/.sfeed/feeds/* > $HOME/.sfeed/feeds.txt
+# HTML
+sfeed_html $HOME/.sfeed/feeds/* > $HOME/.sfeed/feeds.html
+# HTML with frames
+mkdir -p somedir && cd somedir && sfeed_frames $HOME/.sfeed/feeds/*
+.Ed
+.Sh SEE ALSO
+.Xr sfeed 1 ,
+.Xr sfeed_frames 1 ,
+.Xr sfeed_html 1 ,
+.Xr sfeed_plain 1 ,
+.Xr sh 1 ,
+.Xr sfeed 5 ,
+.Xr sfeedrc 5
+.Sh AUTHORS
+.An Hiltjo Posthuma Aq Mt hiltjo@codemadness.org

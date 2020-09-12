@@ -1,0 +1,26 @@
+.Dd August 2, 2020
+.Dt SFEED_MARKREAD 1
+.Os
+.Sh NAME
+.Nm sfeed_markread
+.Nd mark items as read/unread
+.Sh SYNOPSIS
+.Nm
+.Ar read | Ar unread
+.Sh DESCRIPTION
+.Nm
+expects to receive a plain-text list with one or more urls from stdin.
+The received format from stdin is one url per line.
+.Sh ENVIRONMENT VARIABLES
+.Bl -tag -width Ds
+.It Ev SFEED_URL_FILE
+This variable must be set to use as the path to the file containing a
+plain-text list of read urls.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh SEE ALSO
+.Xr awk 1 ,
+.Xr sfeed_curses 1
+.Sh AUTHORS
+.An Hiltjo Posthuma Aq Mt hiltjo@codemadness.org

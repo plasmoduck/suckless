@@ -1,0 +1,290 @@
+irc.oftc.net	2020-08-29T13:27:57Z	*** Looking up your hostname...
+irc.oftc.net	2020-08-29T13:27:57Z	*** Checking Ident
+irc.oftc.net	2020-08-29T13:27:57Z	*** Couldn't look up your hostname
+irc.oftc.net	2020-08-29T13:28:08Z	*** No Ident response
+irc.oftc.net	2020-08-29T13:28:08Z	433 - * Nickname is already in use.
+irc.oftc.net	2020-08-29T13:28:08Z	451 - * Register first.
+irc.oftc.net	2020-08-29T13:28:53Z	*** Looking up your hostname...
+irc.oftc.net	2020-08-29T13:28:53Z	*** Checking Ident
+irc.oftc.net	2020-08-29T13:28:53Z	*** Couldn't look up your hostname
+irc.oftc.net	2020-08-29T13:29:04Z	*** No Ident response
+irc.oftc.net	2020-08-29T13:29:04Z	001 - plasmoduck Welcome to the OFTC Internet Relay Chat Network plasmoduck
+irc.oftc.net	2020-08-29T13:29:04Z	002 - plasmoduck Your host is singleton.oftc.net[172.104.164.108/6667], running version hybrid-7.2.2+oftc1.7.3
+irc.oftc.net	2020-08-29T13:29:04Z	003 - plasmoduck This server was created Sep 22 2018 at 19:20:14
+irc.oftc.net	2020-08-29T13:29:04Z	004 - plasmoduck (null)
+irc.oftc.net	2020-08-29T13:29:04Z	005 - plasmoduck 100 MAXTARGETS=1 CHANTYPES=# :are supported by this server
+irc.oftc.net	2020-08-29T13:29:04Z	005 - plasmoduck 120 CHANNELLEN=50 CHANMODES=eIqb,k,l,cimnpstzMRS ELIST=CMNTU SAFELIST AWAYLEN=160 KNOCK EXCEPTS=e INVEX=I :are supported by this server
+irc.oftc.net	2020-08-29T13:29:04Z	042 - plasmoduck your unique ID
+irc.oftc.net	2020-08-29T13:29:04Z	251 - plasmoduck There are 29 users and 13046 invisible on 19 servers
+irc.oftc.net	2020-08-29T13:29:04Z	252 - plasmoduck IRC Operators online
+irc.oftc.net	2020-08-29T13:29:04Z	254 - plasmoduck channels formed
+irc.oftc.net	2020-08-29T13:29:04Z	255 - plasmoduck I have 163 clients and 1 servers
+irc.oftc.net	2020-08-29T13:29:04Z	265 - plasmoduck Current local users: 163  Max: 298
+irc.oftc.net	2020-08-29T13:29:04Z	266 - plasmoduck Current global users: 13075  Max: 16099
+irc.oftc.net	2020-08-29T13:29:04Z	250 - plasmoduck Highest connection count: 299 (298 clients) (122148 connections received)
+irc.oftc.net	2020-08-29T13:29:04Z	- singleton.oftc.net Message of the Day - 
+irc.oftc.net	2020-08-29T13:29:04Z	-   O
+irc.oftc.net	2020-08-29T13:29:04Z	-    \   The Open and Free
+irc.oftc.net	2020-08-29T13:29:04Z	-     O  Technology Community
+irc.oftc.net	2020-08-29T13:29:04Z	-    /|  https://www.oftc.net
+irc.oftc.net	2020-08-29T13:29:04Z	- O-O O
+irc.oftc.net	2020-08-29T13:29:04Z	- 
+irc.oftc.net	2020-08-29T13:29:04Z	- Welcome to the OFTC IRC Network.
+irc.oftc.net	2020-08-29T13:29:04Z	- 
+irc.oftc.net	2020-08-29T13:29:04Z	- The Open and Free Technology Community was founded at the
+irc.oftc.net	2020-08-29T13:29:04Z	- end of 2001 by a group of experienced members of the Open
+irc.oftc.net	2020-08-29T13:29:04Z	- Source and Free Software communities; it is aimed at
+irc.oftc.net	2020-08-29T13:29:04Z	- providing these communities with better communication,
+irc.oftc.net	2020-08-29T13:29:04Z	- development, and support infrastructure. Our goal is to
+irc.oftc.net	2020-08-29T13:29:04Z	- provide stable services to members of the community in any
+irc.oftc.net	2020-08-29T13:29:04Z	- part of the world, while listening closely to their needs
+irc.oftc.net	2020-08-29T13:29:04Z	- and desires.
+irc.oftc.net	2020-08-29T13:29:04Z	- 
+irc.oftc.net	2020-08-29T13:29:04Z	- We are not a general purpose chat platform, but a topical
+irc.oftc.net	2020-08-29T13:29:04Z	- network intent on providing the open source and free
+irc.oftc.net	2020-08-29T13:29:04Z	- software communities a means to cooperate and communicate.
+irc.oftc.net	2020-08-29T13:29:04Z	- As such, illegal and off-topic activity, such as warez
+irc.oftc.net	2020-08-29T13:29:04Z	- trading, will result in being barred from access.
+irc.oftc.net	2020-08-29T13:29:04Z	- 
+irc.oftc.net	2020-08-29T13:29:04Z	- OFTC honors your privacy. To operate the network, we store
+irc.oftc.net	2020-08-29T13:29:04Z	- and process information about IRC connections, nicknames,
+irc.oftc.net	2020-08-29T13:29:04Z	- and channels. Our Privacy Policy explains what we do with
+irc.oftc.net	2020-08-29T13:29:04Z	- that data, and what your rights are. By connecting, you
+irc.oftc.net	2020-08-29T13:29:04Z	- accept these terms: https://www.oftc.net/Privacy_Policy/
+irc.oftc.net	2020-08-29T13:29:04Z	- 
+irc.oftc.net	2020-08-29T13:29:04Z	- If you require assistance with using the OFTC IRC network,
+irc.oftc.net	2020-08-29T13:29:04Z	- stop by in channel #oftc, or email support@oftc.net with
+irc.oftc.net	2020-08-29T13:29:04Z	- details. For help with non-IRC questions please refer to
+irc.oftc.net	2020-08-29T13:29:04Z	- the respective channels and project homepages.
+irc.oftc.net	2020-08-29T13:29:04Z	- 
+irc.oftc.net	2020-08-29T13:29:04Z	- Thanks and enjoy your stay! The OFTC team.
+irc.oftc.net	2020-08-29T13:29:04Z	End of /MOTD command.
+irc.oftc.net	2020-08-29T13:29:04Z	MODE - plasmoduck +i
+irc.oftc.net	2020-08-29T13:29:04Z	This nickname is registered and protected.  If it is your nickname, you may
+irc.oftc.net	2020-08-29T13:29:04Z	authenticate yourself to services with the IDENTIFY command.  You are
+irc.oftc.net	2020-08-29T13:29:04Z	getting this message because you are not on the access list for the
+irc.oftc.net	2020-08-29T13:29:04Z	plasmoduck nickname.
+plasmoducks 	2020-08-29T13:29:29Z	  plasmoducks  < hi dude
+irc.oftc.net	2020-08-30T12:05:51Z	ERROR -  Trying to reconnect too fast.
+irc.oftc.net	2020-08-30T12:05:53Z	-!- Link lost, attempting reconnection...
+irc.oftc.net	2020-08-30T12:05:54Z	ERROR -  Trying to reconnect too fast.
+irc.oftc.net	2020-08-30T12:05:59Z	-!- Link lost, attempting reconnection...
+irc.oftc.net	2020-08-30T12:05:59Z	ERROR -  Trying to reconnect too fast.
+irc.oftc.net	2020-08-30T12:06:05Z	-!- Link lost, attempting reconnection...
+irc.oftc.net	2020-08-30T12:06:05Z	ERROR -  Trying to reconnect too fast.
+irc.oftc.net	2020-08-30T12:06:10Z	-!- Link lost, attempting reconnection...
+irc.oftc.net	2020-08-30T12:06:11Z	ERROR -  Trying to reconnect too fast.
+irc.oftc.net	2020-08-30T12:06:16Z	-!- Link lost, attempting reconnection...
+irc.oftc.net	2020-08-30T12:06:16Z	ERROR -  Trying to reconnect too fast.
+irc.oftc.net	2020-08-30T12:06:21Z	-!- Link lost, attempting reconnection...
+irc.oftc.net	2020-08-30T12:06:22Z	ERROR -  Trying to reconnect too fast.
+irc.oftc.net	2020-08-30T12:06:23Z	-!- Link lost, attempting reconnection...
+irc.oftc.net	2020-08-30T12:06:35Z	*** Looking up your hostname...
+irc.oftc.net	2020-08-30T12:06:35Z	*** Checking Ident
+irc.oftc.net	2020-08-30T12:06:35Z	*** Couldn't look up your hostname
+irc.oftc.net	2020-08-30T12:06:45Z	*** No Ident response
+irc.oftc.net	2020-08-30T12:06:45Z	001 - plasm0ducks Welcome to the OFTC Internet Relay Chat Network plasm0ducks
+irc.oftc.net	2020-08-30T12:06:45Z	002 - plasm0ducks Your host is singleton.oftc.net[172.104.164.108/6667], running version hybrid-7.2.2+oftc1.7.3
+irc.oftc.net	2020-08-30T12:06:45Z	003 - plasm0ducks This server was created Sep 22 2018 at 19:20:14
+irc.oftc.net	2020-08-30T12:06:45Z	004 - plasm0ducks (null)
+irc.oftc.net	2020-08-30T12:06:45Z	005 - plasm0ducks 100 MAXTARGETS=1 CHANTYPES=# :are supported by this server
+irc.oftc.net	2020-08-30T12:06:45Z	005 - plasm0ducks 120 CHANNELLEN=50 CHANMODES=eIqb,k,l,cimnpstzMRS ELIST=CMNTU SAFELIST AWAYLEN=160 KNOCK EXCEPTS=e INVEX=I :are supported by this server
+irc.oftc.net	2020-08-30T12:06:45Z	042 - plasm0ducks your unique ID
+irc.oftc.net	2020-08-30T12:06:45Z	251 - plasm0ducks There are 30 users and 12995 invisible on 19 servers
+irc.oftc.net	2020-08-30T12:06:45Z	252 - plasm0ducks IRC Operators online
+irc.oftc.net	2020-08-30T12:06:45Z	253 - plasm0ducks unknown connection(s)
+irc.oftc.net	2020-08-30T12:06:45Z	254 - plasm0ducks channels formed
+irc.oftc.net	2020-08-30T12:06:45Z	255 - plasm0ducks I have 156 clients and 1 servers
+irc.oftc.net	2020-08-30T12:06:45Z	265 - plasm0ducks Current local users: 156  Max: 298
+irc.oftc.net	2020-08-30T12:06:45Z	266 - plasm0ducks Current global users: 13025  Max: 16099
+irc.oftc.net	2020-08-30T12:06:45Z	250 - plasm0ducks Highest connection count: 299 (298 clients) (122409 connections received)
+irc.oftc.net	2020-08-30T12:06:45Z	- singleton.oftc.net Message of the Day - 
+irc.oftc.net	2020-08-30T12:06:45Z	-   O
+irc.oftc.net	2020-08-30T12:06:45Z	-    \   The Open and Free
+irc.oftc.net	2020-08-30T12:06:45Z	-     O  Technology Community
+irc.oftc.net	2020-08-30T12:06:45Z	-    /|  https://www.oftc.net
+irc.oftc.net	2020-08-30T12:06:45Z	- O-O O
+irc.oftc.net	2020-08-30T12:06:45Z	- 
+irc.oftc.net	2020-08-30T12:06:45Z	- Welcome to the OFTC IRC Network.
+irc.oftc.net	2020-08-30T12:06:45Z	- 
+irc.oftc.net	2020-08-30T12:06:45Z	- The Open and Free Technology Community was founded at the
+irc.oftc.net	2020-08-30T12:06:45Z	- end of 2001 by a group of experienced members of the Open
+irc.oftc.net	2020-08-30T12:06:45Z	- Source and Free Software communities; it is aimed at
+irc.oftc.net	2020-08-30T12:06:45Z	- providing these communities with better communication,
+irc.oftc.net	2020-08-30T12:06:45Z	- development, and support infrastructure. Our goal is to
+irc.oftc.net	2020-08-30T12:06:45Z	- provide stable services to members of the community in any
+irc.oftc.net	2020-08-30T12:06:45Z	- part of the world, while listening closely to their needs
+irc.oftc.net	2020-08-30T12:06:45Z	- and desires.
+irc.oftc.net	2020-08-30T12:06:45Z	- 
+irc.oftc.net	2020-08-30T12:06:45Z	- We are not a general purpose chat platform, but a topical
+irc.oftc.net	2020-08-30T12:06:45Z	- network intent on providing the open source and free
+irc.oftc.net	2020-08-30T12:06:45Z	- software communities a means to cooperate and communicate.
+irc.oftc.net	2020-08-30T12:06:45Z	- As such, illegal and off-topic activity, such as warez
+irc.oftc.net	2020-08-30T12:06:45Z	- trading, will result in being barred from access.
+irc.oftc.net	2020-08-30T12:06:45Z	- 
+irc.oftc.net	2020-08-30T12:06:45Z	- OFTC honors your privacy. To operate the network, we store
+irc.oftc.net	2020-08-30T12:06:45Z	- and process information about IRC connections, nicknames,
+irc.oftc.net	2020-08-30T12:06:45Z	- and channels. Our Privacy Policy explains what we do with
+irc.oftc.net	2020-08-30T12:06:45Z	- that data, and what your rights are. By connecting, you
+irc.oftc.net	2020-08-30T12:06:45Z	- accept these terms: https://www.oftc.net/Privacy_Policy/
+irc.oftc.net	2020-08-30T12:06:45Z	- 
+irc.oftc.net	2020-08-30T12:06:45Z	- If you require assistance with using the OFTC IRC network,
+irc.oftc.net	2020-08-30T12:06:45Z	- stop by in channel #oftc, or email support@oftc.net with
+irc.oftc.net	2020-08-30T12:06:45Z	- details. For help with non-IRC questions please refer to
+irc.oftc.net	2020-08-30T12:06:45Z	- the respective channels and project homepages.
+irc.oftc.net	2020-08-30T12:06:45Z	- 
+irc.oftc.net	2020-08-30T12:06:45Z	- Thanks and enjoy your stay! The OFTC team.
+irc.oftc.net	2020-08-30T12:06:45Z	End of /MOTD command.
+irc.oftc.net	2020-08-30T12:06:45Z	MODE - plasm0ducks +i
+irc.oftc.net	2020-08-30T12:07:35Z	477 - plasm0ducks Cannot join channel (Need to be identified and verified to join this channel, '/msg NickServ help' to learn how to register and verify.)
+#suckless   	2020-08-30T12:07:40Z	  plasm0ducks  < hi
+irc.oftc.net	2020-08-30T12:07:41Z	404 - plasm0ducks Cannot send to channel
+#suckless   	2020-08-30T12:51:33Z	  plasm0ducks  < nick plasmoduck
+irc.oftc.net	2020-08-30T12:51:33Z	404 - plasm0ducks Cannot send to channel
+irc.oftc.net	2020-08-30T12:51:45Z	479 - plasm0ducks Illegal channel name
+irc.oftc.net	2020-08-30T12:51:45Z	479 - plasm0ducks Illegal channel name
+plasmoduck  	2020-08-30T12:52:01Z	  plasm0ducks  < /quit
+irc.oftc.net	2020-08-30T12:52:01Z	401 - plasm0ducks No such nick/channel
+irc.oftc.net	2020-08-30T12:52:14Z	*** Looking up your hostname...
+irc.oftc.net	2020-08-30T12:52:14Z	*** Checking Ident
+irc.oftc.net	2020-08-30T12:52:14Z	*** Couldn't look up your hostname
+irc.oftc.net	2020-08-30T12:52:24Z	*** No Ident response
+irc.oftc.net	2020-08-30T12:52:24Z	001 - plasmoduck Welcome to the OFTC Internet Relay Chat Network plasmoduck
+irc.oftc.net	2020-08-30T12:52:24Z	002 - plasmoduck Your host is singleton.oftc.net[172.104.164.108/6667], running version hybrid-7.2.2+oftc1.7.3
+irc.oftc.net	2020-08-30T12:52:24Z	003 - plasmoduck This server was created Sep 22 2018 at 19:20:14
+irc.oftc.net	2020-08-30T12:52:24Z	004 - plasmoduck (null)
+irc.oftc.net	2020-08-30T12:52:24Z	005 - plasmoduck 100 MAXTARGETS=1 CHANTYPES=# :are supported by this server
+irc.oftc.net	2020-08-30T12:52:24Z	005 - plasmoduck 120 CHANNELLEN=50 CHANMODES=eIqb,k,l,cimnpstzMRS ELIST=CMNTU SAFELIST AWAYLEN=160 KNOCK EXCEPTS=e INVEX=I :are supported by this server
+irc.oftc.net	2020-08-30T12:52:24Z	042 - plasmoduck your unique ID
+irc.oftc.net	2020-08-30T12:52:24Z	251 - plasmoduck There are 31 users and 12995 invisible on 19 servers
+irc.oftc.net	2020-08-30T12:52:24Z	252 - plasmoduck IRC Operators online
+irc.oftc.net	2020-08-30T12:52:24Z	253 - plasmoduck unknown connection(s)
+irc.oftc.net	2020-08-30T12:52:24Z	254 - plasmoduck channels formed
+irc.oftc.net	2020-08-30T12:52:24Z	255 - plasmoduck I have 157 clients and 1 servers
+irc.oftc.net	2020-08-30T12:52:24Z	265 - plasmoduck Current local users: 157  Max: 298
+irc.oftc.net	2020-08-30T12:52:24Z	266 - plasmoduck Current global users: 13026  Max: 16099
+irc.oftc.net	2020-08-30T12:52:24Z	250 - plasmoduck Highest connection count: 299 (298 clients) (122425 connections received)
+irc.oftc.net	2020-08-30T12:52:24Z	- singleton.oftc.net Message of the Day - 
+irc.oftc.net	2020-08-30T12:52:24Z	-   O
+irc.oftc.net	2020-08-30T12:52:24Z	-    \   The Open and Free
+irc.oftc.net	2020-08-30T12:52:24Z	-     O  Technology Community
+irc.oftc.net	2020-08-30T12:52:24Z	-    /|  https://www.oftc.net
+irc.oftc.net	2020-08-30T12:52:24Z	- O-O O
+irc.oftc.net	2020-08-30T12:52:24Z	- 
+irc.oftc.net	2020-08-30T12:52:24Z	- Welcome to the OFTC IRC Network.
+irc.oftc.net	2020-08-30T12:52:24Z	- 
+irc.oftc.net	2020-08-30T12:52:24Z	- The Open and Free Technology Community was founded at the
+irc.oftc.net	2020-08-30T12:52:24Z	- end of 2001 by a group of experienced members of the Open
+irc.oftc.net	2020-08-30T12:52:24Z	- Source and Free Software communities; it is aimed at
+irc.oftc.net	2020-08-30T12:52:24Z	- providing these communities with better communication,
+irc.oftc.net	2020-08-30T12:52:24Z	- development, and support infrastructure. Our goal is to
+irc.oftc.net	2020-08-30T12:52:24Z	- provide stable services to members of the community in any
+irc.oftc.net	2020-08-30T12:52:24Z	- part of the world, while listening closely to their needs
+irc.oftc.net	2020-08-30T12:52:24Z	- and desires.
+irc.oftc.net	2020-08-30T12:52:24Z	- 
+irc.oftc.net	2020-08-30T12:52:24Z	- We are not a general purpose chat platform, but a topical
+irc.oftc.net	2020-08-30T12:52:24Z	- network intent on providing the open source and free
+irc.oftc.net	2020-08-30T12:52:24Z	- software communities a means to cooperate and communicate.
+irc.oftc.net	2020-08-30T12:52:24Z	- As such, illegal and off-topic activity, such as warez
+irc.oftc.net	2020-08-30T12:52:24Z	- trading, will result in being barred from access.
+irc.oftc.net	2020-08-30T12:52:24Z	- 
+irc.oftc.net	2020-08-30T12:52:24Z	- OFTC honors your privacy. To operate the network, we store
+irc.oftc.net	2020-08-30T12:52:24Z	- and process information about IRC connections, nicknames,
+irc.oftc.net	2020-08-30T12:52:24Z	- and channels. Our Privacy Policy explains what we do with
+irc.oftc.net	2020-08-30T12:52:24Z	- that data, and what your rights are. By connecting, you
+irc.oftc.net	2020-08-30T12:52:24Z	- accept these terms: https://www.oftc.net/Privacy_Policy/
+irc.oftc.net	2020-08-30T12:52:24Z	- 
+irc.oftc.net	2020-08-30T12:52:24Z	- If you require assistance with using the OFTC IRC network,
+irc.oftc.net	2020-08-30T12:52:24Z	- stop by in channel #oftc, or email support@oftc.net with
+irc.oftc.net	2020-08-30T12:52:24Z	- details. For help with non-IRC questions please refer to
+irc.oftc.net	2020-08-30T12:52:25Z	- the respective channels and project homepages.
+irc.oftc.net	2020-08-30T12:52:25Z	- 
+irc.oftc.net	2020-08-30T12:52:25Z	- Thanks and enjoy your stay! The OFTC team.
+irc.oftc.net	2020-08-30T12:52:25Z	End of /MOTD command.
+irc.oftc.net	2020-08-30T12:52:25Z	MODE - plasmoduck +i
+irc.oftc.net	2020-08-30T12:52:25Z	This nickname is registered and protected.  If it is your nickname, you may
+irc.oftc.net	2020-08-30T12:52:25Z	authenticate yourself to services with the IDENTIFY command.  You are
+irc.oftc.net	2020-08-30T12:52:25Z	getting this message because you are not on the access list for the
+irc.oftc.net	2020-08-30T12:52:25Z	plasmoduck nickname.
+irc.oftc.net	2020-08-30T12:54:56Z	477 - plasmoduck Cannot join channel (Need to be identified and verified to join this channel, '/msg NickServ help' to learn how to register and verify.)
+irc.oftc.net	2020-08-30T12:55:07Z	332 - plasmoduck https://www.oftc.net/ChannelModes/ | https://services.oftc.net | OFTC's public support channel. Our social channel is #moocows | Do NOT paste spam when reporting it | Want a cloak/vhost? See https://www.oftc.net/UserCloaks/ | https://www.oftc.net/
+irc.oftc.net	2020-08-30T12:55:07Z	333 - plasmoduck (null)
+irc.oftc.net	2020-08-30T12:55:07Z	353 - plasmoduck plasmoduck clonak sevenup1 zyley slobodan bentham zimmer free2 Hande noreply mnemonic rdelfin kreyren @pastly brunoramos somenick421 jhill zyme el zebrag Meli-sama raycopel- disappear pamaury_ fstd lightsweep fdp rovonovo_zoro wolfshappen jatt YuGiOhJCJ achender_ simonpatapon gargus nyov tnewman691 bamdad coniptor de-facto themill SpComb Mahjong2 t3chn0 kryten apetresc Bebef D-melanogaster ml| milan xelra overclock Guest1181 orly_ Vejeta` sborza bolt Peetz0r
+irc.oftc.net	2020-08-30T12:55:07Z	353 - plasmoduck madage CTF ErrantEgo T0}{|c Seirdy BugBlue nulligan teclo MrR0b07 nyaomi wfnintr xelxebar TheSilentLink trebmuh kwilczynski KH405 Guest991 deathbybandaid woodwose hexa- jonaharagon indy LoRez purrdeta nyancat kristjansson Ekho hekel Ketchup901 kcrk bodiccea_ MatrixTravelerbot[m] torian[m] Guest807 lefrog[m]1 gtc1977[m] dtz[m] Soni kraem MilkManzJourDaddy hypatia KindOne hata8 AlpineLlama mpmc_ federico3 OutdoorAcorn Guest685 JoeK stux|away deltam Strykar gberg
+irc.oftc.net	2020-08-30T12:55:07Z	353 - plasmoduck Ludwig_LJESec urdh SudiptoG- Peng_ @scott Bloodshedder @youam ler cryptodan_mobile steev Pollion Guest409 greeter @Hydroxide @Ganneff john799 jiggawattz @Unit193 snd paktosan Fear berndj Dataforce MatthewAllan93 old FloodServ animal bremner imdeni_ OverTheTop nss madduck WhizzWr nicoo clavi tomreyn ruskie sujeet roar_ planetmaker G ahf Lord Woet Spitfire copyninja @rnowak murb bafs Hobbyboy f0x3 pr grossing obre @tomaw Eliz Zachary_DuBois JStoker jmbsvicetto
+irc.oftc.net	2020-08-30T12:55:07Z	353 - plasmoduck TimWolla PlasmaStar bzed buZz Mikedge440 Peng Guest4452 jaskal jrtc27 balrog cdlu @matt calcmandan paper peb k-man Spydar007 gruetzkopf Aebian echarlie karan funnel @yang Taede @Myon Ttech dustinm` energizer guntha ruru4143 cooldude wraeth winny @Maulkin traumsch1le eXhumed_ liam__ Freso revi hajvan ilbelkyr badpixel stux euidzero Maarten reborn jjm MisterC abrotman DLange reubot tripflag trobotham Guest920 raj dnull naos_ xfbs mquin @formorer adsb patronus
+irc.oftc.net	2020-08-30T12:55:07Z	353 - plasmoduck TonyL Kniaz cheers tumbleweed linuxdaemon noah nobaudy thurin jelly dcraig Guest24699 @dwfreed explodes FluffyFoxeh giraffe alynpost migy praetorian Salt dgw Guest17193 kwerk catalyst Goop @mcintosh Guest24260 @sarnold Adam- @mikegrb chip deetwelve shortdudey123 Nightmare @mwalling
+irc.oftc.net	2020-08-30T12:55:07Z	366 - plasmoduck End of /NAMES list.
+#oftc       	2020-08-30T12:55:31Z	> plasmoducks  < plasmoduck, hi
+#oftc       	2020-08-30T12:55:36Z	  plasmoduck   < hi
+#oftc       	2020-08-30T12:56:11Z	  plasmoduck   < n
+#oftc       	2020-08-30T12:56:14Z	  plasmoduck   < /n
+#oftc       	2020-08-30T12:57:45Z	  plasmoduck   < 0
+#oftc       	2020-08-30T12:57:49Z	  plasmoduck   < sorry
+#oftc       	2020-08-30T12:57:57Z	  plasmoduck   < Im stuck 
+#oftc       	2020-08-30T12:58:23Z	  bremner      < ask a question?
+#suckless   	2020-08-30T13:03:20Z	  plasmoduck   < hi
+irc.oftc.net	2020-08-30T13:03:20Z	404 - plasmoduck Cannot send to channel
+irc.oftc.net	2020-08-30T13:07:01Z	*** Looking up your hostname...
+irc.oftc.net	2020-08-30T13:07:01Z	*** Checking Ident
+irc.oftc.net	2020-08-30T13:07:01Z	*** Couldn't look up your hostname
+irc.oftc.net	2020-08-30T13:07:11Z	*** No Ident response
+irc.oftc.net	2020-08-30T13:07:11Z	001 - plasmoduck Welcome to the OFTC Internet Relay Chat Network plasmoduck
+irc.oftc.net	2020-08-30T13:07:11Z	002 - plasmoduck Your host is singleton.oftc.net[172.104.164.108/6667], running version hybrid-7.2.2+oftc1.7.3
+irc.oftc.net	2020-08-30T13:07:11Z	003 - plasmoduck This server was created Sep 22 2018 at 19:20:14
+irc.oftc.net	2020-08-30T13:07:11Z	004 - plasmoduck (null)
+irc.oftc.net	2020-08-30T13:07:11Z	005 - plasmoduck 100 MAXTARGETS=1 CHANTYPES=# :are supported by this server
+irc.oftc.net	2020-08-30T13:07:11Z	005 - plasmoduck 120 CHANNELLEN=50 CHANMODES=eIqb,k,l,cimnpstzMRS ELIST=CMNTU SAFELIST AWAYLEN=160 KNOCK EXCEPTS=e INVEX=I :are supported by this server
+irc.oftc.net	2020-08-30T13:07:11Z	042 - plasmoduck your unique ID
+irc.oftc.net	2020-08-30T13:07:11Z	251 - plasmoduck There are 31 users and 12995 invisible on 19 servers
+irc.oftc.net	2020-08-30T13:07:11Z	252 - plasmoduck IRC Operators online
+irc.oftc.net	2020-08-30T13:07:11Z	253 - plasmoduck unknown connection(s)
+irc.oftc.net	2020-08-30T13:07:11Z	254 - plasmoduck channels formed
+irc.oftc.net	2020-08-30T13:07:11Z	255 - plasmoduck I have 154 clients and 1 servers
+irc.oftc.net	2020-08-30T13:07:11Z	265 - plasmoduck Current local users: 154  Max: 298
+irc.oftc.net	2020-08-30T13:07:11Z	266 - plasmoduck Current global users: 13026  Max: 16099
+irc.oftc.net	2020-08-30T13:07:11Z	250 - plasmoduck Highest connection count: 299 (298 clients) (122428 connections received)
+irc.oftc.net	2020-08-30T13:07:11Z	- singleton.oftc.net Message of the Day - 
+irc.oftc.net	2020-08-30T13:07:11Z	-   O
+irc.oftc.net	2020-08-30T13:07:11Z	-    \   The Open and Free
+irc.oftc.net	2020-08-30T13:07:11Z	-     O  Technology Community
+irc.oftc.net	2020-08-30T13:07:11Z	-    /|  https://www.oftc.net
+irc.oftc.net	2020-08-30T13:07:11Z	- O-O O
+irc.oftc.net	2020-08-30T13:07:11Z	- 
+irc.oftc.net	2020-08-30T13:07:11Z	- Welcome to the OFTC IRC Network.
+irc.oftc.net	2020-08-30T13:07:11Z	- 
+irc.oftc.net	2020-08-30T13:07:11Z	- The Open and Free Technology Community was founded at the
+irc.oftc.net	2020-08-30T13:07:11Z	- end of 2001 by a group of experienced members of the Open
+irc.oftc.net	2020-08-30T13:07:11Z	- Source and Free Software communities; it is aimed at
+irc.oftc.net	2020-08-30T13:07:11Z	- providing these communities with better communication,
+irc.oftc.net	2020-08-30T13:07:11Z	- development, and support infrastructure. Our goal is to
+irc.oftc.net	2020-08-30T13:07:11Z	- provide stable services to members of the community in any
+irc.oftc.net	2020-08-30T13:07:11Z	- part of the world, while listening closely to their needs
+irc.oftc.net	2020-08-30T13:07:11Z	- and desires.
+irc.oftc.net	2020-08-30T13:07:11Z	- 
+irc.oftc.net	2020-08-30T13:07:11Z	- We are not a general purpose chat platform, but a topical
+irc.oftc.net	2020-08-30T13:07:11Z	- network intent on providing the open source and free
+irc.oftc.net	2020-08-30T13:07:11Z	- software communities a means to cooperate and communicate.
+irc.oftc.net	2020-08-30T13:07:11Z	- As such, illegal and off-topic activity, such as warez
+irc.oftc.net	2020-08-30T13:07:11Z	- trading, will result in being barred from access.
+irc.oftc.net	2020-08-30T13:07:11Z	- 
+irc.oftc.net	2020-08-30T13:07:11Z	- OFTC honors your privacy. To operate the network, we store
+irc.oftc.net	2020-08-30T13:07:11Z	- and process information about IRC connections, nicknames,
+irc.oftc.net	2020-08-30T13:07:11Z	- and channels. Our Privacy Policy explains what we do with
+irc.oftc.net	2020-08-30T13:07:11Z	- that data, and what your rights are. By connecting, you
+irc.oftc.net	2020-08-30T13:07:11Z	- accept these terms: https://www.oftc.net/Privacy_Policy/
+irc.oftc.net	2020-08-30T13:07:11Z	- 
+irc.oftc.net	2020-08-30T13:07:11Z	- If you require assistance with using the OFTC IRC network,
+irc.oftc.net	2020-08-30T13:07:11Z	- stop by in channel #oftc, or email support@oftc.net with
+irc.oftc.net	2020-08-30T13:07:11Z	- details. For help with non-IRC questions please refer to
+irc.oftc.net	2020-08-30T13:07:11Z	- the respective channels and project homepages.
+irc.oftc.net	2020-08-30T13:07:11Z	- 
+irc.oftc.net	2020-08-30T13:07:11Z	- Thanks and enjoy your stay! The OFTC team.
+irc.oftc.net	2020-08-30T13:07:11Z	End of /MOTD command.
+irc.oftc.net	2020-08-30T13:07:11Z	MODE - plasmoduck +i
+irc.oftc.net	2020-08-30T13:07:12Z	This nickname is registered and protected.  If it is your nickname, you may
+irc.oftc.net	2020-08-30T13:07:12Z	authenticate yourself to services with the IDENTIFY command.  You are
+irc.oftc.net	2020-08-30T13:07:12Z	getting this message because you are not on the access list for the
+irc.oftc.net	2020-08-30T13:07:12Z	plasmoduck nickname.
+irc.oftc.net	2020-08-30T13:11:20Z	479 - plasmoduck Illegal channel name
+irc.oftc.net	2020-08-30T13:11:20Z	479 - plasmoduck Illegal channel name

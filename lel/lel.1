@@ -1,0 +1,110 @@
+.Dd July 26, 2016
+.Dt LEL 1
+.Os
+.Sh NAME
+.Nm lel
+.Nd simple X11 image viewer
+.Sh SYNOPSIS
+.Nm
+.Op Fl afv
+.Op Fl h Ar height
+.Op Fl w Ar width
+.Op Fl t Ar title
+.Op Fl x Ar position
+.Op Fl y Ar position
+.Op Ar
+.Sh DESCRIPTION
+The
+.Nm
+utility is a simple X11 image viewer for the
+.Xr farbfeld 5
+format.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl a
+Display full window, keep aspect ratio.
+.It Fl f
+Display full window, stretch (no aspect).
+.It Fl v
+Print version and exit.
+.It Fl h
+Set window height to
+.Ar height .
+.It Fl w
+Set window width to
+.Ar width .
+.It Fl t
+Set window title to
+.Ar title .
+.It Fl x
+Set window X position to
+.Ar position .
+.It Fl y
+Set window Y position to
+.Ar position .
+.It Ar file
+Read input from zero or more files.
+If unspecified, reads from stdin.
+If multiple files are specified,
+.Nm
+will halt with the first failed parse.
+.El
+.Sh COMMANDS
+.Bl -tag -width Ds
+.It Ic RETURN
+Print to stdout title.
+.It Ic ESC | q
+Quit
+.Nm .
+.It Ic LEFTARROW | h
+Scroll horizontally left.
+.It Ic RIGHTARROW | l
+Scroll horizontally right.
+.It Ic DOWNARROW | j
+Scroll vertically down.
+.It Ic UPARROW | k
+Scroll vertically up.
+.It Ic a
+Set full aspect ratio.
+.It Ic o
+Set aspect ratio.
+.It Ic f
+Stretch (no aspect).
+.It Ic n
+Go to the next image.
+.It Ic p
+Go to the previous image.
+.It Ic r
+Reload image.
+.It Ic = | +
+Zoom in.
+.It Ic _ | -
+Zoom out.
+.It Ic 0
+Set zoom level to 100%; set aspect ratio, and reload image.
+.It Ic 1
+Set zoom level to 100%.
+.It Ic 2
+Set zoom level to 200%.
+.It Ic 3
+Set zoom level to 400%.
+.El
+.Sh MOUSE COMMANDS
+.Bl -tag -width Ds
+.It Ic ScrollUp
+Zoom in.
+.It Ic ScrollDown
+Zoom down.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh AUTHORS
+.An -nosplit
+.Nm
+was written by
+.An Hiltjo Posthuma Aq Mt hiltjo@codemadness.org
+and
+.An sin Aq Mt sin@2f30.org .
+Manual page was written by
+.An Svyatoslav Mishyn Aq Mt juef@openmailbox.org .

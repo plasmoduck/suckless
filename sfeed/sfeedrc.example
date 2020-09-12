@@ -1,0 +1,16 @@
+#sfeedpath="$HOME/.sfeed/feeds"
+
+# list of feeds to fetch:
+feeds() {
+	# feed <name> <feedurl> [basesiteurl] [encoding]
+	feed "codemadness" "https://www.codemadness.nl/atom.xml"
+	feed "explosm" "http://feeds.feedburner.com/Explosm"
+	feed "golang github releases" "https://github.com/golang/go/releases.atom"
+	feed "linux kernel" "https://www.kernel.org/feeds/kdist.xml" "https://www.kernel.org"
+	feed "reddit openbsd" "https://old.reddit.com/r/openbsd/.rss"
+	feed "slashdot" "http://rss.slashdot.org/Slashdot/slashdot" "http://slashdot.org"
+	feed "tweakers" "http://feeds.feedburner.com/tweakers/mixed" "http://tweakers.net" "iso-8859-1"
+	# get youtube Atom feed: curl -s -L 'https://www.youtube.com/user/gocoding/videos' | sfeed_web | cut -f 1
+	feed "youtube golang" "https://www.youtube.com/feeds/videos.xml?channel_id=UCO3LEtymiLrgvpb59cNsb8A"
+	feed "xkcd" "https://xkcd.com/atom.xml" "https://xkcd.com"
+}

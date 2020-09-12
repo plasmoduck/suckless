@@ -1,0 +1,37 @@
+xscreenshot
+-----------
+
+A simple X11 screenshot utility. It writes farbfeld image data to stdout.
+
+
+Build and install
+-----------------
+
+$ make
+# make install
+
+
+Dependencies
+------------
+
+- libX11
+
+
+Optional dependencies
+---------------------
+
+- To convert farbfeld data you can use ff2jpg or ff2png from:
+  https://git.suckless.org/farbfeld/
+
+
+Usage
+-----
+
+xscreenshot > file.ff
+ff2png < file.ff > file.png
+
+
+Known issues
+------------
+
+A specified windowid has to be visible on the screen.

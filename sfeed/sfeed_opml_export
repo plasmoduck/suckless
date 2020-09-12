@@ -1,0 +1,57 @@
+#!/bin/sh
+
+# load config (evaluate shellscript).
+# loadconfig(configfile)
+loadconfig() {
+	# allow to specify config via argv[1].
+	if [ ! x"$1" = x"" ]; then
+		# get absolute path of config file.
+		config=$(readlink -f "$1")
+	else
+		# default config location.
+		config="$HOME/.sfeed/sfeedrc"
+	fi
+
+	# load config: config is loaded here to be able to override above variables
+	# (sfeedpath, sfeedfile, etc).
+	if [ -r "$config" ]; then
+		. "$config"
+	else
+		echo "Configuration file \"$config\" does not exist or is not readable." >&2
+		exit 1
+	fi
+}
+
+# override feeds function to ouput opml XML.
+# feed(name, feedurl, [basesiteurl], [encoding])
+feed() {
+	# NOTE: TABs in field values are unsupported, be sane.
+	echo "$1	$2"
+}
+
+# load config file.
+loadconfig "$1"
+
+cat <<!
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="1.0">
+<head>
+	<title>opml export from sfeed</title>
+</head>
+<body>
+!
+
+feeds | awk -F '\t' '{
+	gsub("&", "\\&amp;");
+	gsub("\"", "\\&quot;");
+	gsub("'"'"'", "\\&#39;");
+	gsub("<", "\\&lt;");
+	gsub(">", "\\&gt;");
+
+	print "\t<outline type=\"rss\" title=\"" $1 "\" text=\"" $1 "\" xmlUrl=\"" $2 "\"/>";
+}'
+
+cat <<!
+</body>
+</opml>
+!
