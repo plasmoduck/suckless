@@ -21,9 +21,9 @@ Lastly, build & install:
     ```
 
 ## Updates
-### 13-09-2020 - Added modular dmenu build. Edit ``patches.def.h`` to select modules, then customise ``config.def.h`` & build ``doas/sudo make install``. 
+13-09-2020 - Added modular dmenu build. Edit ``patches.def.h`` to select modules, then customise ``config.def.h`` & build ``doas/sudo make install``. 
 
-### 08-09-2020 - Fix st not showing w3m image previews. 
+08-09-2020 - Fix st not showing w3m image previews. 
   This patch achieves the same goal but instead of canceling the double
   buffer it first copies the front buffer to the back buffer.
   This has the same issues as the FAQ patch in that the cursor line is
