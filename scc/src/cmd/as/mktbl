@@ -1,0 +1,34 @@
+#!/bin/sh
+
+
+unset LC_ALL
+LC_COLLATE=C
+set -e
+
+for i
+do
+	case $i in
+	-c)
+		cpu=$2
+		shift 2
+		;;
+	-f)
+		family=$2
+		shift 2
+		;;
+	-*)
+		echo mktbl: incorrect parameter:$i >&2
+		exit 1
+		;;
+	esac
+done
+
+echo cpu=${cpu:=z80} family=${family:=x80}
+
+rm -f  $$.c target/$family/${cpu}tbl.c
+trap "rm -f $$.c" 0 2 3
+
+awk '!/^$/ {print $1,NR,$2,$3,$4,$5,$6}' target/$family/ops.dat |
+sort -k1 -k2n |
+awk -v cpu=`echo $cpu | tr a-z A-Z` -v family=$family -f mktbl.awk  > $$.c &&
+mv $$.c target/$family/${cpu}tbl.c

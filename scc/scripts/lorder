@@ -1,0 +1,47 @@
+#!/bin/sh
+
+set -e
+trap 'rm -f $$sym?ef' EXIT HUP INT QUIT TERM
+
+case $# in
+0)
+	echo usage: lorder file ... >&2
+	exit 1
+esac
+
+rm -f $$sym?ef
+
+(echo $1:
+ ${NM:-nm} -g "$@") | sed -n '
+	/:$/ {
+		s/://
+		h
+		s/.*/& &/
+		p
+	}
+	/ [ADTR] / {
+		s/.* //
+		G
+		s/\n/ /
+		w '$$symdef'
+	}
+	/ C / {
+		s/.* //
+		G
+		s/\n/ /
+		w '$$symcef'
+	}
+	/ U / {
+		s/.* //
+		G
+		s/\n/ /
+		w '$$symref'
+	}
+'
+sort $$symdef -o $$symdef
+sort $$symref -o $$symref
+sort $$symcef -o $$symcef
+(join $$symref $$symdef
+ join $$symref $$symcef
+ join $$symcef $$symdef) |
+sed 's/[^ ]* *//'

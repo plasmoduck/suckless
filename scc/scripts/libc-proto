@@ -1,0 +1,14 @@
+bin
+libexec
+libexec/scc
+lib
+lib/scc
+lib/scc/ppc32-linux
+lib/scc/i386-linux
+lib/scc/arm32-linux
+lib/scc/arm64-linux
+lib/scc/amd64-netbsd
+lib/scc/amd64-linux
+lib/scc/amd64-openbsd
+lib/scc/amd64-dragonfly
+lib/scc/amd64-darwin

@@ -1,0 +1,62 @@
+# Tab 18, tabs 18, :set ts=18
+# op	args	size	bytes	format	cpu
+.SECTION	sym,string?	0	none	section	POWERPC,POWERPC64
+.TEXT	none	0	none	text	POWERPC,POWERPC64
+.DATA	none	0	none	data	POWERPC,POWERPC64
+.BSS	none	0	none	bss	POWERPC,POWERPC64
+.DB	imm8+	0	none	defb	POWERPC,POWERPC64
+.DEFB	imm8+	0	none	defb	POWERPC,POWERPC64
+.BYTE	imm8+	0	none	defb	POWERPC,POWERPC64
+.DW	imm16+	0	none	defw	POWERPC,POWERPC64
+.DEFW	imm16+	0	none	defw	POWERPC,POWERPC64
+.SHORT	imm16+	0	none	defw	POWERPC,POWERPC64
+.WORD	imm16+	0	none	defw	POWERPC,POWERPC64
+.DD	imm32+	0	none	defd	POWERPC,POWERPC64
+.DEFD	imm32+	0	none	defd	POWERPC,POWERPC64
+.LONG	imm32+	0	none	defd	POWERPC,POWERPC64
+.INT	imm16+	0	none	defd	POWERPC,POWERPC64
+.DQ	imm64+	0	none	defq	POWERPC,POWERPC64
+.DEFQ	imm64+	0	none	defq	POWERPC,POWERPC64
+.EQU	sym,imm16	0	none	equ	POWERPC,POWERPC64
+.EQU	imm16	0	none	equ	POWERPC,POWERPC64
+=	imm16	0	none	equ	POWERPC,POWERPC64
+.SIZE	sym,imm16	0	none	size	POWERPC,POWERPC64
+.SIZE	imm16	0	none	size	POWERPC,POWERPC64
+.COMM	sym,imm16	0	none	common	POWERPC,POWERPC64
+.COMM	imm16	0	none	common	POWERPC,POWERPC64
+.TYPE	sym,imm16	0	none	type	POWERPC,POWERPC64
+.TYPE	imm16	0	none	type	POWERPC,POWERPC64
+.GLOBL	sym+	0	none	global	POWERPC,POWERPC64
+.PUBLIC	sym+	0	none	global	POWERPC,POWERPC64
+.EXTERN	sym+	0	none	extrn	POWERPC,POWERPC64
+.EXTRN	sym+	0	none	extrn	POWERPC,POWERPC64
+.STRING	string+	0	none	string	POWERPC,POWERPC64
+.ASCII	string+	0	none	ascii	POWERPC,POWERPC64
+.ALIGN	imm16+	0	none	align	POWERPC,POWERPC64
+.END	none	0	none	end	POWERPC,POWERPC64
+.INCLUDE	string	0	none	include	POWERPC,POWERPC64
+
+# Branch instructions
+B	imm32	4	18,0,0	i_form	POWERPC
+B	imm64	4	18,0,0	i_form	POWERPC64
+BA	imm32	4	18,1,0	i_form	POWERPC
+BA	imm64	4	18,1,0	i_form	POWERPC64
+BL	imm32	4	18,0,1	i_form	POWERPC
+BL	imm64	4	18,0,1	i_form	POWERPC64
+BLA	imm32	4	18,1,1	i_form	POWERPC
+BLA	imm64	4	18,1,1	i_form	POWERPC64
+
+BC	imm5,imm5,imm32	4	16,0,0	b_form	POWERPC
+BC	imm5,imm5,imm64	4	16,0,0	b_form	POWERPC64
+BCA	imm5,imm5,imm32	4	16,1,0	b_form	POWERPC
+BCA	imm5,imm5,imm64	4	16,1,0	b_form	POWERPC64
+BCL	imm5,imm5,imm32	4	16,0,1	b_form	POWERPC
+BCL	imm5,imm5,imm64	4	16,0,1	b_form	POWERPC64
+BCLA	imm5,imm5,imm32	4	16,1,1	b_form	POWERPC
+BCLA	imm5,imm5,imm64	4	16,1,1	b_form	POWERPC64
+
+BCLR	imm5,imm5,imm2	4	19,0,16,0	xl_form	POWERPC,POWERPC64
+BCLRL	imm5,imm5,imm2	4	19,0,16,1	xl_form	POWERPC,POWERPC64
+
+BCCTR	imm5,imm5,imm2	4	19,2,16,0	xl_form	POWERPC,POWERPC64
+BCCTRL	imm5,imm5,imm2	4	19,2,16,1	xl_form	POWERPC,POWERPC64

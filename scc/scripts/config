@@ -1,0 +1,13 @@
+#!/bin/sh
+
+case `uname` in
+*BSD)
+	echo TOOL=gnu HOST=bsd
+	;;
+Linux)
+	echo TOOL=gnu
+	;;
+Plan9)
+	echo HOST=plan9
+	;;
+esac

@@ -1,0 +1,23 @@
+.TH SPROP 1 sprop\-VERSION
+.SH NAME
+sprop \- simple X property utility
+.SH SYNOPSIS
+.B sprop
+.I xid atom
+.RI [ value ]
+[\-v]
+.SH DESCRIPTION
+.SS Overview
+The
+.I sprop
+utility prints the value of the property
+.I atom
+of the window with the given
+.IR xid ,
+or alternatively sets it to
+.I value
+if given. sprop can only interact with atoms which are strings.
+.SS Options
+.TP
+.B \-v
+prints version information to standard output, then exits.

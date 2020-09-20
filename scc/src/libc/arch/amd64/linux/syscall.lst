@@ -1,0 +1,12 @@
+#number	name
+0	_read
+1	_write
+2	_open
+3	_close
+8	_lseek
+12	_brk
+13	_sigaction
+39	_getpid
+60	_Exit
+62	_kill
+87	_unlink

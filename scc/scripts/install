@@ -1,0 +1,38 @@
+#!/bin/sh
+
+set -e
+
+for i
+do
+	case "$i" in
+	-p)
+		proto=$2
+		shift 2
+		;;
+	-*)
+		echo 1=$1
+		echo usage: install -t prefix [-p proto] >&2
+		exit 1
+		;;
+	esac
+done
+
+prefix=$1
+
+while read type perm name
+do
+	case $type in
+	d)
+		mkdir -p ${prefix?}/$name
+		;;
+	f)
+		cp $name ${prefix?}/$name
+		;;
+	*)
+		echo install: wrong entry type >&2
+		exit 1
+		;;
+	esac
+
+	chmod $perm $prefix/$name
+done < ${proto:-scripts/proto}

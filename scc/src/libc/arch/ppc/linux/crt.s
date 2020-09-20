@@ -1,0 +1,1 @@
+	.include	"../crt-posix.s"

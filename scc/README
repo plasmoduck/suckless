@@ -1,0 +1,167 @@
+Compiling
+=========
+
+SCC is a portable toolchain that can be compiled on any UNIX system
+out of the box. It supports four main configuration options that
+can be passed to the command line:
+
+	- PREFIX: Prefix of the path where scc toolchain is going
+	  to be installed. /usr/local by default.
+
+	- CROSS_COMPILE:
+          Specify a prefix name for the tools called by the Makefile.
+
+	- HOST:
+	  Specify the host system to be used. Possible supported
+	  values are:
+
+		- unix (by default)
+		- bsd
+		- plan9
+
+	- CONF: Specify which version of libc to build.
+	  Once the build process completes only the target specified in
+          CONF will be built. Supported values are:
+
+		- amd64-linux (default)
+		- amd64-darwin
+		- amd64-openbsd
+		- arm64-linux
+		- amd64-dragonfly
+		- amd64-netbsd
+		- arm32-linux
+		- i386-linux
+
+	- TOOL: Specify the toolchain type to be used.  Possible
+	  supported values are:
+
+		- unix (by default)
+		- gnu
+		- gnu-darwin
+		- clang
+
+The main targets of the Makefile are:
+
+	- all:
+	  Compile the toolchain and all the amd64-posix libc. It automatically
+	  determines what is the best value for HOST.
+
+	- toolchain
+	  Compile the toolchain.
+
+	- libc:
+	  Compile the libc for the target specified in CONF.
+
+	- install:
+	  Installs scc in PREFIX.
+
+	- clean:
+	  Remoe all the generated files except the one supposed to be edited
+	  by the user.
+
+	- distclean
+	  Remove all the generated files.
+
+Deviations from standard C
+===========================
+This compiler aims to be fully compatible with the C99 standard, but
+it will have some differences:
+
+- Type qualifiers are accepted but ignored.
+  -----------------------------------------
+
+Type qualifiers make the type system ugly, and their uselessness adds
+unnecessary complexity to the compiler (and increased compilation time):
+
+	- const: The definition of const is not clear in the standard.
+	  If a const value is modified the behavior is undefined
+	  behaviour. It seems it was defined in order to be able to
+	  allocate variables in ROM rather than error detection. This
+	  implememtation will not warn about these modifications and
+	  the compiler will treat them like normal variables (the standard
+	  specifies that a diagnostic message must be printed).
+
+	- volatile: This qualifier was added to the standard
+	  to be able to deal with longjmp (local variables that are not
+	  volatile have undefined state) and for memory mapped registers
+	  or variables whose values are modified asynchronously. This can
+	  be achieved by using special pragma values though.
+	  In the first case, it generates a lot of problems with modern
+	  processors and multithreading, when not holding the value in a
+	  register is not good enough (an explicit memory barrier is needed).
+	  In the second case, this is non-portable code by definition
+	  (depending on the register mapped), so it is better to deal with
+	  it using another solution (compiler extensions or direct
+	  assembly). Since it is needed for the correct behaviour
+	  of portable programs that use longjmp, this specifier eventually
+	  will be implemented.
+
+	- restrict: This qualifier can only be applied to pointers that
+	  mark the pointed object and has no other alias. This qualifier
+	  was introduced to be able to fix some performance problems in
+	  numerical algorithms, where FORTRAN could achieve a better
+	  performance (and in fact even with this specifier FORTRAN has a
+	  better performance in this field). Ignoring it doesn't make the
+	  compiler non-standard and in almost all applications the performance
+	  will be the same.
+
+- Function type names
+  -------------------
+
+C99 allows you to define type names of function types and write something
+like:
+
+int f(int (int));
+
+Accepting function types in type names (or abstract declarators) makes the
+grammar ambiguous because it is impossible to differentiate between:
+
+        (int (f))  -> function returning int with one parameter of type f
+        (int (f))  -> integer variable f
+
+If you don't believe me try this code:
+
+int
+f(int g())
+{
+	return g();
+}
+
+Function type names are stupid, because they are used as an alias
+of the function pointer types, but it is stupid that something
+like sizeof(int (int)) is not allowed (because here it should be
+understood as the size of a function), but f(int (int)) is allowed
+because it is understood as a parameter of function pointer type.
+
+This complexity is not needed at all as function pointers fix all these
+problems without this complexity (and they are the more common
+way of writing such code).
+
+- Definition of variables with incomplete type
+  ---------------------------------------------
+
+C89 allows the definition of variables with incomplete type that
+have external linkage and file scope. The type of the variable
+is the composition of all the definitions found in the file. The exact
+rules are a bit complex (3.7.2) so SCC ignores them at this moment
+by simply not allowing any definition of variables with incomplete type.
+
+If you don't believe me try this code:
+
+struct foo x;
+
+struct foo {
+	int i;
+};
+
+- Variadic function alike macros
+  ------------------------------
+
+The standard (C99 6.10.3 c 4) forces passing more parameters than
+the number of parameters present in the variadic argument list
+(excluding ...). SCC accepts a parameter list with the same number
+of arguments.
+
+#define P(a, ...) a
+
+P(1)

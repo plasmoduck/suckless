@@ -1,0 +1,11 @@
+#number	name		num_of_op
+1	_Exit		1
+3	_read		3
+4	_write		3
+5	_open		2
+6	_close		1
+19	_lseek		3
+20	_getpid		0
+37	_kill		2
+45	_brk		1
+67	_sigaction	3

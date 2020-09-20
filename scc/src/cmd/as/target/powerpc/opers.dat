@@ -1,0 +1,8 @@
+imm2	AIMM2
+imm5	AIMM5
+imm8	AIMM8
+imm16	AIMM16
+imm32	AIMM32
+imm64	AIMM64
+sym	ASYM
+string	ASTR

@@ -1,0 +1,24 @@
+sprop - simple X property utility
+=================================
+Prints/sets window properties in an X server.
+
+
+Requirements
+------------
+In order to build sprop you need the Xlib header files.
+
+
+Installation
+------------
+Edit config.mk to match your local setup (sprop is installed into
+the /usr/local namespace by default).
+
+Afterwards enter the following command to build and install sprop
+(if necessary as root):
+
+    make clean install
+
+
+Running sprop
+--------------
+See the man page for details.
