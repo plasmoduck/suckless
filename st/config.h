@@ -7,7 +7,7 @@ char *externalpipe_sigusr1[] = {"/bin/sh", "-c", "externalpipe_buffer.sh st_stri
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
 static char *font = {
-	"Liberation Mono:pixelsize=14:antialias=true:autohint=true",
+	"Monospace:pixelsize=14:antialias=true:autohint=true",
 	"Font Awesome 5 Pro Solid:size=12",
     "Wuncon Siji:size=12"
 };
