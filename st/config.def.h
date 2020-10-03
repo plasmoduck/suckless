@@ -120,9 +120,9 @@ unsigned int alpha = 0xff;
  * 2: Block ("█")
  * 4: Underline ("_")
  * 6: Bar ("|")
- * 7: Snowman ("☃")
+ * 7: Arrow ("")
  */
-static unsigned int cursorshape = 2;
+static unsigned int cursorshape = 22;
 
 /*
  * Default columns and rows numbers

@@ -12,14 +12,16 @@ static const char *colorname[NUMCOLS] = {
 /* treat a cleared input like a wrong password (color) */
 static const int failonclear = 0;
 
+/* time in seconds to cancel lock with mouse movement */
+static const int timetocancel = 5;
+
 /* default message */
-static const char * message = "-= Password =-";
+static const char * message = "-={ Password }=-";
 
 /* text color */
 static const char * text_color = "#FB4934";
 
 /* text size (must be a valid size) */
-/*static const char * font_name = "-b&h-luxi mono-bold-o-normal--0-0-0-0-m-0-iso8859-15";*/
 static const char * font_name = "-adobe-helvetica-bold-r-normal--24-240-75-75-p-138-iso10646-1";
 
 /*Enable blur*/
