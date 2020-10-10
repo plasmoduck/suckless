@@ -45,7 +45,7 @@ static Parameter defconfig[ParameterLast] = {
 	[SmoothScrolling]     =       { { .i = 1 },     },
 	[SpellChecking]       =       { { .i = 1 },     },
 	[SpellLanguages]      =       { { .v = ((char *[]){ "en_AU", NULL }) }, },
-	[StrictTLS]           =       { { .i = 1 },     },
+	[StrictTLS]           =       { { .i = 0 },     },
 	[Style]               =       { { .i = 1 },     },
 	[WebGL]               =       { { .i = 1 },     },
 	[ZoomLevel]           =       { { .f = 1.0 },   },
@@ -206,6 +206,7 @@ static Key keys[] = {
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_t,      toggle,     { .i = StrictTLS } },
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_m,      toggle,     { .i = Style } },
 };
+static char *searchengine   = "https://duckduckgo.com/";
 
 /* button definitions */
 /* target can be OnDoc, OnLink, OnImg, OnMedia, OnEdit, OnBar, OnSel, OnAny */
