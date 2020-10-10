@@ -1,4 +1,3 @@
-char *externalpipe_sigusr1[] = {"/bin/sh", "-c", "externalpipe_buffer.sh st_strings_read"};
 /* See LICENSE file for copyright and license details. */
 
 /*
@@ -29,6 +28,9 @@ char *stty_args = "stty raw pass8 nl -echo -iexten -cstopb 38400";
 
 /* identification sequence returned in DA and DECID */
 char *vtiden = "\033[?6c";
+
+/* external pipe */
+char *externalpipe_sigusr1[] = {"/bin/sh", "-c", "/home/cjg/bin/externalpipe_buffer.sh st_strings_read"};
 
 /* Kerning / character bounding-box multipliers */
 static float cwscale = 1.0;

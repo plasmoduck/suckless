@@ -7,6 +7,8 @@ static char *certdir        = "~/.surf/certificates/";
 static char *cachedir       = "~/.surf/cache/";
 static char *cookiefile     = "~/.surf/cookies.txt";
 static char *searchurl      = "duckduckgo.com/?q=%s";
+static char *dldir          = "~/dl/";
+static char *dlstatus       = "~/.surf/dlstatus/";
 
 /* Webkit default features */
 /* Highest priority value will be used.
@@ -86,13 +88,12 @@ static WebKitFindOptions findopts = WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE |
         } \
 }
 
-/* DOWNLOAD(URI, referer) */
-#define DOWNLOAD(u, r) { \
+#define DLSTATUS { \
         .v = (const char *[]){ "st", "-e", "/bin/sh", "-c",\
-             "curl -g -L -J -O -A \"$1\" -b \"$2\" -c \"$2\"" \
-             " -e \"$3\" \"$4\"; read", \
-             "surf-download", useragent, cookiefile, r, u, NULL \
-        } \
+             "while true; do cat $1/* 2>/dev/null || echo \"no hay descargas\";"\
+            "A=; read A; "\
+            "if [ $A = \"clean\" ]; then rm $1/*; fi; clear; done",\
+            "surf-dlstatus", dlstatus, NULL } \
 }
 
 /* PLUMB(URI) */
@@ -205,6 +206,9 @@ static Key keys[] = {
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_b,      toggle,     { .i = ScrollBars } },
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_t,      toggle,     { .i = StrictTLS } },
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_m,      toggle,     { .i = Style } },
+
+    /* download-console */
+	{ MODKEY,                GDK_KEY_d,      spawndls,   { 0 } },    
 };
 static char *searchengine   = "https://duckduckgo.com/";
 
