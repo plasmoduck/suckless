@@ -1,7 +1,7 @@
 const char *colorname[] = {
 
   /* 8 normal colors */
-  [0] = "#2f2f2f", /* black   */
+  [0] = "#2F2F2F", /* black   */
   [1] = "#fb4934", /* red     */
   [2] = "#b8bb26", /* green   */
   [3] = "#fabd2f", /* yellow  */
@@ -21,14 +21,14 @@ const char *colorname[] = {
   [15] = "#fbf1c7", /* white   */
 
   /* special colors */
-  [256] = "#2f2f2f", /* background */
+  [256] = "#2F2F2F", /* background */
   [257] = "#d5c4a1", /* foreground */
   [258] = "#FABD2F",     /* cursor */
 };
 
 /* Default colors (colorname index)
  * foreground, background, cursor */
- unsigned int defaultbg = 0;
+ unsigned int defaultbg = 256;
  unsigned int defaultfg = 257;
  unsigned int defaultcs = 258;
  unsigned int defaultrcs= 258;

@@ -6,7 +6,7 @@
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
 static char *font = {
-	"Fantasque Sans Mono:pixelsize=16:antialias=true:autohint=true",
+	"Jetbrains Mono:pixelsize=14:antialias=true:autohint=true",
 	"Font Awesome 5 Pro Solid:size=12",
     "Wuncon Siji:size=12"
 };
