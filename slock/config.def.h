@@ -16,7 +16,7 @@ static const int failonclear = 0;
 static const int timetocancel = 5;
 
 /* default message */
-static const char * message = "-={ Password }=-";
+static const char * message = "-=[ Gruvbox ]=-";
 
 /* text color */
 static const char * text_color = "#FB4934";

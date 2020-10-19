@@ -156,7 +156,7 @@ static Key keys[] = {
 	{ MODKEY,                GDK_KEY_f,      spawn,      SETPROP("_SURF_FIND", "_SURF_FIND", PROMPT_FIND) },
 	{ MODKEY,                GDK_KEY_slash,  spawn,      SETPROP("_SURF_FIND", "_SURF_FIND", PROMPT_FIND) },
 	{ MODKEY,                GDK_KEY_s,      spawn,      SEARCH() },
-	{ MODKEY,                GDK_KEY_b,      spawn,      BM_ADD("_SURF_URI") },
+	{ MODKEY,                GDK_KEY_b,      spawn,      BM_ADD("_SURF_URI") }, /* surf bookmarks */
 
 	{ MODKEY,                GDK_KEY_w,      playexternal, { 0 } },
 
@@ -208,7 +208,7 @@ static Key keys[] = {
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_m,      toggle,     { .i = Style } },
 
     /* download-console */
-	{ MODKEY,                GDK_KEY_d,      spawndls,   { 0 } },    
+	{ MODKEY,                GDK_KEY_d,      spawndls,   { 0 } }, /* surf download menu */
 };
 static char *searchengine   = "https://duckduckgo.com/";
 
