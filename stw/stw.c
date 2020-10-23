@@ -81,13 +81,6 @@ usage: stw [-x pos] [-y pos] [-X pos] [-Y pos] [-a align]\n\
 }
 
 static void
-signal_handler(int s)
-{
-	if (-1 == write(spipe[1], s == SIGCHLD ? "c" : "a", 1))
-		abort();
-}
-
-static void
 start_cmd()
 {
 	int fds[2];
@@ -366,14 +359,6 @@ setup(char *font)
 
 	if (pipe(spipe) == -1)
 		die("pipe:");
-
-	struct sigaction sa = {0};
-	sa.sa_handler = signal_handler;
-	sa.sa_flags = SA_RESTART;
-
-	if (sigaction(SIGCHLD, &sa, NULL) == -1
-	|| sigaction(SIGALRM, &sa, NULL) == -1)
-		die("sigaction:");
 
 	// xlib and xft
 

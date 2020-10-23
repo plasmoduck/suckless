@@ -6,7 +6,7 @@
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
 static char *font = {
-	"Jetbrains Mono:pixelsize=14:antialias=true:autohint=true",
+	"Jetbrains Mono:pixelsize=12:antialias=true:autohint=true",
 	"Font Awesome 5 Pro Solid:size=12",
     "Wuncon Siji:size=12"
 };
@@ -113,9 +113,9 @@ char *termname = "st-256color";
 unsigned int tabspaces = 8;
 
 /* bg opacity */
-unsigned int alpha = 0xdd;
+unsigned int alpha = 0xde;
 
-#include "colors/monokai.h"
+#include "colors/gruvbox-soft.h"
 
 /*
  * Default shape of cursor

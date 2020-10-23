@@ -4,7 +4,7 @@
  * You need to uncomment the corresponding line in config.mk to use the -lXrender library
  * when including this patch.
  */
-#define ALPHA_PATCH 0
+#define ALPHA_PATCH 1
 
 /* This patch adds a border around the dmenu window. It is intended to be used with the center
  * or xyw patches, to make the menu stand out from similarly coloured windows.
