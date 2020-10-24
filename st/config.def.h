@@ -113,7 +113,7 @@ char *termname = "st-256color";
 unsigned int tabspaces = 8;
 
 /* bg opacity */
-unsigned int alpha = 0xde;
+unsigned int alpha = 0xff;
 
 #include "colors/gruvbox-soft.h"
 
@@ -176,8 +176,9 @@ static MouseShortcut mshortcuts[] = {
 #define TERMMOD (ControlMask|ShiftMask)
 
 static char *openurlcmd[] = { "/bin/sh", "-c",
-	"xurls | openurl.sh -l 10 -w $WINDOWID | xargs -r open",
+	"xurls | dmenu -l 10 -w $WINDOWID | xargs -r open",
 	"externalpipe", NULL };
+
 static Shortcut shortcuts[] = {
 	/* mask                 keysym          function        argument */
 	{ XK_ANY_MOD,           XK_Break,       sendbreak,      {.i =  0} },
@@ -196,7 +197,7 @@ static Shortcut shortcuts[] = {
 	{ ShiftMask,            XK_Page_Up,     kscrollup,      {.i = -1} },
 	{ ShiftMask,            XK_Page_Down,   kscrolldown,    {.i = -1} },
 	{ MODKEY,               XK_l,           copyurl,        {.i =  0} },
-	{ MODKEY,		XK_u,		externalpipe,	{ .v = openurlcmd } },
+	{ MODKEY, 		XK_u, 		externalpipe, 	{ .v = openurlcmd } },
 };
 
 /*
