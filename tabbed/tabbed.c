@@ -18,6 +18,7 @@
 #include <X11/Xft/Xft.h>
 
 #include "arg.h"
+#include "icon.h"
 
 /* XEMBED messages */
 #define XEMBED_EMBEDDED_NOTIFY          0
@@ -49,7 +50,7 @@
 
 enum { ColFG, ColBG, ColLast };       /* color */
 enum { WMProtocols, WMDelete, WMName, WMState, WMFullscreen,
-       XEmbed, WMSelectTab, WMLast }; /* default atoms */
+       XEmbed, WMSelectTab, WMIcon, WMLast }; /* default atoms */
 
 typedef union {
 	int i;
@@ -137,6 +138,7 @@ static void updatenumlockmask(void);
 static void updatetitle(int c);
 static int xerror(Display *dpy, XErrorEvent *ee);
 static void xsettitle(Window w, const char *str);
+static void xseticon(void);
 
 /* variables */
 static int screen;
@@ -173,10 +175,10 @@ static char **cmd;
 static char *wmname = "tabbed";
 static const char *geometry;
 static Bool barvisibility = False;
-
+static unsigned long icon[ICON_WIDTH * ICON_HEIGHT + 2];
 char *argv0;
 
-/* configuration, allows nested code to access above variables */
+/* configuration, allows nested code to access above vastatic unsigned long icon[ICON_WIDTH * ICON_HEIGHT + 2];riables */
 #include "config.h"
 
 void
@@ -459,6 +461,8 @@ focus(int c)
 			n += snprintf(&buf[n], sizeof(buf) - n, " %s", cmd[i]);
 
 		xsettitle(win, buf);
+		XChangeProperty(dpy, win, wmatom[WMIcon], XA_CARDINAL, 32,
+		                PropModeReplace, (unsigned char *) icon, ICON_WIDTH * ICON_HEIGHT + 2);
 		XRaiseWindow(dpy, win);
 
 		return;
@@ -478,6 +482,7 @@ focus(int c)
 		lastsel = sel;
 		sel = c;
 	}
+	xseticon();
 
 	if (clients[c]->urgent && (wmh = XGetWMHints(dpy, clients[c]->win))) {
 		wmh->flags &= ~XUrgencyHint;
@@ -898,9 +903,13 @@ propertynotify(const XEvent *e)
 			}
 		}
 		XFree(wmh);
+		if (c == sel)
+			xseticon();
 	} else if (ev->state != PropertyDelete && ev->atom == XA_WM_NAME &&
 	           (c = getclient(ev->window)) > -1) {
 		updatetitle(c);
+	} else if (ev->atom == wmatom[WMIcon] && (c = getclient(ev->window)) > -1 && c == sel) {
+		xseticon();
 	}
 }
 
@@ -1025,7 +1034,8 @@ setup(void)
 	wmatom[WMSelectTab] = XInternAtom(dpy, "_TABBED_SELECT_TAB", False);
 	wmatom[WMState] = XInternAtom(dpy, "_NET_WM_STATE", False);
 	wmatom[XEmbed] = XInternAtom(dpy, "_XEMBED", False);
-
+	wmatom[WMIcon] = XInternAtom(dpy, "_NET_WM_ICON", False);
+	
 	/* init appearance */
 	wx = 0;
 	wy = 0;
@@ -1102,6 +1112,17 @@ setup(void)
 
 	snprintf(winid, sizeof(winid), "%lu", win);
 	setenv("XEMBED", winid, 1);
+
+	/* change icon from RGBA to ARGB */
+	icon[0] = ICON_WIDTH;
+	icon[1] =  ICON_HEIGHT;
+	for (int i = 0; i < ICON_WIDTH * ICON_HEIGHT; ++i) {
+		icon[i + 2] =
+		    ICON_PIXEL_DATA[i * 4 + 3] << 24 |
+		    ICON_PIXEL_DATA[i * 4 + 0] <<  0 |
+		    ICON_PIXEL_DATA[i * 4 + 1] <<  8 |
+		    ICON_PIXEL_DATA[i * 4 + 2] << 16 ;
+	}
 
 	nextfocus = foreground;
 	focus(-1);
@@ -1299,6 +1320,46 @@ xsettitle(Window w, const char *str)
 		XSetTextProperty(dpy, w, &xtp, XA_WM_NAME);
 		XFree(xtp.value);
 	}
+}
+
+void
+xseticon(void)
+{
+	Atom ret_type;
+	XWMHints *wmh, *cwmh;
+	int ret_format;
+	unsigned long ret_nitems, ret_nleft;
+	long offset = 0L;
+	unsigned char *data;
+
+	wmh = XGetWMHints(dpy, win);
+	wmh->flags &= ~(IconPixmapHint | IconMaskHint);
+	wmh->icon_pixmap = wmh->icon_mask = None;
+
+
+	if (XGetWindowProperty(dpy, clients[sel]->win, wmatom[WMIcon], offset, LONG_MAX, False,
+	                       XA_CARDINAL, &ret_type, &ret_format, &ret_nitems,
+	                       &ret_nleft, &data) == Success &&
+	    ret_type == XA_CARDINAL && ret_format == 32)
+	{
+		XChangeProperty(dpy, win, wmatom[WMIcon], XA_CARDINAL, 32,
+		                PropModeReplace, data, ret_nitems);
+	} else if ((cwmh = XGetWMHints(dpy, clients[sel]->win)) && cwmh->flags & IconPixmapHint) {
+		XDeleteProperty(dpy, win, wmatom[WMIcon]);
+		wmh->flags |= IconPixmapHint;
+		wmh->icon_pixmap = cwmh->icon_pixmap;
+		if (cwmh->flags & IconMaskHint) {
+			wmh->flags |= IconMaskHint;
+			wmh->icon_mask = cwmh->icon_mask;
+		}
+		XFree(cwmh);
+	} else {
+		XChangeProperty(dpy, win, wmatom[WMIcon], XA_CARDINAL, 32,
+		                PropModeReplace, (unsigned char *) icon, ICON_WIDTH * ICON_HEIGHT + 2);
+	}
+	XSetWMHints(dpy, win, wmh);
+	XFree(wmh);
+	XFree(data);
 }
 
 void

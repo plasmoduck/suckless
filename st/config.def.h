@@ -113,7 +113,7 @@ char *termname = "st-256color";
 unsigned int tabspaces = 8;
 
 /* bg opacity */
-unsigned int alpha = 0xff;
+unsigned int alpha = 0xdd;
 
 #include "colors/gruvbox-soft.h"
 
