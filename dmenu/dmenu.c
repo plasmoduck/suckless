@@ -47,7 +47,7 @@
 #define TEXTW(X)              (drw_fontset_getwidth(drw, (X)) + lrpad)
 #endif // PANGO_PATCH
 #if ALPHA_PATCH
-#define OPAQUE                0xffU
+#define OPAQUE                0xee
 #define OPACITY               "_NET_WM_WINDOW_OPACITY"
 #endif // ALPHA_PATCH
 

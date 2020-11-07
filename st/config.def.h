@@ -6,9 +6,9 @@
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
 static char *font = {
-	"Mono:pixelsize=12:antialias=true:autohint=true",
+	"JetBrains Mono:pixelsize=12:antialias=true:autohint=true",
 	"Font Awesome 5 Pro Solid:size=12",
-    "Wuncon Siji:size=12"
+	"Wuncon Siji:size=12"
 };
 static int borderpx = 10;
 

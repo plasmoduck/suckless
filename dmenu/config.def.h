@@ -3,7 +3,7 @@
 
 static int topbar = 1;                      /* -b  option; if 0, dmenu appears at bottom */
 #if ALPHA_PATCH
-static double opacity = 1.0;                /* -o  option; defines alpha translucency */
+static double opacity = 0.5;                /* -o  option; defines alpha translucency */
 #endif // ALPHA_PATCH
 #if FUZZYMATCH_PATCH
 static int fuzzy = 1;                       /* -F  option; if 0, dmenu doesn't use fuzzy matching */
@@ -45,7 +45,7 @@ static const char *symbol_2 = ">";
 #endif // SYMBOLS_PATCH
 
 #if ALPHA_PATCH
-static const unsigned int baralpha = 0xaa;
+static const unsigned int baralpha = 0.5;
 static const unsigned int borderalpha = OPAQUE;
 static const unsigned int alphas[][3]      = {
 	/*               fg      bg        border     */
@@ -61,7 +61,7 @@ static const char *colors[][2] =
 #endif // XRESOURCES_PATCH
 {
 	/*               fg         bg       */
-	[SchemeNorm] = { "#fbf1c7", "#2B2928" },
+	[SchemeNorm] = { "#fbf1c7", "#32302F" },
         [SchemeSel] = { "#fbf1c7", "#CC5E50" },
         [SchemeOut] = { "#fbf1c7", "#8ec07c" },
 	#if MORECOLOR_PATCH
