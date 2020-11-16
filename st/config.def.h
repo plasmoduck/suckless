@@ -7,8 +7,7 @@
  */
 static char *font = {
 	"JetBrains Mono:pixelsize=12:antialias=true:autohint=true",
-	"Font Awesome 5 Pro Solid:size=12",
-	"Wuncon Siji:size=12"
+	"Font Awesome:pixelsize=10:antialias=true:autohint=true"
 };
 static int borderpx = 10;
 
