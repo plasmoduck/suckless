@@ -1,5 +1,4 @@
-/* modifier 0 means no modifier */
-static int surfuseragent    = 1;  /* Append Surf version to default WebKit user agent */
+static int surfuseragent    = 0;  /* Append Surf version to default WebKit user agent */
 static char *fulluseragent  = "Mozilla/5.0 (X11; FreeBSD amd64; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.135 Safari/537.36"; /* Or override the whole user agent string */
 static char *scriptfile     = "~/.surf/script.js";
 static char *styledir       = "~/.surf/styles/";
@@ -178,9 +177,9 @@ static Key keys[] = {
 	{ MODKEY,                GDK_KEY_u,      scrollh,    { .i = -10 } },
 
 
-	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_j,      zoom,       { .i = -1 } },
-	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_k,      zoom,       { .i = +1 } },
-	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_q,      zoom,       { .i = 0  } },
+	{ MODKEY,		         GDK_KEY_j,      zoom,       { .i = -1 } },
+	{ MODKEY,		         GDK_KEY_k,      zoom,       { .i = +1 } },
+	{ MODKEY, 		         GDK_KEY_q,      zoom,       { .i = 0  } },
 	{ MODKEY,                GDK_KEY_minus,  zoom,       { .i = -1 } },
 	{ MODKEY,                GDK_KEY_plus,   zoom,       { .i = +1 } },
 
