@@ -5,7 +5,7 @@ static const char font[]        = "monospace:size=9";
 static const char* normbgcolor  = "#282828";
 static const char* normfgcolor  = "#D5C4A1";
 static const char* selbgcolor   = "#373636";
-static const char* selfgcolor   = "#B8BB26";
+static const char* selfgcolor   = "#A9AC43";
 static const char* urgbgcolor   = "#111111";
 static const char* urgfgcolor   = "#cc0000";
 static const char before[]      = "<";
