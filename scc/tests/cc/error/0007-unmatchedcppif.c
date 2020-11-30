@@ -1,9 +1,0 @@
-/*
-PATTERN:
-
-.
-*/
-
-#ifdef FOO
-
-

@@ -1,9 +1,0 @@
-1	__Exit
-3	__read
-4	__write
-5	__open
-6	__close
-20	__getpid
-46	__sigaction
-37	__kill
-199	__lseek

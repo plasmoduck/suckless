@@ -1,9 +1,0 @@
-#!/bin/sh
-
-set -e
-
-rm -f $1
-trap 'r=$?;rm -f $$.tmp;exit $r' HUP EXIT QUIT TERM
-
-(echo OBJS=\\
- find . -name '*.o' | sed 's/$/\\/') > $$.tmp && mv $$.tmp $1
