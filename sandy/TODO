@@ -1,0 +1,24 @@
+In no particular order, at sandy.c:
+- Update manpage
+- Create m_*vline
+- Bracket matching?
+- Smart end? is it really needed?
+- BUG: high CPU usage on continuous resize
+- BUG: Deal with the bigger-than-window line
+- Improve regex search (backwards!!)
+- Improve syntax highlight, multiline?
+- Group delete undos?
+- Show line numbers
+- Show some documentation when you press tab in command mode
+- FINDBW prompt? is it needed?
+- Support multiple marks (with S_Parameter)
+- Instead of delete, just cut
+- Add folding support
+- Add better paste support (if whole line was cut, append it beneath)
+
+At config.def.h:
+- Use local/system script path and all
+- Choose color-set for either black or white bg
+- Define more syntaxes
+- Refine syntax regexes
+

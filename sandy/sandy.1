@@ -1,0 +1,221 @@
+.TH SANDY 1 sandy\-VERSION
+.SH NAME
+sandy \- simple ncurses text editor
+.SH SYNOPSIS
+.B sandy
+.RB [ \-adhruS ]
+.RB [ \-t
+.IR tabstop ]
+.RB [ \-s
+.IR syntax ]
+.RI [ file |\-]
+.SH DESCRIPTION
+sandy is a simple modeless ncurses text editor.  It loads and saves files and
+lets you perform basic editing and pipe the selection through arbitrary
+commands.  A small degree of external control can be achieved by writing to a
+named pipe.  Sandy can also capture text from the standard input and edit it
+instead of a file as well as dump the buffer to the standard output instead of
+writing it to a file.
+.SH OPTIONS
+.TP
+.B \-a
+Autoindents text while editing.
+.TP
+.B \-d
+Dumps to stdout instead of writing to a file; causes saving to exit immediately.
+.TP
+.B \-h
+Prints usage information to stderr, then exits.
+.TP
+.B \-r
+Opens the selected file read\-only.
+.TP
+.BI \-s " syntax"
+Manually choose the syntax colors.
+.TP
+.B \-S
+Use no syntax colors at all.
+.TP
+.BI \-t " tabstop"
+Use selected tabstop in characters.
+.TP
+.B \-v
+Prints version information to stderr, then exits.
+.SH USAGE
+The default key\-bindings try to stick to the "emacs\-mode" present in modern
+shells (specifically
+.IR mksh (1)),
+which actually differs a bit from what
+.IR emacs (1)
+does.  Text is selected manually with the mouse or keyboard, or automtically
+when you search, pipe, undo or enter new text.  External input is handled using
+.IR dmenu (1)
+if the DISPLAY environment variable is set, read using
+.IR sh (1)
+otherwise.  Similarly, X11 clipboard interaction occurs through
+.IR xsel (1)
+if DISPLAY is set, using a hidden file in the /tmp directory otherwise.
+.SS Cursor movement
+Cursor movement bindings are used to move the text insertion point and
+optionally to select text.  Special keys (such as arrows, Home/End, Prev/Next)
+move the cursor and cancel any selection; they can be used to browse the text.
+Control or Meta keybindings extend or shrink the selection by moving the end
+at the insertion point; they are useful to perform minor changes without
+taking your fingers off the home row.  Remember to cancel the selection with
+Ctrl\-g before moving to select a new piece of text.
+.TP
+.BR Ctrl\-f " or " Right
+Move cursor to next char.
+.TP
+.BR Ctrl\-b " or " Left
+Move cursor to previous char.
+.TP
+.BR Ctrl\-n " or " Down
+Move cursor to next line.
+.TP
+.BR Ctrl\-p " or " Up
+Move cursor to previous line.
+.TP
+.BR Meta\-f " or " Shift\-Right
+Move cursor to the end of this or next word.
+.TP
+.BR Meta\-b " or " Shift\-Left
+Move cursor to the start of this or previous word.
+.TP
+.BR Ctrl\-a " or " Home
+Move cursor to the beginning of the current line.
+.TP
+.BR Ctrl\-e " or " End
+Move cursor to the end of the current line.
+.TP
+.BR Ctrl\-v " or " Prev
+Move cursor one full screen up.
+.TP
+.BR Meta\-v " or " Next
+Move cursor one full screen down.
+.TP
+.BR Meta\-, " or " Shift\-Home
+Move cursor to the beginning of the file.
+.TP
+.BR Meta\-. " or " Shift\-End
+Move cursor to the end of the file.
+.TP
+.BR Ctrl\-Space " or " Ctrl\-`
+Set mark in current position, then go to mark.
+.TP
+.BR Meta\-Space " or " Meta\-`
+Manually set mark in current position.
+.SS Finding and selecting
+Text is searched (and selected) using POSIX regular expressions.  Every time
+your search matches anything, the mark is set to your previous position so you
+can return there easily with Ctrl\-space.
+.TP
+.B Ctrl\-s
+Prompt for a search regex forward or if there is a selection, repeat search
+forward.
+.TP
+.B Meta\-s
+Repeat search forward.
+.TP
+.B Ctrl\-r
+Prompt for a search regex backwards or if there is a selection, repeat
+search backwards.
+.TP
+.B Meta\-r
+Repeat search backwards.
+.TP
+.B Ctrl\-\]
+Extend selection to word, line or full file from current.
+.TP
+.B Ctrl\-g
+Cancel current selection.
+.TP
+.B Ctrl\-o
+Move to the opposite size of the selection, usually to modify it.
+.SS Deleting
+Unlike in most other text editors, inserting text while a selection is active does not delete its content.
+.TP
+.BR Ctrl\-d
+Kill the current selection and put it in the clipboard. If there is no selection, delete next character.
+.TP
+.BR Delete " or " Shift\-Delete
+Delete the current selection if any. Otherwise delete next character.
+.TP
+.BR Backspace
+Delete previous character.
+.TP
+.B Ctrl\-u
+Delete to beginning of line or join with previous line.
+.TP
+.B Ctrl\-k
+Delete to end of line or join with next line.
+.TP
+.B Ctrl\-w
+Delete to beginning of word or previous word.
+.TP
+.B Meta\-d
+Delete to end of word or next word.
+.SS File operations
+.TP
+.BR Ctrl\-c
+Quit if the file has not been modified.  Repeat to quit unconditionally.
+.TP
+.B Ctrl\-x
+Quit if the file is not modified. Otherwise write changes to disk.
+.SS Text operations
+These operations affect the selected text if any.
+.TP
+.B Ctrl\-\e
+Prompt for a command to pipe text through.
+.TP
+.B Meta\-\e
+Prompt for a sed command to pipe text through.
+.TP
+.B Meta\-5
+Prompt for a literal string to replace the text.
+.TP
+.B Meta\-6
+Delete newline characters, joining lines.
+.TP
+.B Meta\-c
+Capitalize selection.
+.TP
+.B Meta\-l
+Lowercase selection.
+.TP
+.B Meta\-u
+Uppercase selection.
+.TP
+.BR Ctrl\-y " or " Shift\-Insert
+Add (paste, yank) text from the clipboard.
+.TP
+.BR Ctrl\-t " or " Insert
+Copy to the clipboard.
+.TP
+.BR (Again) Ctrl\-d " or " Shift\-Delete
+If there is any selection, cut to the clipboard.
+.SS Other
+.TP
+.B Ctrl\-l
+Center screen in current line, refresh.
+.TP
+.B Ctrl\-q
+Insert next character as\-is.  This is modal and sucks, but there simply was no
+other way.
+.TP
+.B Ctrl\-_
+Undo the last action.
+.TP
+.B Ctrl\-^
+Redo or repeat the previous action.
+.TP
+.B Ctrl\-z
+Suspend editor to shell.
+.TP
+.BR Meta\-x " or " Ctrl\-[ " or " Esc
+Prompt for command.
+.SH SEE ALSO
+.IR dmenu (1),
+.IR xsel (1)
+.SH BUGS
+Please report them!

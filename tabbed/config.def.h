@@ -1,10 +1,10 @@
 /* See LICENSE file for copyright and license details. */
 
 /* appearance */
-static const char font[]        = "monospace:size=9";
+static const char font[]        = "monospace:size=10";
 static const char* normbgcolor  = "#282828";
 static const char* normfgcolor  = "#D5C4A1";
-static const char* selbgcolor   = "#373636";
+static const char* selbgcolor   = "#343130";
 static const char* selfgcolor   = "#A9AC43";
 static const char* urgbgcolor   = "#111111";
 static const char* urgfgcolor   = "#cc0000";
