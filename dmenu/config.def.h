@@ -3,7 +3,7 @@
 
 static int topbar = 1;                      /* -b  option; if 0, dmenu appears at bottom */
 #if ALPHA_PATCH
-static double opacity = 0.5;                /* -o  option; defines alpha translucency */
+static double opacity = 0xdd;                /* -o  option; defines alpha translucency */
 #endif // ALPHA_PATCH
 #if FUZZYMATCH_PATCH
 static int fuzzy = 1;                       /* -F  option; if 0, dmenu doesn't use fuzzy matching */
@@ -45,7 +45,7 @@ static const char *symbol_2 = ">";
 #endif // SYMBOLS_PATCH
 
 #if ALPHA_PATCH
-static const unsigned int baralpha = 0.5;
+static const unsigned int baralpha = 0xdd;
 static const unsigned int borderalpha = OPAQUE;
 static const unsigned int alphas[][3]      = {
 	/*               fg      bg        border     */
@@ -62,8 +62,8 @@ static const char *colors[][2] =
 {
 	/*               fg         bg       */
 	[SchemeNorm] = { "#fbf1c7", "#32302F" },
-        [SchemeSel] = { "#fbf1c7", "#CC5E50" },
-        [SchemeOut] = { "#fbf1c7", "#8ec07c" },
+    [SchemeSel] = { "#fbf1c7", "#CC5E50" },
+    [SchemeOut] = { "#fbf1c7", "#8ec07c" },
 	#if MORECOLOR_PATCH
 	[SchemeMid]  = { "#eeeeee", "#770000" },
 	#endif // MORECOLOR_PATCH
@@ -79,7 +79,7 @@ static const char *colors[][2] =
 static unsigned int lines      = 20;
 #if GRID_PATCH
 /* -g option; if nonzero, dmenu uses a grid comprised of columns and lines */
-static unsigned int columns    = 0;
+static unsigned int columns    = 20;
 #endif // GRID_PATCH
 #if LINE_HEIGHT_PATCH
 static unsigned int lineheight = 0;         /* -h option; minimum height of a menu line     */

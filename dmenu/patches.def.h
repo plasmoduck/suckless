@@ -55,7 +55,7 @@
  * G columns * L lines grid.
  * https://tools.suckless.org/dmenu/patches/grid/
  */
-#define GRID_PATCH 0
+#define GRID_PATCH 1
 
 /* This patch highlights the individual characters of matched text for each dmenu list entry.
  * The fuzzy highlight patch takes precedence over this patch.

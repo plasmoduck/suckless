@@ -1,6 +1,6 @@
 /* A simplified way to customize */
 #define USE_TERM_STATUS 1
-#define BOTTOM_TITLE    0
+#define BOTTOM_TITLE    1
 #define HILIGHT_CURRENT 1
 #define HILIGHT_SYNTAX  1
 #define SHOW_NONPRINT   0
