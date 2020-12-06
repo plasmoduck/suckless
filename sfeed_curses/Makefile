@@ -1,7 +1,7 @@
 .POSIX:
 
 NAME = sfeed_curses
-VERSION = 0.9.1
+VERSION = 0.9.5
 
 # paths
 PREFIX = /usr/local
@@ -11,15 +11,21 @@ DOCPREFIX = ${PREFIX}/share/doc/${NAME}
 # use system flags.
 SFEED_CFLAGS = ${CFLAGS}
 SFEED_LDFLAGS = ${LDFLAGS} -lcurses
-SFEED_CPPFLAGS = -D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700 -D_BSD_SOURCE
+SFEED_CPPFLAGS = -D_BSD_SOURCE
 
 # Linux: some distros use ncurses and require -lncurses.
 #SFEED_LDFLAGS = ${LDFLAGS} -lncurses
+
+# Gentoo Linux: some distros might also require -ltinfo and -D_DEFAULT_SOURCE
+# to prevent warnings about feature macros.
+#SFEED_LDFLAGS = ${LDFLAGS} -lcurses -ltinfo
+#SFEED_CPPFLAGS = -D_DEFAULT_SOURCE -D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700 -D_BSD_SOURCE
 
 BIN = sfeed_curses
 SCRIPTS = sfeed_content sfeed_markread
 
 SRC = ${BIN:=.c}
+HDR = minicurses.h
 
 MAN1 = ${BIN:=.1}\
 	${SCRIPTS:=.1}
@@ -36,7 +42,7 @@ OBJ = ${SRC:.c=.o}
 ${OBJ}:
 
 .o:
-	${CC} ${SFEED_LDFLAGS} -o $@ $<
+	${CC} -o $@ $< ${SFEED_LDFLAGS}
 
 .c.o:
 	${CC} ${SFEED_CFLAGS} ${SFEED_CPPFLAGS} -o $@ -c $<
@@ -44,7 +50,7 @@ ${OBJ}:
 dist:
 	rm -rf "${NAME}-${VERSION}"
 	mkdir -p "${NAME}-${VERSION}"
-	cp -f ${MAN1} ${DOC} ${SRC} ${SCRIPTS} Makefile \
+	cp -f ${MAN1} ${DOC} ${HDR} ${SRC} ${SCRIPTS} Makefile \
 		"${NAME}-${VERSION}"
 	# make tarball
 	tar cf - "${NAME}-${VERSION}" | \

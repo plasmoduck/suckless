@@ -4,7 +4,6 @@
 #include <sys/wait.h>
 
 #include <ctype.h>
-#include <curses.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <locale.h>
@@ -13,11 +12,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <term.h>
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
 #include <wchar.h>
+
+/* curses */
+#include <curses.h>
+#include <term.h>
 
 /* Allow to lazyload items when a file is specified? This saves memory but
    increases some latency when seeking items. It also causes issues if the
@@ -33,9 +35,14 @@
 /* See the README for some color theme examples. */
 #include "colors.h"
 
-static char *plumber = "xdg-open"; /* environment variable: $SFEED_PLUMBER */
-static char *piper = "sfeed_content"; /* environment variable: $SFEED_PIPER */
-static char *yanker = "xclip -r"; /* environment variable: $SFEED_YANKER */
+static char *plumbercmd = "xdg-open"; /* env variable: $SFEED_PLUMBER */
+static char *pipercmd = "sfeed_content"; /* env variable: $SFEED_PIPER */
+static char *yankercmd = "xclip -r"; /* env variable: $SFEED_YANKER */
+static char *markreadcmd = "sfeed_markread read"; /* env variable: $SFEED_MARK_READ */
+static char *markunreadcmd = "sfeed_markread unread"; /* env variable: $SFEED_MARK_UNREAD */
+static int plumberia = 0; /* env variable: $SFEED_PLUMBER_INTERACTIVE */
+static int piperia = 1; /* env variable: $SFEED_PIPER_INTERACTIVE */
+static int yankeria = 0; /* env variable: $SFEED_YANKER_INTERACTIVE */
 
 enum {
 	ATTR_RESET = 0,	ATTR_BOLD_ON = 1, ATTR_FAINT_ON = 2, ATTR_REVERSE_ON = 7
@@ -45,7 +52,8 @@ enum Pane { PaneFeeds, PaneItems, PaneLast };
 
 enum {
 	FieldUnixTimestamp = 0, FieldTitle, FieldLink, FieldContent,
-	FieldContentType, FieldId, FieldAuthor, FieldEnclosure, FieldLast
+	FieldContentType, FieldId, FieldAuthor, FieldEnclosure,
+	FieldCategory, FieldLast
 };
 
 struct win {
@@ -126,13 +134,15 @@ struct feed {
 void alldirty(void);
 void cleanup(void);
 void draw(void);
-int isurlnew(const char *);
+int getsidebarwidth(void);
 void markread(struct pane *, off_t, off_t, int);
 void pane_draw(struct pane *);
-void readurls(void);
 void sighandler(int);
 void updategeom(void);
-void updatesidebar(int);
+void updatesidebar(void);
+void urls_free(void);
+int urls_isnew(const char *);
+void urls_read(void);
 
 static struct statusbar statusbar;
 static struct pane panes[PaneLast];
@@ -163,8 +173,9 @@ ttywritef(const char *fmt, ...)
 	int n;
 
 	va_start(ap, fmt);
-	n = vdprintf(1, fmt, ap);
+	n = vfprintf(stdout, fmt, ap);
 	va_end(ap);
+	fflush(stdout);
 
 	return n;
 }
@@ -188,11 +199,12 @@ die(const char *fmt, ...)
 	cleanup();
 
 	va_start(ap, fmt);
-	vdprintf(2, fmt, ap);
+	vfprintf(stderr, fmt, ap);
 	va_end(ap);
 
 	if (saved_errno)
-		dprintf(2, ": %s", strerror(saved_errno));
+		fprintf(stderr, ": %s", strerror(saved_errno));
+	fflush(stderr);
 	write(2, "\n", 1);
 
 	_exit(1);
@@ -301,7 +313,7 @@ colw(const char *s)
 		if ((rl = mbtowc(&wc, &s[i], slen - i < 4 ? slen - i : 4)) <= 0)
 			break;
 		if ((w = wcwidth(wc)) == -1)
-			continue;
+			w = 1;
 		col += w;
 	}
 	return col;
@@ -324,7 +336,7 @@ utf8pad(char *buf, size_t bufsiz, const char *s, size_t len, int pad)
 		if ((rl = mbtowc(&wc, &s[i], slen - i < 4 ? slen - i : 4)) <= 0)
 			break;
 		if ((w = wcwidth(wc)) == -1)
-			continue;
+			w = 1;
 		if (col + w > len || (col + w == len && s[i + rl])) {
 			if (siz + 4 >= bufsiz)
 				return -1;
@@ -383,7 +395,6 @@ updatetitle(void)
 void
 appmode(int on)
 {
-	/*ttywrite(on ? "\x1b[?1049h" : "\x1b[?1049l");*/ /* smcup, rmcup */
 	ttywrite(tparm(on ? enter_ca_mode : exit_ca_mode, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
@@ -396,58 +407,63 @@ mousemode(int on)
 void
 cursormode(int on)
 {
-	/*ttywrite(on ? "\x1b[?25h" : "\x1b[?25l");*/ /* DECTCEM (in)Visible cursor */
 	ttywrite(tparm(on ? cursor_normal : cursor_invisible, 0, 0, 0, 0, 0, 0, 0, 0, 0));
-}
-
-void
-cursorsave(void)
-{
-	/*ttywrite("\x1b""7");*/
-	ttywrite(tparm(save_cursor, 0, 0, 0, 0, 0, 0, 0, 0, 0));
-}
-
-void
-cursorrestore(void)
-{
-	/*ttywrite("\x1b""8");*/
-	ttywrite(tparm(restore_cursor, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
 void
 cursormove(int x, int y)
 {
-	/*ttywritef("\x1b[%d;%dH", y + 1, x + 1);*/
 	ttywrite(tparm(cursor_address, y, x, 0, 0, 0, 0, 0, 0, 0));
+}
+
+void
+cursorsave(void)
+{
+	/* do not save the cursor if it won't be restored anyway */
+	if (cursor_invisible)
+		ttywrite(tparm(save_cursor, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+}
+
+void
+cursorrestore(void)
+{
+	/* if the cursor cannot be hidden then move to a consistent position */
+	if (cursor_invisible)
+		ttywrite(tparm(restore_cursor, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+	else
+		cursormove(0, 0);
 }
 
 void
 attrmode(int mode)
 {
-	char *p;
-
-	/*ttywritef("\x1b[%dm", mode);*/
 	switch (mode) {
-	case ATTR_RESET: p = exit_attribute_mode; break;
-	case ATTR_BOLD_ON: p = enter_bold_mode; break;
-	case ATTR_FAINT_ON: p = enter_dim_mode; break;
-	case ATTR_REVERSE_ON: p = enter_standout_mode; break;
-	default: return;
+	case ATTR_RESET:
+		ttywrite(tparm(exit_attribute_mode, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+		break;
+	case ATTR_BOLD_ON:
+		ttywrite(tparm(enter_bold_mode, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+		break;
+	case ATTR_FAINT_ON:
+		ttywrite(tparm(enter_dim_mode, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+		break;
+	case ATTR_REVERSE_ON:
+		ttywrite(tparm(enter_reverse_mode, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+		break;
+	default:
+		return;
 	}
-	ttywrite(tparm(p, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
 void
 cleareol(void)
 {
-	/*ttywrite("\x1b[K");*/
 	ttywrite(tparm(clr_eol, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
 void
 clearscreen(void)
 {
-	/*ttywrite("\x1b[H\x1b[2J");*/
 	ttywrite(tparm(clear_screen, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 }
 
@@ -472,6 +488,7 @@ cleanup(void)
 
 	resettitle();
 
+	memset(&sa, 0, sizeof(sa));
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART; /* require BSD signal semantics */
 	sa.sa_handler = SIG_DFL;
@@ -492,11 +509,6 @@ win_update(struct win *w, int width, int height)
 void
 resizewin(void)
 {
-	/*struct winsize winsz;
-	if (ioctl(0, TIOCGWINSZ, &winsz) == -1)
-		die("ioctl");
-	win_update(&win, winsz.ws_col, winsz.ws_row);*/
-
 	setupterm(NULL, 1, NULL);
 	/* termios globals are changed: `lines` and `columns` */
 	win_update(&win, columns, lines);
@@ -512,6 +524,8 @@ init(void)
 	tcgetattr(0, &tsave);
 	memcpy(&tcur, &tsave, sizeof(tcur));
 	tcur.c_lflag &= ~(ECHO|ICANON);
+	tcur.c_cc[VMIN] = 1;
+	tcur.c_cc[VTIME] = 0;
 	tcsetattr(0, TCSANOW, &tcur);
 
 	resizewin();
@@ -525,6 +539,7 @@ init(void)
 
 	updategeom();
 
+	memset(&sa, 0, sizeof(sa));
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART; /* require BSD signal semantics */
 	sa.sa_handler = sighandler;
@@ -536,24 +551,50 @@ init(void)
 	needcleanup = 1;
 }
 
+void
+processexit(pid_t pid, int interactive)
+{
+	pid_t wpid;
+	struct sigaction sa;
+
+	memset(&sa, 0, sizeof(sa));
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_RESTART; /* require BSD signal semantics */
+	sa.sa_handler = SIG_IGN;
+	sigaction(SIGINT, &sa, NULL);
+
+	if (interactive) {
+		while ((wpid = wait(NULL)) >= 0 && wpid != pid)
+			;
+		updatesidebar();
+		updatetitle();
+		init();
+	} else {
+		sa.sa_handler = sighandler;
+		sigaction(SIGINT, &sa, NULL);
+	}
+}
+
 /* Pipe item line or item field to a program.
    If `field` is -1 then pipe the TSV line, else a specified field.
-   if `wantoutput` is 1 then cleanup and restore the tty,
+   if `interactive` is 1 then cleanup and restore the tty and wait on the
+   process.
    if 0 then don't do that and also write stdout and stderr to /dev/null. */
 void
-pipeitem(const char *cmd, struct item *item, int field, int wantoutput)
+pipeitem(const char *cmd, struct item *item, int field, int interactive)
 {
 	FILE *fp;
-	int i, pid, wpid, status;
+	pid_t pid;
+	int i, status;
 
-	if (wantoutput)
+	if (interactive)
 		cleanup();
 
 	switch ((pid = fork())) {
 	case -1:
 		die("fork");
 	case 0:
-		if (!wantoutput) {
+		if (!interactive) {
 			dup2(devnullfd, 1);
 			dup2(devnullfd, 2);
 		}
@@ -575,28 +616,30 @@ pipeitem(const char *cmd, struct item *item, int field, int wantoutput)
 		status = WIFEXITED(status) ? WEXITSTATUS(status) : 127;
 		_exit(status);
 	default:
-		while ((wpid = wait(NULL)) >= 0 && wpid != pid)
-			;
-
-		if (wantoutput) {
-			updatesidebar(onlynew);
-			updatetitle();
-			init();
-		}
+		processexit(pid, interactive);
 	}
 }
 
 void
-forkexec(char *argv[])
+forkexec(char *argv[], int interactive)
 {
-	switch (fork()) {
+	pid_t pid;
+
+	if (interactive)
+		cleanup();
+
+	switch ((pid = fork())) {
 	case -1:
 		die("fork");
 	case 0:
-		dup2(devnullfd, 1);
-		dup2(devnullfd, 2);
+		if (!interactive) {
+			dup2(devnullfd, 1);
+			dup2(devnullfd, 2);
+		}
 		if (execvp(argv[0], argv) == -1)
 			_exit(1);
+	default:
+		processexit(pid, interactive);
 	}
 }
 
@@ -608,8 +651,7 @@ pane_row_get(struct pane *p, off_t pos)
 
 	if (p->row_get)
 		return p->row_get(p, pos);
-	else
-		return p->rows + pos;
+	return p->rows + pos;
 }
 
 char *
@@ -618,8 +660,7 @@ pane_row_text(struct pane *p, struct row *row)
 	/* custom formatter */
 	if (p->row_format)
 		return p->row_format(p, row);
-	else
-		return row->text;
+	return row->text;
 }
 
 int
@@ -758,7 +799,7 @@ cyclepanen(int n)
 void
 cyclepane(void)
 {
-	int i;
+	size_t i;
 
 	i = selpane;
 	cyclepanen(+1);
@@ -772,6 +813,9 @@ updategeom(void)
 {
 	int w, x;
 
+	panes[PaneFeeds].width = getsidebarwidth();
+	if (win.width && panes[PaneFeeds].width > win.width)
+		panes[PaneFeeds].width = win.width - 1;
 	panes[PaneFeeds].x = 0;
 	panes[PaneFeeds].y = 0;
 	/* reserve space for statusbar */
@@ -803,6 +847,7 @@ updategeom(void)
 	scrollbars[PaneItems].x = panes[PaneItems].x + panes[PaneItems].width;
 	scrollbars[PaneItems].y = panes[PaneItems].y;
 	scrollbars[PaneItems].size = panes[PaneItems].height;
+	scrollbars[PaneItems].hidden = panes[PaneItems].width ? 0 : 1;
 
 	/* statusbar below */
 	statusbar.width = win.width;
@@ -943,7 +988,17 @@ lineeditor(void)
 		} else if (ch >= ' ') {
 			write(1, &ch, 1);
 		} else if (ch < 0) {
-			continue; /* process signals later */
+			switch (sigstate) {
+			case 0:
+			case SIGWINCH:
+				continue; /* process signals later */
+			case SIGINT:
+				sigstate = 0; /* exit prompt, do not quit */
+			case SIGTERM:
+				break; /* exit prompt and quit */
+			}
+			free(input);
+			return NULL;
 		}
 		input[nchars++] = ch;
 	}
@@ -954,12 +1009,10 @@ char *
 uiprompt(int x, int y, char *fmt, ...)
 {
 	va_list ap;
-	char *input;
-	char buf[32];
+	char *input, buf[32];
 
 	va_start(ap, fmt);
-	if (vsnprintf(buf, sizeof(buf), fmt, ap) >= sizeof(buf))
-		buf[sizeof(buf) - 1] = '\0';
+	vsnprintf(buf, sizeof(buf), fmt, ap);
 	va_end(ap);
 
 	cursorsave();
@@ -991,7 +1044,9 @@ statusbar_draw(struct statusbar *s)
 	cursorsave();
 	cursormove(s->x, s->y);
 	THEME_STATUSBAR();
-	printpad(s->text, s->width);
+	/* terminals without xenl (eat newline glitch) mess up scrolling when
+	   using the last cell on the last line on the screen. */
+	printpad(s->text, s->width - (!eat_newline_glitch));
 	attrmode(ATTR_RESET);
 	cursorrestore();
 	s->dirty = 0;
@@ -1058,6 +1113,7 @@ feed_items_get(struct feed *f, FILE *fp, struct items *itemsret)
 	size_t cap, i, linesize = 0, nitems;
 	ssize_t linelen;
 	off_t offset;
+	int ret = -1;
 
 	cap = nitems = 0;
 	offset = 0;
@@ -1096,17 +1152,18 @@ feed_items_get(struct feed *f, FILE *fp, struct items *itemsret)
 		if (linelen <= 0 || feof(fp))
 			break;
 	}
-	free(line);
+	ret = 0;
+
+err:
 	itemsret->cap = cap;
 	itemsret->items = items;
 	itemsret->len = nitems;
-	return 0;
-
-err:
 	free(line);
-	feed_items_free(itemsret);
 
-	return -1;
+	if (ret)
+		feed_items_free(itemsret);
+
+	return ret;
 }
 
 void
@@ -1123,7 +1180,7 @@ updatenewitems(struct feed *f)
 		row = &(p->rows[i]); /* do not use pane_row_get */
 		item = (struct item *)row->data;
 		if (urlfile)
-			item->isnew = isurlnew(item->link);
+			item->isnew = urls_isnew(item->link);
 		else
 			item->isnew = (item->timeok && item->timestamp >= comparetime);
 		row->bold = item->isnew;
@@ -1172,7 +1229,7 @@ feed_count(struct feed *f, FILE *fp)
 		parseline(line, fields);
 
 		if (urlfile) {
-			f->totalnew += isurlnew(fields[FieldLink]);
+			f->totalnew += urls_isnew(fields[FieldLink]);
 		} else {
 			parsedtime = 0;
 			if (!strtotime(fields[FieldUnixTimestamp], &parsedtime))
@@ -1262,12 +1319,13 @@ feeds_reloadall(void)
 	off_t pos;
 
 	pos = panes[PaneItems].pos; /* store numeric position */
-	readurls();
 	feeds_set(curfeed); /* close and reopen feed if possible */
+	urls_read();
 	feeds_load(feeds, nfeeds);
+	urls_free();
 	/* restore numeric position */
 	pane_setpos(&panes[PaneItems], pos);
-	updatesidebar(onlynew);
+	updatesidebar();
 	updatetitle();
 }
 
@@ -1275,15 +1333,14 @@ int
 getsidebarwidth(void)
 {
 	struct feed *feed;
-	static char text[1024];
-	int i, len, width = 0;
+	size_t i;
+	int len, width = 0;
 
 	for (i = 0; i < nfeeds; i++) {
 		feed = &feeds[i];
 
-		snprintf(text, sizeof(text), "%s (%lu/%lu)",
-		         feed->name, feed->totalnew, feed->total);
-		len = colw(text);
+		len = snprintf(NULL, 0, " (%lu/%lu)", feed->totalnew, feed->total) +
+			colw(feed->name);
 		if (len > width)
 			width = len;
 
@@ -1295,7 +1352,7 @@ getsidebarwidth(void)
 }
 
 void
-updatesidebar(int onlynew)
+updatesidebar(void)
 {
 	struct pane *p;
 	struct row *row;
@@ -1345,7 +1402,9 @@ sighandler(int signo)
 	case SIGINT:
 	case SIGTERM:
 	case SIGWINCH:
-		sigstate = signo;
+		/* SIGTERM is more important, do not override it */
+		if (sigstate != SIGTERM)
+			sigstate = signo;
 		break;
 	}
 }
@@ -1428,22 +1487,23 @@ mousereport(int button, int release, int x, int y)
 			if (!p->nrows || pos >= p->nrows)
 				break;
 			pane_setpos(p, pos);
-			if (selpane == PaneFeeds) {
-				readurls();
+			if (i == PaneFeeds) {
 				row = pane_row_get(p, p->pos);
 				f = (struct feed *)row->data;
 				feeds_set(f);
+				urls_read();
 				if (f->fp)
 					feed_load(f, f->fp);
+				urls_free();
 				/* redraw row: counts could be changed */
-				updatesidebar(onlynew);
+				updatesidebar();
 				updatetitle();
-			} else if (selpane == PaneItems) {
+			} else if (i == PaneItems) {
 				if (dblclick && !changedpane) {
 					row = pane_row_get(p, p->pos);
 					item = (struct item *)row->data;
 					markread(p, p->pos, p->pos, 1);
-					forkexec((char *[]) { plumber, item->fields[FieldLink], NULL });
+					forkexec((char *[]) { plumbercmd, item->fields[FieldLink], NULL }, plumberia);
 				}
 			}
 			break;
@@ -1451,11 +1511,11 @@ mousereport(int button, int release, int x, int y)
 			if (!p->nrows || pos >= p->nrows)
 				break;
 			pane_setpos(p, pos);
-			if (selpane == PaneItems) {
+			if (i == PaneItems) {
 				row = pane_row_get(p, p->pos);
 				item = (struct item *)row->data;
 				markread(p, p->pos, p->pos, 1);
-				pipeitem(piper, item, -1, 1);
+				pipeitem(pipercmd, item, -1, 1);
 			}
 			break;
 		case 3: /* scroll up */
@@ -1473,13 +1533,19 @@ feed_row_format(struct pane *p, struct row *row)
 	struct feed *feed;
 	static char text[1024];
 	char bufw[256], counts[128];
-	int len;
+	int len, w;
 
 	feed = (struct feed *)row->data;
 
+	/* align counts to the right and pad remaining width with spaces */
 	len = snprintf(counts, sizeof(counts), "(%lu/%lu)",
 	               feed->totalnew, feed->total);
-	if (utf8pad(bufw, sizeof(bufw), feed->name, p->width - len, ' ') != -1)
+	if (len > p->width)
+		w = p->width;
+	else
+		w = p->width - len;
+
+	if (utf8pad(bufw, sizeof(bufw), feed->name, w, ' ') != -1)
 		snprintf(text, sizeof(text), "%s%s", bufw, counts);
 	else
 		text[0] = '\0';
@@ -1569,13 +1635,7 @@ markread(struct pane *p, off_t from, off_t to, int isread)
 	if (!urlfile || !p->nrows)
 		return;
 
-	if (isread) {
-		if (!(cmd = getenv("SFEED_MARK_READ")))
-			cmd = "sfeed_markread read";
-	} else {
-		if (!(cmd = getenv("SFEED_MARK_UNREAD")))
-			cmd = "sfeed_markread unread";
-	}
+	cmd = isread ? markreadcmd : markunreadcmd;
 
 	switch ((pid = fork())) {
 	case -1:
@@ -1621,30 +1681,42 @@ markread(struct pane *p, off_t from, off_t to, int isread)
 			if (i >= visstart && i < visstart + p->height)
 				pane_row_draw(p, i, i == p->pos);
 		}
-		updatesidebar(onlynew);
+		updatesidebar();
 		updatetitle();
 	}
 }
 
 int
-urlcmp(const void *v1, const void *v2)
+urls_cmp(const void *v1, const void *v2)
 {
 	return strcmp(*((char **)v1), *((char **)v2));
 }
 
+int
+urls_isnew(const char *url)
+{
+	return bsearch(&url, urls, nurls, sizeof(char *), urls_cmp) == NULL;
+}
+
 void
-readurls(void)
+urls_free(void)
+{
+	while (nurls > 0)
+		free(urls[--nurls]);
+	free(urls);
+	urls = NULL;
+	nurls = 0;
+}
+
+void
+urls_read(void)
 {
 	FILE *fp;
 	char *line = NULL;
 	size_t linesiz = 0, cap = 0;
 	ssize_t n;
 
-	while (nurls > 0)
-		free(urls[--nurls]);
-	free(urls);
-	urls = NULL;
-	nurls = 0;
+	urls_free();
 
 	if (!urlfile || !(fp = fopen(urlfile, "rb")))
 		return;
@@ -1661,13 +1733,7 @@ readurls(void)
 	fclose(fp);
 	free(line);
 
-	qsort(urls, nurls, sizeof(char *), urlcmp);
-}
-
-int
-isurlnew(const char *url)
-{
-	return bsearch(&url, urls, nurls, sizeof(char *), urlcmp) == NULL;
+	qsort(urls, nurls, sizeof(char *), urls_cmp);
 }
 
 int
@@ -1691,11 +1757,21 @@ main(int argc, char *argv[])
 	setlocale(LC_CTYPE, "");
 
 	if ((tmp = getenv("SFEED_PLUMBER")))
-		plumber = tmp;
+		plumbercmd = tmp;
 	if ((tmp = getenv("SFEED_PIPER")))
-		piper = tmp;
+		pipercmd = tmp;
 	if ((tmp = getenv("SFEED_YANKER")))
-		yanker = tmp;
+		yankercmd = tmp;
+	if ((tmp = getenv("SFEED_PLUMBER_INTERACTIVE")))
+		plumberia = !strcmp(tmp, "1");
+	if ((tmp = getenv("SFEED_PIPER_INTERACTIVE")))
+		piperia = !strcmp(tmp, "1");
+	if ((tmp = getenv("SFEED_YANKER_INTERACTIVE")))
+		yankeria = !strcmp(tmp, "1");
+	if ((tmp = getenv("SFEED_MARK_READ")))
+		markreadcmd = tmp;
+	if ((tmp = getenv("SFEED_MARK_UNREAD")))
+		markunreadcmd = tmp;
 	urlfile = getenv("SFEED_URL_FILE");
 
 	panes[PaneFeeds].row_format = feed_row_format;
@@ -1721,15 +1797,17 @@ main(int argc, char *argv[])
 		}
 		nfeeds = argc - 1;
 	}
-	readurls();
 	feeds_set(&feeds[0]);
+	urls_read();
 	feeds_load(feeds, nfeeds);
+	urls_free();
 
 	if (!isatty(0)) {
 		if ((fd = open("/dev/tty", O_RDONLY)) == -1)
 			die("open: /dev/tty");
 		if (dup2(fd, 0) == -1)
-			die("dup2: /dev/tty");
+			die("dup2(%d, 0): /dev/tty -> stdin", fd);
+		close(fd);
 	}
 	if (argc == 1)
 		feeds[0].fp = NULL;
@@ -1745,7 +1823,7 @@ main(int argc, char *argv[])
 	if ((devnullfd = open("/dev/null", O_WRONLY)) == -1)
 		die("open: /dev/null");
 
-	updatesidebar(onlynew);
+	updatesidebar();
 	updatetitle();
 	init();
 	draw();
@@ -1902,7 +1980,7 @@ nextpage:
 				p = &panes[selpane];
 				row = pane_row_get(p, p->pos);
 				item = (struct item *)row->data;
-				forkexec((char *[]) { plumber, item->fields[FieldEnclosure], NULL });
+				forkexec((char *[]) { plumbercmd, item->fields[FieldEnclosure], NULL }, plumberia);
 			}
 			break;
 		case 'm': /* toggle mouse mode */
@@ -1918,26 +1996,27 @@ nextpage:
 		case 't': /* toggle showing only new in sidebar */
 			onlynew = !onlynew;
 			pane_setpos(&panes[PaneFeeds], 0);
-			updatesidebar(onlynew);
+			updatesidebar();
 			break;
 		case 'o': /* feeds: load, items: plumb url */
 		case '\n':
 			p = &panes[selpane];
 			if (selpane == PaneFeeds && panes[selpane].nrows) {
-				readurls();
 				row = pane_row_get(p, p->pos);
 				f = (struct feed *)row->data;
 				feeds_set(f);
+				urls_read();
 				if (f->fp)
 					feed_load(f, f->fp);
+				urls_free();
 				/* redraw row: counts could be changed */
-				updatesidebar(onlynew);
+				updatesidebar();
 				updatetitle();
 			} else if (selpane == PaneItems && panes[selpane].nrows) {
 				row = pane_row_get(p, p->pos);
 				item = (struct item *)row->data;
 				markread(p, p->pos, p->pos, 1);
-				forkexec((char *[]) { plumber, item->fields[FieldLink], NULL });
+				forkexec((char *[]) { plumbercmd, item->fields[FieldLink], NULL }, plumberia);
 			}
 			break;
 		case 'c': /* items: pipe TSV line to program */
@@ -1950,11 +2029,11 @@ nextpage:
 				row = pane_row_get(p, p->pos);
 				item = (struct item *)row->data;
 				switch (ch) {
-				case 'y': pipeitem(yanker, item, FieldLink, 0); break;
-				case 'E': pipeitem(yanker, item, FieldEnclosure, 0); break;
+				case 'y': pipeitem(yankercmd, item, FieldLink, yankeria); break;
+				case 'E': pipeitem(yankercmd, item, FieldEnclosure, yankeria); break;
 				default:
 					markread(p, p->pos, p->pos, 1);
-					pipeitem(piper, item, -1, 1);
+					pipeitem(pipercmd, item, -1, piperia);
 					break;
 				}
 			}
@@ -1982,7 +2061,6 @@ event:
 		else if (ch == -3 && sigstate == 0)
 			continue; /* just a time-out, nothing to do */
 
-		/* handle last signal */
 		switch (sigstate) {
 		case SIGHUP:
 			feeds_reloadall();

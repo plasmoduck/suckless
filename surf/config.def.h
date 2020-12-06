@@ -1,6 +1,5 @@
 static int surfuseragent    = 1;  /* Append Surf version to default WebKit user agent */
 static char *fulluseragent  = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:83.0) Gecko/20100101 Firefox/83.0"; /* Default: Mozilla/5.0 (X11; FreeBSD amd64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/11.0 Safari/605.1.15 Surf/2.0 */
-static char *scriptfile     = "~/.surf/script.js";
 static char *styledir       = "~/.surf/styles/";
 static char *certdir        = "~/.surf/certificates/";
 static char *cachedir       = "~/.surf/cache/";
@@ -8,6 +7,10 @@ static char *cookiefile     = "~/.surf/cookies.txt";
 static char *searchurl      = "duckduckgo.com/?q=%s";
 static char *dldir          = "~/dl/";
 static char *dlstatus       = "~/.surf/dlstatus/";
+static char *scriptfiles[] = {
+"~/.surf/script.js",
+"~/.surf/input_focus.user.js",
+};
 
 /* Webkit default features */
 /* Highest priority value will be used.
@@ -170,7 +173,7 @@ static Key keys[] = {
 	/* vertical and horizontal scrolling, in viewport percentage */
 	{ MODKEY,                GDK_KEY_j,      scrollv,    { .i = +10 } },
 	{ MODKEY,                GDK_KEY_k,      scrollv,    { .i = -10 } },
-	{ MODKEY,                GDK_KEY_space,  scrollv,    { .i = +50 } },
+	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_space,  scrollv,    { .i = +50 } },
 	{ MODKEY,                GDK_KEY_b,      scrollv,    { .i = -50 } },
 	{ MODKEY,                GDK_KEY_i,      scrollh,    { .i = +10 } },
 	{ MODKEY,                GDK_KEY_u,      scrollh,    { .i = -10 } },

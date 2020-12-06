@@ -24,8 +24,8 @@ parseuri(const char *s, struct uri *u, int rel)
 		p += 2; /* skip "//" */
 	} else {
 		/* protocol part */
-		for (p = s; *p && (isalpha((unsigned char)*p) || isdigit((unsigned char)*p) ||
-			       *p == '+' || *p == '-' || *p == '.'); p++)
+		for (p = s; isalpha((unsigned char)*p) || isdigit((unsigned char)*p) ||
+			       *p == '+' || *p == '-' || *p == '.'; p++)
 			;
 		if (!strncmp(p, "://", 3)) {
 			if ((size_t)(p - s) >= sizeof(u->proto))

@@ -1,5 +1,5 @@
-#ifndef _XML_H
-#define _XML_H
+#ifndef _XML_H_
+#define _XML_H_
 
 #include <stdio.h>
 
@@ -13,24 +13,17 @@ typedef struct xmlparser {
 	      const char *, size_t);
 	void (*xmlattrentity)(struct xmlparser *, const char *, size_t,
 	      const char *, size_t, const char *, size_t);
-	void (*xmlcdatastart)(struct xmlparser *);
 	void (*xmlcdata)(struct xmlparser *, const char *, size_t);
-	void (*xmlcdataend)(struct xmlparser *);
-	void (*xmlcommentstart)(struct xmlparser *);
-	void (*xmlcomment)(struct xmlparser *, const char *, size_t);
-	void (*xmlcommentend)(struct xmlparser *);
 	void (*xmldata)(struct xmlparser *, const char *, size_t);
-	void (*xmldataend)(struct xmlparser *);
 	void (*xmldataentity)(struct xmlparser *, const char *, size_t);
-	void (*xmldatastart)(struct xmlparser *);
 	void (*xmltagend)(struct xmlparser *, const char *, size_t, int);
 	void (*xmltagstart)(struct xmlparser *, const char *, size_t);
 	void (*xmltagstartparsed)(struct xmlparser *, const char *,
 	      size_t, int);
 
 #ifndef GETNEXT
-	/* GETNEXT overridden for sfeed to reduce function call overhead and
-	   further context optimizations. */
+	/* GETNEXT overridden to reduce function call overhead and further
+	   context optimizations. */
 	#define GETNEXT getchar
 #endif
 

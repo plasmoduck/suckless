@@ -51,6 +51,7 @@ printfeed(FILE *fp, struct feed *f)
 			        tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
 			        tm->tm_hour, tm->tm_min);
 		} else {
+			isnew = 0;
 			fputs("                 ", stdout);
 		}
 		f->total++;

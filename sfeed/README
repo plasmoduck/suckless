@@ -111,7 +111,7 @@ Optional dependencies
 OS tested
 ---------
 
-- Linux (compilers: clang, gcc, pcc, tcc, libc: glibc, musl).
+- Linux (compilers: clang, cproc, gcc, pcc, tcc, libc: glibc, musl).
 - OpenBSD (clang, gcc).
 - NetBSD
 - FreeBSD
@@ -119,12 +119,13 @@ OS tested
 - Windows (cygwin gcc, mingw).
 - HaikuOS (using libbsd).
 - FreeDOS (djgpp).
+- FUZIX (sdcc -mz80).
 
 
 Architectures tested
 --------------------
 
-amd64, ARM, aarch64, HPPA, i386, SPARC64.
+amd64, ARM, aarch64, HPPA, i386, SPARC64, Z80.
 
 
 Files
@@ -288,14 +289,14 @@ advertisements, strip tracking parameters and more.
 				}
 
 				# shorten feedburner links.
-				if (match(s, /^(http|https):\/\/[^/]+\/~r\/.*\/~3\/[^\/]+\//)) {
+				if (match(s, /^(http|https):\/\/[^\/]+\/~r\/.*\/~3\/[^\/]+\//)) {
 					s = substr($3, RSTART, RLENGTH);
 				}
 
 				# strip tracking parameters
 				# urchin, facebook, piwik, webtrekk and generic.
-				gsub(/\?(ad|campaign|pk|tm|wt)_([^&]+)/, "?", s);
-				gsub(/&(ad|campaign|pk|tm|wt)_([^&]+)/, "", s);
+				gsub(/\?(ad|campaign|fbclid|pk|tm|utm|wt)_([^&]+)/, "?", s);
+				gsub(/&(ad|campaign|fbclid|pk|tm|utm|wt)_([^&]+)/, "", s);
 
 				gsub(/\?&/, "?", s);
 				gsub(/[\?&]+$/, "", s);
@@ -551,7 +552,7 @@ Now you can view feeds in mutt(1) for example.
 
 - - -
 
-Incremental data updates
+Incremental data updates using If-Modified-Since
 
 For servers that support it some incremental updates and bandwidth-saving can
 be done by using the "If-Modified-Since" HTTP header.
@@ -569,6 +570,30 @@ adding the -z option:
 
 This comes at a cost of some privacy. For example there can be a fingerprinting
 vector of the local modification date of the feed file.
+
+- - -
+
+Incremental data updates using ETag caching
+
+For servers that support it some incremental updates and bandwidth-saving can
+be done by using the "ETag" HTTP header.
+
+Create a directory for storing the ETags per feed:
+
+	mkdir -p ~/.sfeed/etags/
+
+The curl ETag options can be used to send the previous ETag header value.  You
+can do this by overriding the fetch() function in the sfeedrc file and adding
+the --etag-save and --etag-compare options:
+
+	# fetch(name, url, feedfile)
+	fetch() {
+		etag="$HOME/.sfeed/etags/$(basename "$3")"
+		curl --etag-save "${etag}" --etag-compare "${etag}" "$2"
+	}
+
+This comes at a cost of some privacy. For example there can be a unique
+generated ETag.
 
 - - -
 

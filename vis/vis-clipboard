@@ -1,0 +1,143 @@
+#!/bin/sh
+
+# Copyright (C) 2016 Richard Burke, ISC licensed
+
+vc_fatal() {
+	echo "$@" >&2
+	exit 1
+}
+
+vc_usage() {
+	vc_fatal "`basename $0` [--selection sel] [--usable|--copy|--paste]"
+}
+
+vc_determine_command() {
+	if [ -n "$WAYLAND_DISPLAY" ]; then
+		for c in wl-copy wl-paste; do
+			if type "$c" >/dev/null 2>&1; then
+				echo "wlclipboard"
+				return 0
+			fi
+		done
+	fi
+	
+	if [ -n "$DISPLAY" ]; then
+		for c in xclip xsel; do
+			if type "$c" >/dev/null 2>&1; then
+				echo "$c"
+				return 0
+			fi
+		done
+	fi
+
+	if [ "$sel" = "primary" ]; then
+		vc_fatal "clipboard primary selection is not supported on your platform"
+	fi
+
+	if type pbcopy >/dev/null 2>&1; then
+		echo 'mac'
+		return 0
+	fi
+
+	if [ -c /dev/clipboard ]; then
+		echo 'cygwin'
+		return 0
+	fi
+
+	return 1
+}
+
+vc_usable() {
+	if vc_determine_command >/dev/null 2>&1; then
+		exit 0
+	fi
+
+	exit 1
+}
+
+vc_copy() {
+	COPY_CMD="`vc_determine_command 2>/dev/null`"
+
+	if [ $? -ne 0 ] || [ -z "$COPY_CMD" ]; then
+		vc_fatal 'System clipboard not supported'
+	fi
+
+	vc_${COPY_CMD}_copy
+
+	exit $?
+}
+
+vc_paste() {
+	PASTE_CMD="`vc_determine_command 2>/dev/null`"
+
+	if [ $? -ne 0 ] || [ -z "$PASTE_CMD" ]; then
+		vc_fatal 'System clipboard not supported'
+	fi
+
+	vc_${PASTE_CMD}_paste
+
+	exit $?
+}
+
+vc_wlclipboard_copy() {
+	if [ "$sel" = "primary" ]; then
+		wl-copy --primary -t TEXT
+	else
+		wl-copy -t TEXT
+	fi
+}
+
+vc_wlclipboard_paste() {
+	if [ "$sel" = "primary" ]; then
+		wl-paste --primary -t text
+	else
+		wl-paste -t text
+	fi
+}
+
+vc_xsel_copy() {
+	xsel --"$sel" -bi
+}
+
+vc_xsel_paste() {
+	xsel --"$sel" -bo
+}
+
+vc_xclip_copy() {
+	xclip -selection "$sel" -i >/dev/null 2>&1
+}
+
+vc_xclip_paste() {
+	xclip -selection "$sel" -o
+}
+
+vc_mac_copy() {
+	pbcopy
+}
+
+vc_mac_paste() {
+	pbpaste
+}
+
+vc_cygwin_copy() {
+	cat >/dev/clipboard
+}
+
+vc_cygwin_paste() {
+	cat /dev/clipboard
+}
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--usable) fn=vc_usable;;
+		--copy) fn=vc_copy;;
+		--paste) fn=vc_paste;;
+		--selection) shift; sel="$1";;
+		*) ;;
+	esac
+	shift
+done
+
+sel=${sel:-"clipboard"} $fn
+
+vc_usage

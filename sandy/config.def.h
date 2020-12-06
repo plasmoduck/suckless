@@ -1,7 +1,7 @@
 /* A simplified way to customize */
 #define USE_TERM_STATUS 1
 #define BOTTOM_TITLE    1
-#define HILIGHT_CURRENT 1
+#define HILIGHT_CURRENT 0
 #define HILIGHT_SYNTAX  1
 #define SHOW_NONPRINT   0
 #define HANDLE_MOUSE    1
@@ -262,7 +262,7 @@ static const Key commkeys[] = { /* Command mode keys here */
 /*Mouse clicks */
 static const Click clks[] = {
 /* mouse mask,           fcur / fsel,      tests,               func,       arg */
-{BUTTON1_CLICKED,        { TRUE , TRUE  }, { 0,     0,     0 }, 0,          { 0 } },
+{BUTTON1_CLICKED,        { TRUE , TRUE  }, { 0,     0,     0 }, f_move,     { .v = TOSEL } },
 {BUTTON3_CLICKED,        { TRUE , FALSE }, { t_sel, 0,     0 }, f_pipero,   { .v = TOSEL } },
 {BUTTON2_CLICKED,        { FALSE, FALSE }, { t_rw,  0,     0 }, f_pipenull, { .v = FROMSEL } },
 {BUTTON4_CLICKED,        { FALSE, FALSE }, { 0,     0,     0 }, f_move,     { .m = m_prevscr } },

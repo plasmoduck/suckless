@@ -1,4 +1,4 @@
-.Dd March 15, 2020
+.Dd November 1, 2020
 .Dt SFEED_XMLENC 1
 .Os
 .Sh NAME
@@ -9,7 +9,8 @@
 .Sh DESCRIPTION
 .Nm
 reads XML data from stdin and writes the found text\-encoding to stdout.
-It translates the characters to lowercase and strips control characters.
+It converts characters in the encoding-name to lowercase and strips characters
+which are not allowed in an encoding-name.
 .Sh EXIT STATUS
 .Ex -std
 .Sh EXAMPLES

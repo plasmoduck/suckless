@@ -30,7 +30,8 @@ struct uri {
 
 enum {
 	FieldUnixTimestamp = 0, FieldTitle, FieldLink, FieldContent,
-	FieldContentType, FieldId, FieldAuthor, FieldEnclosure, FieldLast
+	FieldContentType, FieldId, FieldAuthor, FieldEnclosure, FieldCategory,
+	FieldLast
 };
 
 int  absuri(char *, size_t, const char *, const char *);

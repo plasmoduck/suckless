@@ -1,4 +1,4 @@
-.Dd March 15, 2020
+.Dd October 22, 2020
 .Dt SFEED_WEB 1
 .Os
 .Sh NAME
@@ -21,13 +21,12 @@ url<TAB>content\-type<newline>
 .Bl -tag -width Ds
 .It url
 Found relative or absolute url.
-If the url is relative and the
+.Pp
+For relative urls if a <base href="..." /> tag is found it will be used,
+otherwise if the
 .Ar baseurl
-option is
-specified then the url is made absolute.
-If the url is relative and no
-.Ar baseurl
-option is specified then it is printed as is.
+option is specified then that is used, if neither are set then the relative url
+is printed.
 .It content\-type
 Usually application/atom+xml or application/rss+xml.
 .El

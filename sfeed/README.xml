@@ -3,11 +3,14 @@ XML parser
 
 A small XML parser.
 
+For the original version see:
+https://git.codemadness.org/xmlparser/
+
 
 Dependencies
 ------------
 
-- C compiler (C99).
+- C compiler (ANSI).
 
 
 Features
@@ -51,7 +54,7 @@ Caveats
   HTML <pre> tags.
 - The XML specification has no limits on tag and attribute names. For
   simplicity/sanity sake this XML parser takes some liberties. Tag and
-  attribute names are truncated.
+  attribute names are truncated if they are excessively long.
 - Entity expansions are not parsed aswell as DOCTYPE, ATTLIST etc.
 
 
@@ -71,6 +74,9 @@ Examples
 --------
 
 sfeed_opml_import.c or sfeed_web.c or sfeed_xmlenc.c
+
+See skeleton.c in the original xmlparser repository for a base program to start
+quickly.
 
 
 License

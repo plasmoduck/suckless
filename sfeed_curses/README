@@ -44,7 +44,7 @@ Dependencies
 
 - C compiler (C99).
 - libc (recommended: C99 and POSIX >= 200809).
-- curses (typically ncurses).
+- curses (typically ncurses), optional but recommended: but see minicurses.h.
 
 
 Optional dependencies
@@ -78,8 +78,11 @@ OS tested
 - Linux (compilers: clang, gcc, tcc, libc: glibc, musl).
 - OpenBSD (clang, gcc).
 - NetBSD
+- FreeBSD
+- DragonFlyBSD
+- Illumos (OpenIndiana).
 - Windows (cygwin gcc + mintty).
-- HaikuOS (works, but requires [v]dprintf implementation).
+- HaikuOS
 
 
 Known terminal issues
@@ -103,7 +106,7 @@ Color themes
 #define THEME_ITEM_NORMAL()           do {                          } while(0)
 #define THEME_ITEM_FOCUS()            do {                          } while(0)
 #define THEME_ITEM_BOLD()             do { attrmode(ATTR_BOLD_ON);  } while(0)
-#define THEME_ITEM_SELECTED()         do { ttywrite("\x1b[93;44m"); } while(0) /* bright yellow fg, blue bg */
+#define THEME_ITEM_SELECTED()         do { if (p->focused) ttywrite("\x1b[93;44m"); } while(0) /* bright yellow fg, blue bg */
 #define THEME_SCROLLBAR_FOCUS()       do { ttywrite("\x1b[34m");    } while(0) /* blue fg */
 #define THEME_SCROLLBAR_NORMAL()      do { ttywrite("\x1b[34m");    } while(0)
 #define THEME_SCROLLBAR_TICK_FOCUS()  do { ttywrite("\x1b[44m");    } while(0) /* blue bg */
@@ -121,7 +124,7 @@ Color themes
 #define THEME_ITEM_NORMAL()           do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
 #define THEME_ITEM_FOCUS()            do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
 #define THEME_ITEM_BOLD()             do { attrmode(ATTR_BOLD_ON); SETFGCOLOR(0xaa, 0x00, 0x00); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
-#define THEME_ITEM_SELECTED()         do { attrmode(ATTR_REVERSE_ON); } while(0)
+#define THEME_ITEM_SELECTED()         do { if (p->focused) attrmode(ATTR_REVERSE_ON); } while(0)
 #define THEME_SCROLLBAR_FOCUS()       do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
 #define THEME_SCROLLBAR_NORMAL()      do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
 #define THEME_SCROLLBAR_TICK_FOCUS()  do { SETBGCOLOR(0x00, 0x00, 0xaa); SETFGCOLOR(0xff, 0xff, 0xff); } while(0)
@@ -145,13 +148,13 @@ reload the feeds by sending the signal SIGHUP.
 In the input handling code you can then add a case:
 
 	case 'M':
-		forkexec((char *[]) { "markallread.sh", NULL });
+		forkexec((char *[]) { "markallread.sh", NULL }, 0);
 		break;
 
 or
 
 	case 'S':
-		forkexec((char *[]) { "syncnews.sh", NULL });
+		forkexec((char *[]) { "syncnews.sh", NULL }, 1);
 		break;
 
 The specified script should be in $PATH or an absolute path.
@@ -167,10 +170,26 @@ Example of a `markallread.sh` shellscript to mark all urls as read:
 	mv "$tmp" ~/.sfeed/urls &&
 	pkill -SIGHUP sfeed_curses # reload feeds.
 
-Example of a `sync.sh` shellscript to update the feeds and reload them:
+Example of a `syncnews.sh` shellscript to update the feeds and reload them:
 
 	#!/bin/sh
 	sfeed_update && pkill -SIGHUP sfeed_curses
+
+
+Open an url directly in the same terminal
+-----------------------------------------
+
+To open an url directly in the same terminal using the text-mode lynx browser:
+
+	SFEED_PLUMBER=lynx SFEED_PLUMBER_INTERACTIVE=1 sfeed_curses ~/.sfeed/feeds/*
+
+
+Yank to tmux buffer
+-------------------
+
+This changes the yank command to set the tmux buffer, instead of X11 xclip:
+
+	SFEED_YANKER="tmux set-buffer \`cat\`"
 
 
 License

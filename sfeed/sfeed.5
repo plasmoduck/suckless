@@ -1,4 +1,4 @@
-.Dd July 20, 2019
+.Dd September 19, 2020
 .Dt SFEED 5
 .Os
 .Sh NAME
@@ -23,7 +23,7 @@ Other whitespace characters except spaces are removed.
 Control characters are removed.
 .Pp
 The order and content of the fields are:
-.Bl -tag -width 17n
+.Bl -tag -width 12n
 .It timestamp
 UNIX timestamp in UTC+0, empty if missing or on parse failure.
 .It title
@@ -40,6 +40,8 @@ RSS item GUID or Atom id.
 Item author.
 .It enclosure
 Item, first enclosure.
+.It category
+Item, categories, multiple values are separated by |.
 .El
 .Sh SEE ALSO
 .Xr sfeed 1 ,

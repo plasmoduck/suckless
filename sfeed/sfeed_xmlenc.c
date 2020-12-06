@@ -14,7 +14,7 @@ static void
 xmltagstart(XMLParser *p, const char *t, size_t tl)
 {
 	/* optimization: try to find a processing instruction only at the
-	   start of the data. */
+	   start of the data at the first few starting tags. */
 	if (tags++ > 3)
 		exit(0);
 }
@@ -26,11 +26,19 @@ xmlattr(XMLParser *p, const char *t, size_t tl, const char *n, size_t nl,
 	if (strcasecmp(t, "?xml") || strcasecmp(n, "encoding"))
 		return;
 
-	/* output lowercase, no control characters */
 	for (; *v; v++) {
-		if (!iscntrl((unsigned char)*v))
+		if (isalpha((unsigned char)*v) ||
+		    isdigit((unsigned char)*v) ||
+		    *v == '.' || *v == ':' || *v == '-' || *v == '_')
 			putchar(tolower((unsigned char)*v));
 	}
+}
+
+static void
+xmlattrend(XMLParser *p, const char *t, size_t tl, const char *n, size_t nl)
+{
+	if (strcasecmp(t, "?xml") || strcasecmp(n, "encoding"))
+		return;
 	putchar('\n');
 	exit(0);
 }
@@ -42,6 +50,8 @@ main(void)
 		err(1, "pledge");
 
 	parser.xmlattr = xmlattr;
+	parser.xmlattrentity = xmlattr; /* no entity conversion */
+	parser.xmlattrend = xmlattrend;
 	parser.xmltagstart = xmltagstart;
 
 	/* NOTE: getnext is defined in xml.h for inline optimization */
