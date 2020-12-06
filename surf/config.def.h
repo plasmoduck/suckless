@@ -8,8 +8,8 @@ static char *searchurl      = "duckduckgo.com/?q=%s";
 static char *dldir          = "~/dl/";
 static char *dlstatus       = "~/.surf/dlstatus/";
 static char *scriptfiles[] = {
-"~/.surf/script.js",
-"~/.surf/input_focus.user.js",
+"~/.surf/scripts/script.js",
+"~/.surf/scripts/focus.js",
 };
 
 /* Webkit default features */
@@ -173,7 +173,7 @@ static Key keys[] = {
 	/* vertical and horizontal scrolling, in viewport percentage */
 	{ MODKEY,                GDK_KEY_j,      scrollv,    { .i = +10 } },
 	{ MODKEY,                GDK_KEY_k,      scrollv,    { .i = -10 } },
-	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_space,  scrollv,    { .i = +50 } },
+	{ MODKEY,                GDK_KEY_e,      scrollv,    { .i = +50 } },
 	{ MODKEY,                GDK_KEY_b,      scrollv,    { .i = -50 } },
 	{ MODKEY,                GDK_KEY_i,      scrollh,    { .i = +10 } },
 	{ MODKEY,                GDK_KEY_u,      scrollh,    { .i = -10 } },
