@@ -12,6 +12,11 @@ function unescape(s) {
 	gsub("\\\\\\\\", "\\", s);
 	return s;
 }
+BEGIN {
+	htmlconv = "lynx -stdin -dump " \
+		"-underline_links -image_links " \
+		"-display_charset=\"utf-8\" -assume_charset=\"utf-8\" ";
+}
 {
 	print "Title:     " $2;
 	if (length($7))
@@ -29,8 +34,8 @@ function unescape(s) {
 	if ($5 == "plain") {
 		print unescape($4);
 	} else {
-		print ("<span>" unescape($4) "</span>") | \
-			"lynx -stdin -dump -underline_links -image_links";
+		print unescape($4) | htmlconv;
+		close(htmlconv);
 	}
 	exit;
 }' | \

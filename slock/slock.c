@@ -269,7 +269,7 @@ readpw(Display *dpy, struct xrandr *rr, struct lock **locks, int nscreens,
 			    IsPrivateKeypadKey(ksym))
 				continue;
 			switch (ksym) {
-			case XF86XK_AudioPlay:
+      case XF86XK_AudioPlay:
       case XF86XK_AudioStop:
       case XF86XK_AudioPrev:
       case XF86XK_AudioNext:

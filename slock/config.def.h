@@ -5,7 +5,7 @@ static const char *group = "nogroup";
 static const char *colorname[NUMCOLS] = {
 	[INIT] =   "black",     /* after initialization */
 	[INPUT] =  "#005577",   /* during input */
-	[FAILED] = "#F92672",   /* wrong password */
+	[FAILED] = "#E22425",   /* wrong password */
 	[CAPS] =   "red",       /* CapsLock on */
 };
 
@@ -16,10 +16,10 @@ static const int failonclear = 0;
 static const int timetocancel = 5;
 
 /* default message */
-static const char * message = "-=[ Gruvbox ]=-";
+static const char * message = "Think Correctly";
 
 /* text color */
-static const char * text_color = "#F92672";
+static const char * text_color = "#E22425";
 
 /* text size (must be a valid size) */
 static const char * font_name = "-adobe-helvetica-bold-r-normal--24-240-75-75-p-138-iso10646-1";

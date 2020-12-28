@@ -21,11 +21,6 @@
 #include <curses.h>
 #include <term.h>
 
-/* Allow to lazyload items when a file is specified? This saves memory but
-   increases some latency when seeking items. It also causes issues if the
-   feed is changed while having the UI open (and offsets are changed). */
-/*#define LAZYLOAD 1*/
-
 #define LEN(a) sizeof((a))/sizeof((a)[0])
 
 #define PAD_TRUNCATE_SYMBOL    "\xe2\x80\xa6" /* symbol: "ellipsis" */
@@ -34,7 +29,6 @@
 
 /* See the README for some color theme examples. */
 #include "colors.h"
-
 static char *plumbercmd = "xdg-open"; /* env variable: $SFEED_PLUMBER */
 static char *pipercmd = "sfeed_content"; /* env variable: $SFEED_PIPER */
 static char *yankercmd = "xclip -r"; /* env variable: $SFEED_YANKER */
@@ -43,6 +37,7 @@ static char *markunreadcmd = "sfeed_markread unread"; /* env variable: $SFEED_MA
 static int plumberia = 0; /* env variable: $SFEED_PLUMBER_INTERACTIVE */
 static int piperia = 1; /* env variable: $SFEED_PIPER_INTERACTIVE */
 static int yankeria = 0; /* env variable: $SFEED_YANKER_INTERACTIVE */
+static int lazyload = 0; /* env variable: $SFEED_LAZYLOAD */
 
 enum {
 	ATTR_RESET = 0,	ATTR_BOLD_ON = 1, ATTR_FAINT_ON = 2, ATTR_REVERSE_ON = 7
@@ -149,8 +144,9 @@ static struct pane panes[PaneLast];
 static struct scrollbar scrollbars[PaneLast]; /* each pane has a scrollbar */
 static struct win win;
 static size_t selpane;
-static int usemouse = 1; /* use xterm mouse tracking */
+static int fixedsidebarwidth = -1; /* fixed sidebar width, < 0 is automatic */
 static int onlynew = 0; /* show only new in sidebar */
+static int usemouse = 1; /* use xterm mouse tracking */
 
 static struct termios tsave; /* terminal state at startup */
 static struct termios tcur;
@@ -313,7 +309,7 @@ colw(const char *s)
 		if ((rl = mbtowc(&wc, &s[i], slen - i < 4 ? slen - i : 4)) <= 0)
 			break;
 		if ((w = wcwidth(wc)) == -1)
-			w = 1;
+			continue;
 		col += w;
 	}
 	return col;
@@ -1131,8 +1127,7 @@ feed_items_get(struct feed *f, FILE *fp, struct items *itemsret)
 			if (line[linelen - 1] == '\n')
 				line[--linelen] = '\0';
 
-#ifdef LAZYLOAD
-			if (f->path) {
+			if (lazyload && f->path) {
 				linetoitem(line, item);
 
 				/* data is ignored here, will be lazy-loaded later. */
@@ -1141,9 +1136,6 @@ feed_items_get(struct feed *f, FILE *fp, struct items *itemsret)
 			} else {
 				linetoitem(estrdup(line), item);
 			}
-#else
-			linetoitem(estrdup(line), item);
-#endif
 
 			nitems++;
 		}
@@ -1335,6 +1327,10 @@ getsidebarwidth(void)
 	struct feed *feed;
 	size_t i;
 	int len, width = 0;
+
+	/* fixed sidebar width? else calculate an optimal size automatically */
+	if (fixedsidebarwidth >= 0)
+		return fixedsidebarwidth;
 
 	for (i = 0; i < nfeeds; i++) {
 		feed = &feeds[i];
@@ -1563,7 +1559,6 @@ feed_row_match(struct pane *p, struct row *row, const char *s)
 	return (strcasestr(feed->name, s) != NULL);
 }
 
-#ifdef LAZYLOAD
 struct row *
 item_row_get(struct pane *p, off_t pos)
 {
@@ -1596,7 +1591,6 @@ item_row_get(struct pane *p, off_t pos)
 	}
 	return itemrow;
 }
-#endif
 
 /* Custom formatter for item row. */
 char *
@@ -1772,14 +1766,15 @@ main(int argc, char *argv[])
 		markreadcmd = tmp;
 	if ((tmp = getenv("SFEED_MARK_UNREAD")))
 		markunreadcmd = tmp;
-	urlfile = getenv("SFEED_URL_FILE");
+	if ((tmp = getenv("SFEED_LAZYLOAD")))
+		lazyload = !strcmp(tmp, "1");
+	urlfile = getenv("SFEED_URL_FILE"); /* can be NULL */
 
 	panes[PaneFeeds].row_format = feed_row_format;
 	panes[PaneFeeds].row_match = feed_row_match;
 	panes[PaneItems].row_format = item_row_format;
-#ifdef LAZYLOAD
-	panes[PaneItems].row_get = item_row_get;
-#endif
+	if (lazyload)
+		panes[PaneItems].row_get = item_row_get;
 
 	feeds = ecalloc(argc, sizeof(struct feed));
 	if (argc == 1) {
@@ -1991,6 +1986,20 @@ nextpage:
 			panes[PaneFeeds].hidden = !panes[PaneFeeds].hidden;
 			if (selpane == PaneFeeds && panes[selpane].hidden)
 				selpane = PaneItems;
+			updategeom();
+			break;
+		case '<': /* decrease fixed sidebar width */
+		case '>': /* increase fixed sidebar width */
+			if (fixedsidebarwidth < 0)
+				fixedsidebarwidth = getsidebarwidth();
+			if (ch == '<' && fixedsidebarwidth > 0)
+				fixedsidebarwidth--;
+			else if (ch != '<')
+				fixedsidebarwidth++;
+			updategeom();
+			break;
+		case '=': /* reset fixed sidebar width to automatic size */
+			fixedsidebarwidth = -1;
 			updategeom();
 			break;
 		case 't': /* toggle showing only new in sidebar */

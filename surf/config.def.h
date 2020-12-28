@@ -21,8 +21,8 @@ static char *scriptfiles[] = {
 static Parameter defconfig[ParameterLast] = {
 	/* parameter                    Arg value       priority */
 	[AcceleratedCanvas]   =       { { .i = 1 },     },
-	[AccessMicrophone]    =       { { .i = 0 },     },
-	[AccessWebcam]        =       { { .i = 0 },     },
+	[AccessMicrophone]    =       { { .i = 1 },     },
+	[AccessWebcam]        =       { { .i = 1 },     },
 	[Certificate]         =       { { .i = 1 },     },
 	[CaretBrowsing]       =       { { .i = 1 },     },
 	[CookiePolicies]      =       { { .v = "@Aa" }, },
@@ -30,7 +30,7 @@ static Parameter defconfig[ParameterLast] = {
 	[DiskCache]           =       { { .i = 1 },     },
 	[DNSPrefetch]         =       { { .i = 0 },     },
 	[FileURLsCrossAccess] =       { { .i = 0 },     },
-	[FontSize]            =       { { .i = 12 },    },
+	[FontSize]            =       { { .i = 14 },    },
 	[FrameFlattening]     =       { { .i = 0 },     },
 	[Geolocation]         =       { { .i = 0 },     },
 	[HideBackground]      =       { { .i = 0 },     },
@@ -183,7 +183,7 @@ static Key keys[] = {
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_k,      zoom,       { .i = +1 } },
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_q,      zoom,       { .i = 0  } },
 	{ MODKEY,                GDK_KEY_minus,  zoom,       { .i = -1 } },
-	{ MODKEY,                GDK_KEY_plus,   zoom,       { .i = +1 } },
+	{ MODKEY,                GDK_KEY_equal,  zoom,       { .i = +1 } },
 
 	{ MODKEY,                GDK_KEY_p,      clipboard,  { .i = 1 } },
 	{ MODKEY,                GDK_KEY_y,      clipboard,  { .i = 0 } },

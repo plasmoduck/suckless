@@ -20,7 +20,7 @@ static int min_width = 300;                 /* minimum width when centered */
 #endif // CENTER_PATCH
 /* -fn option overrides fonts[0]; default X11 font or font set */
 #if PANGO_PATCH
-static char font[] = "JetBrains Mono:size=10";
+static char font[] = "JetBrains Mono:size=18";
 #else
 #if XRESOURCES_PATCH
 static char *fonts[] = 
@@ -28,7 +28,7 @@ static char *fonts[] =
 static const char *fonts[] =
 #endif // XRESOURCES_PATCH
 {
-	"JetBrains Mono:size=10"
+	"JetBrains Mono:size=14"
 };
 #endif // PANGO_PATCH
 #if MANAGED_PATCH

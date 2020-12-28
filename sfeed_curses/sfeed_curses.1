@@ -1,4 +1,4 @@
-.Dd November 15, 2020
+.Dd December 18, 2020
 .Dt SFEED_CURSES 1
 .Os
 .Sh NAME
@@ -79,6 +79,12 @@ Reload all feed files which were specified as arguments on startup.
 Toggle mouse-mode.
 .It s
 Toggle showing the feeds pane sidebar.
+.It <
+Use fixed sidebar width and decrease fixed width by 1 column.
+.It >
+Use fixed sidebar width and increase fixed width by 1 column.
+.It =
+Reset sidebar width to automatic adjustment.
 .It t
 Toggle showing only feeds with new items in the sidebar.
 .It a, e, @
@@ -169,8 +175,9 @@ If set to "1" then before execution it restores the terminal attributes and
 .Nm
 will wait until the program is finished.
 If set to "0" then it will suppress stdout and stderr output.
+For example this option is useful to open a text-mode browser in the same
+terminal.
 By default this is set to "0".
-This option is useful to open a text-mode browser in the same terminal.
 .It Ev SFEED_YANKER
 A program where the url or enclosure field is piped to, to copy it to a
 clipboard.
@@ -203,6 +210,19 @@ is also set, if unset the default program used is "sfeed_markread unread".
 The marked items are piped to the program.
 The program is expected to merge items in a safe/transactional manner.
 The program should return the exit status 0 on success or non-zero on failure.
+.It Ev SFEED_LAZYLOAD
+Lazyload items when reading the feed data from files.
+This can reduce memory usage but increases latency when seeking items,
+especially on slower disk drives.
+It can also cause a race-condition issue if the feed data on disk is changed
+while having the UI open and offsets for the lines are different.
+A workaround for the race-condition issue is by sending the SIGHUP signal to
+.Nm
+directly after the data was updated.
+This forces
+.Nm
+to reload the latest feed data and update the correct line offsets.
+By default this is set to "0".
 .It Ev SFEED_FEED_PATH
 This variable is set by
 .Nm

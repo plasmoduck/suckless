@@ -6,7 +6,7 @@
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
 static char *font = {
-	"Jetbrains Mono:pixelsize=15:antialias=true:autohint=true",
+	"Jetbrains Mono:pixelsize=18:antialias=true:autohint=true",
 	"Font Awesome:pixelsize=10:antialias=true:autohint=true"
 };
 static int borderpx = 10;
@@ -114,7 +114,7 @@ unsigned int tabspaces = 8;
 /* bg opacity */
 unsigned int alpha = 0xcc;
 
-#include "colors/gruvbox-soft.h"
+#include "colors/gruvbox.h"
 
 /*
  * Default shape of cursor
@@ -175,7 +175,7 @@ static MouseShortcut mshortcuts[] = {
 #define TERMMOD (ControlMask|ShiftMask)
 
 static char *openurlcmd[] = { "/bin/sh", "-c",
-	"xurls | dmenu -l 10 -w $WINDOWID | xargs -r open",
+	"xurls | dmenu -l 10 | xargs -r open",
 	"externalpipe", NULL };
 
 static Shortcut shortcuts[] = {
