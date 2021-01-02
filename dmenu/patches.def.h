@@ -29,7 +29,7 @@
  * the program will crash on encountering such characters. Note that you will also need a font
  * that provides color emojis for this to work.
  */
-#define COLOR_EMOJI_PATCH 1
+#define COLOR_EMOJI_PATCH 0
 
 /* This patch adds a flag (-dy) which makes dmenu run the command given to it whenever input
  * is changed with the current input as the last argument and update the option list according

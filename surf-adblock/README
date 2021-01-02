@@ -1,0 +1,32 @@
+Adblock extension for surf
+==========================
+
+!!! NOTE !!!
+
+This extension is in development and many things don't work yet. However
+feel free to send patches to improve it.
+
+
+Install
+-------
+
+$ make
+$ doas make install
+
+
+Usage
+-----
+
+Download Adblock rules:
+
+	surf-adblock-dl > ~/.surf/adblockrules
+
+Start surf:
+
+	surf https://favoritewebsite.xxx/
+
+
+License
+-------
+
+ISC, see LICENSE file.

@@ -1,0 +1,19 @@
+#!/bin/sh
+# download Adblock/ublock lists and merge them.
+
+set -x -e
+
+for l in \
+	https://easylist.github.io/easylist/easylist.txt\
+	https://easylist.github.io/easylist/easyprivacy.txt\
+	https://easylist-downloads.adblockplus.org/antiadblockfilters.txt\
+	https://easylist-downloads.adblockplus.org/easylistdutch.txt\
+	https://easylist.github.io/easylistgermany/easylistgermany.txt\
+	https://easylist-downloads.adblockplus.org/liste_fr.txt\
+	https://easylist.github.io/easylist/fanboy-annoyance.txt\
+	https://easylist.github.io/easylist/fanboy-social.txt; do
+
+	curl -L "$l"
+	echo "" # not all lists have line at EOF.
+done | awk '!x[$0]++'
+#      ^ remove duplicate lines but keep the order.

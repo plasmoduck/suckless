@@ -6,7 +6,7 @@
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
 static char *font = {
-	"Jetbrains Mono:pixelsize=18:antialias=true:autohint=true",
+	"JetBrains Mono:pixelsize=18:antialias=true:autohint=true",
 	"Font Awesome:pixelsize=10:antialias=true:autohint=true"
 };
 static int borderpx = 10;
@@ -175,7 +175,7 @@ static MouseShortcut mshortcuts[] = {
 #define TERMMOD (ControlMask|ShiftMask)
 
 static char *openurlcmd[] = { "/bin/sh", "-c",
-	"xurls | dmenu -l 10 | xargs -r open",
+	"xurls | dmenu -l 10 | xclip",
 	"externalpipe", NULL };
 
 static Shortcut shortcuts[] = {

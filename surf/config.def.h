@@ -4,12 +4,14 @@ static char *styledir       = "~/.surf/styles/";
 static char *certdir        = "~/.surf/certificates/";
 static char *cachedir       = "~/.surf/cache/";
 static char *cookiefile     = "~/.surf/cookies.txt";
-static char *searchurl      = "duckduckgo.com/?q=%s";
+static char *searchurl      = "google.com/search";
 static char *dldir          = "~/dl/";
 static char *dlstatus       = "~/.surf/dlstatus/";
 static char *scriptfiles[] = {
 "~/.surf/scripts/script.js",
 "~/.surf/scripts/focus.js",
+"~/.surf/scripts/block_fonts.js",
+"~/.surf/scripts/youtube_circumvent_sign_in.user.js",
 };
 
 /* Webkit default features */
@@ -211,7 +213,7 @@ static Key keys[] = {
     /* download-console */
 	{ MODKEY,                GDK_KEY_d,      spawndls,   { 0 } }, /* surf download menu */
 };
-static char *searchengine   = "https://duckduckgo.com/";
+static char *searchengine   = "https://google.com/";
 
 /* button definitions */
 /* target can be OnDoc, OnLink, OnImg, OnMedia, OnEdit, OnBar, OnSel, OnAny */

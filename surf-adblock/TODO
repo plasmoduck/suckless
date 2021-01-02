@@ -1,0 +1,65 @@
+- elementhiding: reverse exception rule are not supported (per domain).
+- block rule: exception rules are not supported: these are also abused sometimes
+  to whitelist certain sites.
+
+- simplify match, there are only a few rules with multiple *.
+
+- loadrules: return struct rules* ?
+  on error free rules.
+
+- optimization: for simple patterns use: strstr, strcasestr, strcmp, strcasemp
+
+- combine rules in groups: display: none: display: initial, saves memory:
+  rule1,rule2 { display: none; } vs rule 1{...}rule2{...}
+
+- checkrequest -> allowrequest.
+
+- add test-case for global exception rules (no domains), see globalcss init code.
+  also support inverse element hide rule: "~example.com##div.textad".
+- support domain name anchor separately: "||".
+- test blocking websocket connections in surf.
+- skip protocol part when matching for now, (later add support for websockets).
+- for f->matchbegin, matchend etc: make sure to match domain properly, check part of
+  domain (subdomain).
+- optimize towupper for fnmatch? check < 128, see musl optimization.
+- fix blocking of : ||ads.somesite.com^
+  matchbegin and matchend rules are wrong.
+- fix tweakers.net popup / rule.
+	this is in an exception rule...
+
+	make sure exception rules are always below in the list? modify awk script?
+- preprocess pattern upfront (no copying of data per match (snprintf)).
+- performance:
+  - benchmark rule matching (timing).
+  - bloom filters? some kind of cache?
+  - optimize simple filter case.
+    - also for single wildcard (at most start or end)? */bla or /bla*
+- support separator "^" = [/\?]?
+  - test it better.
+- CSS: separate CSS rules so it never is iterated in request rules.
+  ? Cache all global rules, iterate site rules per site?
+- there is a websocket option? ignore it: block it in surf itself.
+  test if websockets use ws:// prefix.
+- show linenr on error / ignored rule.
+
+Docs:
+- https://adblockplus.org/en/filter-cheatsheet
+- https://adblockplus.org/filters
+
+- On out-of-memory situations don't crash the page, but how to handle it?
+- CSS blocking: don't allow sites to override the appended global and
+  site-specific stylesheet.
+- separate between site-specific and global block rules.
+- optimize matching:
+	? hashtable per domain for specific rules or use bloom filters for matching?
+	- separate general block rules into a separate list.
+	- test: just use a simple strstr/strcasestr for patterns with no wildcards
+          and no matchbegin/matchend. Use strncmp/strcasecmp for patterns with no wildcards
+          and matchbegin or matchend set.
+	- make less CPU intensive.
+	- maybe even include it statically?
+	- optimize CSS rule matching (only per site?).
+
+- optimize memory allocation.
+- optimize: pregenerate one global stylesheet that applies to all sites?
+- separate adblocker into daemon? not sure.

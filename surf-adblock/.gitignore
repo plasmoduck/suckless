@@ -1,0 +1,6 @@
+*.o
+*.core
+*.lo
+*.la
+tests/tests
+surf-adblock
