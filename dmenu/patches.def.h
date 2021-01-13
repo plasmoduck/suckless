@@ -42,13 +42,13 @@
  * to be used together with the fuzzymatch patch.
  * https://tools.suckless.org/dmenu/patches/fuzzyhighlight/
  */
-#define FUZZYHIGHLIGHT_PATCH 0
+#define FUZZYHIGHLIGHT_PATCH 1
 
 /* This patch adds support for fuzzy-matching to dmenu, allowing users to type non-consecutive
  * portions of the string to be matched.
  * https://tools.suckless.org/dmenu/patches/fuzzymatch/
  */
-#define FUZZYMATCH_PATCH 0
+#define FUZZYMATCH_PATCH 1
 
 /* Allows dmenu's entries to be rendered in a grid by adding a new -g flag to specify
  * the number of grid columns. The -g and -l options can be used together to create a
@@ -71,7 +71,7 @@
 /* This patch causes dmenu to print out the current text each time a key is pressed.
  * https://tools.suckless.org/dmenu/patches/incremental/
  */
-#define INCREMENTAL_PATCH 0
+#define INCREMENTAL_PATCH 1
 
 /* This patch adds an option to provide preselected text.
  * https://tools.suckless.org/dmenu/patches/initialtext/
@@ -151,7 +151,7 @@
  *
  * https://tools.suckless.org/dmenu/patches/non_blocking_stdin/
  */
-#define NON_BLOCKING_STDIN_PATCH 0
+#define NON_BLOCKING_STDIN_PATCH 1
 
 /* Adds text which displays the number of matched and total items in the top right corner of dmenu.
  * https://tools.suckless.org/dmenu/patches/numbers/
