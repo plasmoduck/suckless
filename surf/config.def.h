@@ -164,7 +164,7 @@ static Key keys[] = {
 	{ MODKEY,                GDK_KEY_b,      spawn,      BM_ADD("_SURF_URI") }, /* surf bookmarks */
 	{ MODKEY,                GDK_KEY_w,      playexternal, { 0 } },
 	{ 0,                     GDK_KEY_Escape, stop,       { 0 } },
-	{ MODKEY,                GDK_KEY_c,      stop,       { 0  },
+	{ MODKEY,                GDK_KEY_c,      stop,       { 0 } },
 
 	{ MODKEY|GDK_SHIFT_MASK, GDK_KEY_r,      reload,     { .i = 1 } },
 	{ MODKEY,                GDK_KEY_r,      reload,     { .i = 0 } },
