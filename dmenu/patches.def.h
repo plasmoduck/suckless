@@ -4,7 +4,7 @@
  * You need to uncomment the corresponding line in config.mk to use the -lXrender library
  * when including this patch.
  */
-#define ALPHA_PATCH 1
+#define ALPHA_PATCH 0
 
 /* This patch adds a border around the dmenu window. It is intended to be used with the center
  * or xyw patches, to make the menu stand out from similarly coloured windows.
@@ -29,7 +29,7 @@
  * the program will crash on encountering such characters. Note that you will also need a font
  * that provides color emojis for this to work.
  */
-#define COLOR_EMOJI_PATCH 0
+#define COLOR_EMOJI_PATCH 1
 
 /* This patch adds a flag (-dy) which makes dmenu run the command given to it whenever input
  * is changed with the current input as the last argument and update the option list according
@@ -42,7 +42,7 @@
  * to be used together with the fuzzymatch patch.
  * https://tools.suckless.org/dmenu/patches/fuzzyhighlight/
  */
-#define FUZZYHIGHLIGHT_PATCH 1
+#define FUZZYHIGHLIGHT_PATCH 1 
 
 /* This patch adds support for fuzzy-matching to dmenu, allowing users to type non-consecutive
  * portions of the string to be matched.
@@ -61,7 +61,7 @@
  * The fuzzy highlight patch takes precedence over this patch.
  * https://tools.suckless.org/dmenu/patches/highlight/
  */
-#define HIGHLIGHT_PATCH 1
+#define HIGHLIGHT_PATCH 0
 
 /* This will automatically sort the search result so that high priority items are shown first.
  * https://tools.suckless.org/dmenu/patches/highpriority/

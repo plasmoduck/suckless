@@ -1,0 +1,72 @@
+.Dd August 4, 2020
+.Dt SVKBD 1
+.Os
+.Sh NAME
+.Nm svkbd
+.Nd simple virtual keyboard
+.Sh SYNOPSIS
+.Nm
+.Op Fl D
+.Op Fl d
+.Op Fl g Ar geometry
+.Op Fl fn Ar font
+.Op Fl O
+.Op Fl h
+.Op Fl H Ar heightfactor
+.Op Fl l Ar layers
+.Op Fl s Ar layer
+.Op Fl v
+.Sh DESCRIPTION
+.Nm
+is a simple virtual keyboard for X.org, intended to be used in environments, where no
+keyboard is available.
+.Sh OPTIONS
+.Bl -tag -width Ds
+.It Fl D
+Debug mode; output verbosely to stderr.
+.It Fl d
+Set the _NET_WM_WINDOW_TYPE_DOCK property to hint windowmanagers it is
+dockable, by default off.
+.It Fl fn Ar font
+Defines the font or font set used. e.g. "Monospace:bold:size=20" (an Xft font).
+.It Fl g Ar geometry
+Adjust the initial window position or size as specified by the standard X11
+geometry format.
+.It Fl h
+Show the usage information.
+.It Fl H Ar heightfactor
+Affects the vertical space taken by the keyboard.
+One row of keys takes up 1/heighfactor of the screen's total height.
+.It Fl l Ar layers
+Comma separated list of layers to enable (by name). If not set, all layers
+in the layout will be available.
+The layer names are defined by the layout you compiled.
+.It Fl s Ar layer
+The layer to show on program start-up (by name). If not set, the first
+layer of the layout will be shown.
+.It Fl O
+Disable overlay functionality.
+.It Fl v
+Show the version information.
+.El
+.Sh ENVIRONMENT
+The following environment variables can be defined, providing
+an alternative to some of the command line parameters.
+The command line parameters, however, always take precedence:
+.Bl -tag -width Ds
+.It Ev SVKBD_LAYERS
+Comma separated list of layers to enable (by name). The layer names are defined by the layout
+you compiled.
+.It Ev SVKBD_ENABLEOVERLAYS
+Set this to 0 if you want to disable overlay functionality.
+.It Ev SVKBD_HEIGHTFACTOR
+Affects the vertical space taken by the keyboard.
+One row of keys takes up 1/heighfactor of the screen's total height.
+.El
+.Sh SEE ALSO
+.Xr XParseGeometry 3
+.Sh AUTHORS
+.An Christoph Lohmann Aq Mt 20h@r-36.net
+.An Enno Boland Aq Mt gottox@s01.de
+.An Miles Alan Aq Mt m@milesalan.com
+.An Maarten van Gompel Aq Mt proycon@anaproy.nl

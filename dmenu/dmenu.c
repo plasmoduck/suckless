@@ -47,7 +47,7 @@
 #define TEXTW(X)              (drw_fontset_getwidth(drw, (X)) + lrpad)
 #endif // PANGO_PATCH
 #if ALPHA_PATCH
-#define OPAQUE                0xee
+#define OPAQUE                0xffU
 #define OPACITY               "_NET_WM_WINDOW_OPACITY"
 #endif // ALPHA_PATCH
 
@@ -582,7 +582,9 @@ match(void)
 	#if HIGHPRIORITY_PATCH
 	lhpprefix = hpprefixend = NULL;
 	#endif // HIGHPRIORITY_PATCH
-	#if NON_BLOCKING_STDIN_PATCH
+	#if NON_BLOCKING_STDIN_PATCH && DYNAMIC_OPTIONS_PATCH
+	for (item = items; item && (!(dynamic && *dynamic) || item->text); item = (dynamic && *dynamic) ? item + 1 : item->next)
+	#elif NON_BLOCKING_STDIN_PATCH
 	for (item = items; item; item = item->next)
 	#else
 	for (item = items; item && item->text; item++)

@@ -25,15 +25,15 @@ FREETYPEINC = $(X11INC)/freetype2
 #EXTRAFLAGS=-D_GNU_SOURCE
 
 # Uncomment this for the alpha patch / ALPHA_PATCH
-XRENDER = -lXrender
+#XRENDER = -lXrender
 
 # Uncomment for the pango patch / PANGO_PATCH
-PANGOINC = `pkg-config --cflags xft pango pangoxft`
-PANGOLIB = `pkg-config --libs xft pango pangoxft`
+#PANGOINC = `pkg-config --cflags xft pango pangoxft`
+#PANGOLIB = `pkg-config --libs xft pango pangoxft`
 
 # includes and libs
 INCS = -I$(X11INC) -I$(FREETYPEINC) $(JANSSONINC) ${PANGOINC}
-LIBS = -L$(X11LIB) -lX11 $(XINERAMALIBS) $(FREETYPELIBS) $(JANSSONLIBS) -L$(XRENDER) ${PANGOLIB}
+LIBS = -L$(X11LIB) -lX11 $(XINERAMALIBS) $(FREETYPELIBS) $(JANSSONLIBS) -lm $(XRENDER) ${PANGOLIB}
 
 # flags
 CPPFLAGS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_XOPEN_SOURCE=700 -D_POSIX_C_SOURCE=200809L -DVERSION=\"$(VERSION)\" $(XINERAMAFLAGS) $(EXTRAFLAGS)

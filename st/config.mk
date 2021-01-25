@@ -33,3 +33,4 @@ LIBS = -L$(X11LIB) -lm -lX11 -lutil -lXft -lXrender\
 
 # compiler and linker
 # CC = c99
+CC = cc
