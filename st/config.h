@@ -173,10 +173,12 @@ static MouseShortcut mshortcuts[] = {
 #define MODKEY Mod1Mask
 #define TERMMOD (ControlMask|ShiftMask)
 
-static char *openurlcmd[] = { "/bin/sh", "-c",
+/*static char *openurlcmd[] = { "/bin/sh", "-c",
 	"xurls | dmenu -l 10 | xclip",
-	"externalpipe", NULL };
+	"externalpipe", NULL };*/
 
+static char *openurlcmd[] = { "/home/cjg/bin/openurl.sh",
+                "externalpipe", NULL };
 static Shortcut shortcuts[] = {
 	/* mask                 keysym          function        argument */
 	{ XK_ANY_MOD,           XK_Break,       sendbreak,      {.i =  0} },
@@ -196,6 +198,7 @@ static Shortcut shortcuts[] = {
 	{ ShiftMask,            XK_Page_Down,   kscrolldown,    {.i = -1} },
 	{ MODKEY,               XK_l,           copyurl,        {.i =  0} },
 	{ MODKEY, 		XK_u, 		externalpipe, 	{ .v = openurlcmd } },
+
 };
 
 /*
