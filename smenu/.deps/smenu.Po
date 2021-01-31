@@ -1,0 +1,193 @@
+smenu.o: smenu.c config.h /usr/include/stdio.h /usr/include/sys/cdefs.h \
+ /usr/include/sys/_null.h /usr/include/sys/_types.h \
+ /usr/include/machine/_types.h /usr/include/x86/_types.h \
+ /usr/include/machine/_limits.h /usr/include/x86/_limits.h \
+ /usr/include/stdlib.h /usr/include/limits.h /usr/include/sys/limits.h \
+ /usr/include/sys/syslimits.h \
+ /usr/local/lib/gcc9/gcc/x86_64-portbld-freebsd12.1/9.3.0/include/stdarg.h \
+ /usr/include/signal.h /usr/include/sys/signal.h \
+ /usr/include/sys/_sigset.h /usr/include/machine/signal.h \
+ /usr/include/x86/signal.h /usr/include/sys/_pthreadtypes.h \
+ /usr/include/sys/_timespec.h /usr/include/machine/ucontext.h \
+ /usr/include/x86/ucontext.h /usr/include/sys/_ucontext.h \
+ /usr/include/ctype.h /usr/include/_ctype.h /usr/include/runetype.h \
+ /usr/include/xlocale/_ctype.h /usr/include/time.h \
+ /usr/include/sys/timespec.h /usr/include/xlocale/_time.h \
+ /usr/include/string.h /usr/include/strings.h \
+ /usr/include/xlocale/_strings.h /usr/include/xlocale/_string.h \
+ /usr/include/unistd.h /usr/include/sys/types.h \
+ /usr/include/machine/endian.h /usr/include/x86/endian.h \
+ /usr/include/sys/_stdint.h /usr/include/sys/select.h \
+ /usr/include/sys/_timeval.h /usr/include/sys/unistd.h \
+ /usr/include/locale.h /usr/include/xlocale/_locale.h \
+ /usr/include/langinfo.h /usr/include/xlocale/_langinfo.h \
+ /usr/include/term.h /usr/include/ncurses_dll.h /usr/include/termios.h \
+ /usr/include/sys/_termios.h /usr/include/sys/ttycom.h \
+ /usr/include/sys/ioccom.h /usr/include/sys/ttydefaults.h \
+ /usr/include/regex.h /usr/include/errno.h /usr/include/sys/ioctl.h \
+ /usr/include/sys/filio.h /usr/include/sys/sockio.h \
+ /usr/include/sys/time.h /usr/include/sys/param.h \
+ /usr/include/machine/param.h /usr/include/machine/_align.h \
+ /usr/include/x86/_align.h /usr/include/wchar.h \
+ /usr/include/xlocale/_wchar.h xmalloc.h list.h index.h utf8.h \
+ /usr/local/lib/gcc9/gcc/x86_64-portbld-freebsd12.1/9.3.0/include/stdint.h \
+ /usr/include/stdint.h /usr/include/machine/_stdint.h \
+ /usr/include/x86/_stdint.h fgetc.h utils.h ctxopt.h usage.h smenu.h
+
+config.h:
+
+/usr/include/stdio.h:
+
+/usr/include/sys/cdefs.h:
+
+/usr/include/sys/_null.h:
+
+/usr/include/sys/_types.h:
+
+/usr/include/machine/_types.h:
+
+/usr/include/x86/_types.h:
+
+/usr/include/machine/_limits.h:
+
+/usr/include/x86/_limits.h:
+
+/usr/include/stdlib.h:
+
+/usr/include/limits.h:
+
+/usr/include/sys/limits.h:
+
+/usr/include/sys/syslimits.h:
+
+/usr/local/lib/gcc9/gcc/x86_64-portbld-freebsd12.1/9.3.0/include/stdarg.h:
+
+/usr/include/signal.h:
+
+/usr/include/sys/signal.h:
+
+/usr/include/sys/_sigset.h:
+
+/usr/include/machine/signal.h:
+
+/usr/include/x86/signal.h:
+
+/usr/include/sys/_pthreadtypes.h:
+
+/usr/include/sys/_timespec.h:
+
+/usr/include/machine/ucontext.h:
+
+/usr/include/x86/ucontext.h:
+
+/usr/include/sys/_ucontext.h:
+
+/usr/include/ctype.h:
+
+/usr/include/_ctype.h:
+
+/usr/include/runetype.h:
+
+/usr/include/xlocale/_ctype.h:
+
+/usr/include/time.h:
+
+/usr/include/sys/timespec.h:
+
+/usr/include/xlocale/_time.h:
+
+/usr/include/string.h:
+
+/usr/include/strings.h:
+
+/usr/include/xlocale/_strings.h:
+
+/usr/include/xlocale/_string.h:
+
+/usr/include/unistd.h:
+
+/usr/include/sys/types.h:
+
+/usr/include/machine/endian.h:
+
+/usr/include/x86/endian.h:
+
+/usr/include/sys/_stdint.h:
+
+/usr/include/sys/select.h:
+
+/usr/include/sys/_timeval.h:
+
+/usr/include/sys/unistd.h:
+
+/usr/include/locale.h:
+
+/usr/include/xlocale/_locale.h:
+
+/usr/include/langinfo.h:
+
+/usr/include/xlocale/_langinfo.h:
+
+/usr/include/term.h:
+
+/usr/include/ncurses_dll.h:
+
+/usr/include/termios.h:
+
+/usr/include/sys/_termios.h:
+
+/usr/include/sys/ttycom.h:
+
+/usr/include/sys/ioccom.h:
+
+/usr/include/sys/ttydefaults.h:
+
+/usr/include/regex.h:
+
+/usr/include/errno.h:
+
+/usr/include/sys/ioctl.h:
+
+/usr/include/sys/filio.h:
+
+/usr/include/sys/sockio.h:
+
+/usr/include/sys/time.h:
+
+/usr/include/sys/param.h:
+
+/usr/include/machine/param.h:
+
+/usr/include/machine/_align.h:
+
+/usr/include/x86/_align.h:
+
+/usr/include/wchar.h:
+
+/usr/include/xlocale/_wchar.h:
+
+xmalloc.h:
+
+list.h:
+
+index.h:
+
+utf8.h:
+
+/usr/local/lib/gcc9/gcc/x86_64-portbld-freebsd12.1/9.3.0/include/stdint.h:
+
+/usr/include/stdint.h:
+
+/usr/include/machine/_stdint.h:
+
+/usr/include/x86/_stdint.h:
+
+fgetc.h:
+
+utils.h:
+
+ctxopt.h:
+
+usage.h:
+
+smenu.h:

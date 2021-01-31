@@ -1,0 +1,4 @@
+Terminal utility that allows you to use words coming from the standard
+input to create a nice selection window just below the cursor.
+
+Once done, your selection will be sent to standard output.

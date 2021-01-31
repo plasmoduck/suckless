@@ -1,0 +1,11 @@
+$ OUT=$(smenu t0002.in)
+
+a b c 
+2:07 
+$ 
+
+$ echo ":$OUT:"
+
+::
+
+$ exit 0

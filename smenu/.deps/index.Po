@@ -1,0 +1,91 @@
+index.o: index.c /usr/include/stdlib.h /usr/include/sys/cdefs.h \
+ /usr/include/sys/_null.h /usr/include/sys/_types.h \
+ /usr/include/machine/_types.h /usr/include/x86/_types.h \
+ /usr/include/machine/_limits.h /usr/include/x86/_limits.h \
+ /usr/local/lib/gcc9/gcc/x86_64-portbld-freebsd12.1/9.3.0/include/stdint.h \
+ /usr/include/stdint.h /usr/include/machine/_stdint.h \
+ /usr/include/x86/_stdint.h /usr/include/sys/_stdint.h \
+ /usr/include/unistd.h /usr/include/sys/types.h \
+ /usr/include/machine/endian.h /usr/include/x86/endian.h \
+ /usr/include/sys/_pthreadtypes.h /usr/include/sys/select.h \
+ /usr/include/sys/_sigset.h /usr/include/sys/_timeval.h \
+ /usr/include/sys/timespec.h /usr/include/sys/_timespec.h \
+ /usr/include/sys/unistd.h /usr/include/wchar.h /usr/include/_ctype.h \
+ /usr/include/runetype.h /usr/include/xlocale/_wchar.h \
+ /usr/include/string.h /usr/include/strings.h \
+ /usr/include/xlocale/_strings.h /usr/include/xlocale/_string.h xmalloc.h \
+ list.h utils.h /usr/include/errno.h index.h
+
+/usr/include/stdlib.h:
+
+/usr/include/sys/cdefs.h:
+
+/usr/include/sys/_null.h:
+
+/usr/include/sys/_types.h:
+
+/usr/include/machine/_types.h:
+
+/usr/include/x86/_types.h:
+
+/usr/include/machine/_limits.h:
+
+/usr/include/x86/_limits.h:
+
+/usr/local/lib/gcc9/gcc/x86_64-portbld-freebsd12.1/9.3.0/include/stdint.h:
+
+/usr/include/stdint.h:
+
+/usr/include/machine/_stdint.h:
+
+/usr/include/x86/_stdint.h:
+
+/usr/include/sys/_stdint.h:
+
+/usr/include/unistd.h:
+
+/usr/include/sys/types.h:
+
+/usr/include/machine/endian.h:
+
+/usr/include/x86/endian.h:
+
+/usr/include/sys/_pthreadtypes.h:
+
+/usr/include/sys/select.h:
+
+/usr/include/sys/_sigset.h:
+
+/usr/include/sys/_timeval.h:
+
+/usr/include/sys/timespec.h:
+
+/usr/include/sys/_timespec.h:
+
+/usr/include/sys/unistd.h:
+
+/usr/include/wchar.h:
+
+/usr/include/_ctype.h:
+
+/usr/include/runetype.h:
+
+/usr/include/xlocale/_wchar.h:
+
+/usr/include/string.h:
+
+/usr/include/strings.h:
+
+/usr/include/xlocale/_strings.h:
+
+/usr/include/xlocale/_string.h:
+
+xmalloc.h:
+
+list.h:
+
+utils.h:
+
+/usr/include/errno.h:
+
+index.h:
