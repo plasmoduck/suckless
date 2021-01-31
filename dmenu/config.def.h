@@ -79,7 +79,7 @@ static const char *colors[][2] =
 static unsigned int lines      = 20;
 #if GRID_PATCH
 /* -g option; if nonzero, dmenu uses a grid comprised of columns and lines */
-static unsigned int columns    = 20;
+static unsigned int columns    = 0;
 #endif // GRID_PATCH
 #if LINE_HEIGHT_PATCH
 static unsigned int lineheight = 0;         /* -h option; minimum height of a menu line     */

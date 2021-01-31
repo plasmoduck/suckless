@@ -29,7 +29,7 @@
  * the program will crash on encountering such characters. Note that you will also need a font
  * that provides color emojis for this to work.
  */
-#define COLOR_EMOJI_PATCH 1
+#define COLOR_EMOJI_PATCH 0 
 
 /* This patch adds a flag (-dy) which makes dmenu run the command given to it whenever input
  * is changed with the current input as the last argument and update the option list according
@@ -55,7 +55,7 @@
  * G columns * L lines grid.
  * https://tools.suckless.org/dmenu/patches/grid/
  */
-#define GRID_PATCH 1
+#define GRID_PATCH 0
 
 /* This patch highlights the individual characters of matched text for each dmenu list entry.
  * The fuzzy highlight patch takes precedence over this patch.
