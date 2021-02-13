@@ -6,7 +6,8 @@
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
 static char *font = {
-	"JetBrains Mono:pixelsize=19:antialias=true:autohint=true"
+	"JetBrains Mono:pixelsize=18:antialias=true:autohint=true",
+	"siji:pixelsize=10:antialias=true:autohint=true"
 };
 static int borderpx = 10;
 
@@ -82,13 +83,13 @@ const int boxdraw = 1;
 const int boxdraw_bold = 1;
 
 /* braille (U28XX):  1: render as adjacent "pixels",  0: use font */
-const int boxdraw_braille = 0;
+const int boxdraw_braille = 1;
 
 /*
  * bell volume. It must be a value between -100 and 100. Use 0 for disabling
  * it
  */
-static int bellvolume = 0;
+static int bellvolume = 10;
 
 /* default TERM value */
 char *termname = "st-256color";
@@ -173,12 +174,9 @@ static MouseShortcut mshortcuts[] = {
 #define MODKEY Mod1Mask
 #define TERMMOD (ControlMask|ShiftMask)
 
-/*static char *openurlcmd[] = { "/bin/sh", "-c",
-	"xurls | dmenu -l 10 | xclip",
-	"externalpipe", NULL };*/
-
 static char *openurlcmd[] = { "/home/cjg/bin/openurl.sh",
                 "externalpipe", NULL };
+
 static Shortcut shortcuts[] = {
 	/* mask                 keysym          function        argument */
 	{ XK_ANY_MOD,           XK_Break,       sendbreak,      {.i =  0} },
@@ -198,7 +196,6 @@ static Shortcut shortcuts[] = {
 	{ ShiftMask,            XK_Page_Down,   kscrolldown,    {.i = -1} },
 	{ MODKEY,               XK_l,           copyurl,        {.i =  0} },
 	{ MODKEY, 		XK_u, 		externalpipe, 	{ .v = openurlcmd } },
-
 };
 
 /*

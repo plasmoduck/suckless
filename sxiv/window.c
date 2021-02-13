@@ -169,8 +169,12 @@ void win_open(win_t *win)
 		                       &win->w, &win->h);
 	if ((gmask & WidthValue) != 0)
 		sizehints.flags |= USSize;
+	else
+		win->w = WIN_WIDTH;
 	if ((gmask & HeightValue) != 0)
 		sizehints.flags |= USSize;
+	else
+		win->h = WIN_HEIGHT;
 	if ((gmask & XValue) != 0) {
 		if ((gmask & XNegative) != 0) {
 			win->x += e->scrw - win->w;

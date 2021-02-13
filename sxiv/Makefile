@@ -7,7 +7,7 @@ PREFIX = /usr/local
 MANPREFIX = $(PREFIX)/share/man
 
 # autoreload backend: inotify/nop
-AUTORELOAD = inotify
+AUTORELOAD = nop
 
 # enable features requiring giflib (-lgif)
 HAVE_GIFLIB = 1
@@ -16,10 +16,10 @@ HAVE_GIFLIB = 1
 HAVE_LIBEXIF = 1
 
 cflags = -std=c99 -Wall -pedantic $(CFLAGS)
-cppflags = -I. $(CPPFLAGS) -D_BSD_SOURCE \
+cppflags = -I. $(CPPFLAGS) -I/usr/local/include -D_XOPEN_SOURCE=700 \
   -DHAVE_GIFLIB=$(HAVE_GIFLIB) -DHAVE_LIBEXIF=$(HAVE_LIBEXIF) \
   -I/usr/include/freetype2 -I$(PREFIX)/include/freetype2
-
+LDFLAGS="-L/usr/local/lib -Wl,-R/usr/local/lib"
 lib_exif_0 =
 lib_exif_1 = -lexif
 lib_gif_0 =

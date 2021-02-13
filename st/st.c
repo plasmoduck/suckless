@@ -2467,7 +2467,8 @@ tputc(Rune u)
 		len = utf8encode(u, c);
 		if (!control && (width = wcwidth(u)) == -1)
 			width = 1;
-	}
+                if (u >= 0x1F600 && u <= 0x1F6FF) width = 2;
+        }
 
 	if (IS_SET(MODE_PRINT))
 		tprinter(c, len);

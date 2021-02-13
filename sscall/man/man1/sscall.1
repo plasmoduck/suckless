@@ -1,0 +1,78 @@
+.Dd June 23, 2012
+.Dt SSCALL 1
+.Os
+.Sh NAME
+.Nm sscall
+.Nd voice chat with your friends
+.Sh SYNOPSIS
+.Nm
+.Op Fl v
+.Op Fl b Ar brate
+.Op Fl r Ar srate
+.Op Fl c Ar nchan
+.Op Fl d Ar drvid
+.Ar rhost rport lport
+.Nm
+.Op Fl Vh
+.Sh DESCRIPTION
+The
+.Nm
+command will stream the stdin to the remote host
+.Ar rhost
+on the remote port
+.Ar rport .
+Similarly, the remote side can connect to the
+.Ar lport
+port on the local machine.  Note that
+.Nm
+uses a sample rate of 16kHz for all network communication.
+If you cannot provide input audio of that type, you should tell
+.Nm
+to resample the audio using the
+.Ar brate
+option.  This will also affect output audio playback.
+These options are generally useful if your system does
+not support certain input/output sample rates.
+.Pp
+The options are as follows:
+.Bl -tag
+.It Fl v
+Enable verbose output.
+.It Fl b Ar brate
+Use
+.Ar brate
+bits per sample.
+.It Fl r Ar srate
+Use
+.Ar srate
+samples per second (in a single channel).
+.It Fl c Ar nchan
+Set the number of channels to
+.Ar nchan .
+.It Fl d Ar drvid
+Use the audio backend with id
+.Ar drvid
+instead of the default libao driver.  See
+.Xr libao.conf 5
+for more information.
+.It Fl V
+Print version information.
+.It Fl h
+Show the help screen.
+.El
+.Sh EXAMPLES
+Talk with host mypal at port 8888, opening local port 9999
+for the incoming stream; the script my-rec.sh should handle voice
+recording from the sound card's microphone:
+.Pp
+.Dl $ my-rec.sh | sscall mypal 8888 9999
+.Pp
+.Sh AUTHOR
+Written by quantumdream.
+.Sh ACKNOWLEDGEMENTS
+The people behind 2f30.org have been very helpful and their
+ideas have been much appreciated.
+.Sh COPYING
+Copyright \(co 2012 quantumdream.
+.Pp
+This is free software distributed under the MIT/X Consortium License.

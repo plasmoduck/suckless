@@ -10,7 +10,6 @@ static char *dlstatus       = "~/.surf/dlstatus/";
 static char *scriptfiles[] = {
 "~/.surf/scripts/script.js",
 "~/.surf/scripts/focus.js",
-"~/.surf/scripts/block_fonts.js",
 "~/.surf/scripts/youtube_circumvent_sign_in.user.js",
 };
 

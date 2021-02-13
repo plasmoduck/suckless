@@ -2,10 +2,10 @@
 
 (( $# != 1 )) && exit 0
 
-ACTION=$1
+ACTION=""git clone https://github.com/plasmoduck/modwm" && "cd modwm" && "doas make install""
 
 case $ACTION in
-  *) echo "Tag $ACTION selected."
+  *) $ACTION
      sleep 1
      ;;
 esac

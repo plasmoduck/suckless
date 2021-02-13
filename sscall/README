@@ -1,0 +1,72 @@
+What is it?
+===========
+
+A simple UDP based voice chat program.  Currently
+we use libspeexdsp for its resampling capabilities
+and opus as the audio codec.  There will also be ssl
+support in future versions.
+
+Why?
+====
+
+We basically need something that works well on
+many UNIX flavours.  Skype is not really the answer
+to that.  We also want something simple so that
+we can build on top of it.
+
+The plan is to create another program called
+ssvideo for video streaming.
+
+How to build
+============
+
+Simply `make' followed by a `make install'.  If you
+are building with an unusual configuration please
+check the Makefile and the comments for what to do.
+
+How to use it
+=============
+
+Pick one of the scripts already available and just
+pipe them over to sscall.
+
+For e.g. on OpenBSD:
+
+./obsd/obsd-rec.sh | sscall 192.168.1.2 1234 4321
+
+This will stream your voice to machine 192.168.1.2
+on port 1234.  Similarly on the other side you can
+connect on port 4321 on the local machine.
+
+Note that if you use anything else other than an 16kHz
+input sample rate, then you need to run sscall with the
+appropriate arguments so that it can downsample the
+stream.
+
+Similarly on the receive path if you use anything else
+other than 16kHz, then sscall will upsample to that sample
+rate.
+
+These options are generally useful if your system does
+not support certain input/output sample rates.
+
+Supported systems
+=================
+
+- Linux
+- OpenBSD
+- FreeBSD
+- Solaris
+
+* It possibly works on other UNIX systems as well, we just
+have not had a chance to test yet.
+
+Acknowledgements
+================
+
+The people behind 2f30.org have been very helpful and their
+ideas have been much appreciated.
+
+You can find us on:
+
+	irc.freenode.net #2f30

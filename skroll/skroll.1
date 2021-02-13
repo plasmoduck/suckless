@@ -1,0 +1,40 @@
+ .TH skroll 1 2014-09-03 "v3.0" "Skroll nanual"
+ .SH NAME
+ skroll \- make a given text scroll
+ .SH SYNOPSIS
+ .B skroll
+ .RI [ \-hlr ]\ [ \-n\ num ]\ [ \-d\ delay ]
+ .SH DESCRIPTION
+ .PP
+ .B skroll
+ reads text from stdin and make it scroll to stdout.
+ .TP
+ .B \-h
+ Displays a help text
+ .TP
+ .B \-l
+ Loop text forever
+ .TP
+ .B \-r
+ Output a newline after each step
+ .TP
+ BI \-n\ <num>
+ Show <num> char at a time (defaults to 10)
+ TP
+ .BI \-d\ <delay>
+ Define scrolling speed, in second/step (defaults to 0.5)
+ .SH EXAMPLES
+ .TP
+ \(buLoop indefinitely:
+ \fBecho\fR "Hello world!" | \fBskroll\fR  \-l
+ .TP
+ \(buOutput \fIX\fR characters at a time:
+ \fBskroll\fR \-n \fIX\fR < \fIFILE\fR
+ .TP
+ \(buRotate a step every \fIX\fR seconds:
+ \fBmpc\fR current \-\-wait | \fBskroll\fR -d \fIX\fR
+.SH REPORTING BUGS
+If you encounter any bugs, feel free to report them at \fIwilly@mailoo.org\fR
+.SH AUTHORS / CONTRIBUTORS
+Willy Goiffon is the main author.
+Dave Chesser helped with the man page

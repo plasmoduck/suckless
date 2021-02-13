@@ -1,0 +1,14 @@
+* Add flow control
+* Figure out stream properties on the fly
+* Add encryption (dtls?)
+* Switch over to multiplexed I/O and get rid of threads
+* We'll need support for a config file
+* A server side so we can do neat things (working over NAT etc.)
+* Add IPv6 support
+* ARM port for Linux - should just work?
+* Use connected UDP sockets
+* What about a DCCP based fork of sscall?
+* Probe for supported output sample rates
+* Fix high CPU usage issue
+* Buffer up as many packets as possible in a single transfer
+* Default port, pick up port from incoming connection.
