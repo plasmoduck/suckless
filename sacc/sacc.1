@@ -1,0 +1,99 @@
+.TH SACC 1 2018-02-24
+.SH NAME
+sacc \- a terminal gopher client
+.SH SYNOPSIS
+.B sacc
+.IR URL
+.PP
+.SH DESCRIPTION
+.B sacc
+is a terminal gopher client. Gopher is a simple protocol to retrieve
+hierarchical information. The protocol is defined in
+.I RFC 1436
+(Gopher).
+.SH SHORTCUTS
+Shortcuts can be redefined in the
+.I config.h.
+The manpage is showing the default shortcuts.
+.TP
+.B Down or j
+Move one line down.
+.TP
+.B J
+Move to the next link item downwards.
+.TP
+.B Up or k
+Move one line up.
+.TP
+.B K
+Move to the next link item upwards.
+.TP
+.B PgDown or Space
+Move one page down.
+.TP
+.B PgUp or b
+Move one page up.
+.TP
+.B Home or g
+Move to the top of the page.
+.TP
+.B End or G
+Move to the end of the page.
+.TP
+.B Right or l
+View highlighted item.
+.TP
+.B Left or h
+View previous item.
+.TP
+.B L
+Refetch currently viewed item.
+.TP
+.B /
+Search in the current page.
+.TP
+.B n
+Search the same string forward.
+.TP
+.B N
+Search the same string backwards.
+.TP
+.B U
+Print the URI of the current page.
+.TP
+.B u
+Print the URI of the highlighted item.
+.TP
+.B ?
+Show the help message of shortcuts.
+.TP
+.B ^D or q
+Exit sacc.
+.SH ENVIRONMENT
+Sacc will use the pager set in the
+.B PAGER
+variable to display textual content.
+Note that sacc takes back control of the screen
+as soon as the pager finishes.
+.SH PLUMBER
+When some file is opened
+.I sacc
+cannot open natively, it will run
+.I xdg-open.
+This can be configured in the
+.I config.h
+to run some other plumber.
+.SH CUSTOMIZATION
+.B sacc
+can be customized by creating a custom config.h and (re)compiling the source
+code. This keeps it fast, secure and simple.
+.SH AUTHORS
+See the LICENSE file for the authors.
+.SH LICENSE
+See the LICENSE file for the terms of redistribution.
+.SH SEE ALSO
+.BR geomyidae (8),
+.BR clic (1),
+.BR xdg-open (1)
+.SH BUGS
+Please report them to Quentin Rameau <quinq@fifth.space>
