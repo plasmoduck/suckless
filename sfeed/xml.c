@@ -252,7 +252,8 @@ numericentitytostr(const char *e, char *buf, size_t bufsiz)
 	else
 		l = strtol(e, &end, 10);
 	/* invalid value or not a well-formed entity or invalid code point */
-	if (errno || e == end || *end != ';' || l < 0 || l > 0x10ffff)
+	if (errno || e == end || *end != ';' || l < 0 || l > 0x10ffff ||
+	    (l >= 0xd800 && l <= 0xdfff))
 		return -1;
 	len = codepointtoutf8(l, buf);
 	buf[len] = '\0';
@@ -291,7 +292,7 @@ xml_parse(XMLParser *x)
 
 			if (c == '!') { /* cdata and comments */
 				for (tagdatalen = 0; (c = GETNEXT()) != EOF;) {
-					/* NOTE: sizeof(x->data) must be atleast sizeof("[CDATA[") */
+					/* NOTE: sizeof(x->data) must be at least sizeof("[CDATA[") */
 					if (tagdatalen <= sizeof("[CDATA[") - 1)
 						x->data[tagdatalen++] = c;
 					if (c == '>')

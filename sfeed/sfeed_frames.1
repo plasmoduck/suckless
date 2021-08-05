@@ -1,4 +1,4 @@
-.Dd March 15, 2020
+.Dd July 31, 2021
 .Dt SFEED_FRAMES 1
 .Os
 .Sh NAME
@@ -6,34 +6,43 @@
 .Nd format feed data to HTML with frames
 .Sh SYNOPSIS
 .Nm
-.Op Ar file...
+.Op Ar
 .Sh DESCRIPTION
 .Nm
 formats feed data (TSV) from
 .Xr sfeed 1
-to HTML.
-It reads TSV data from stdin or
+from stdin or for each
 .Ar file
-and writes HTML files for the frameset to the current directory.
+to HTML.
+It writes HTML files for the frameset to the current directory.
 If no
 .Ar file
-parameters are specified and therefore the data is read from stdin then the
-menu.html file is not written.
+arguments are specified and so the data is read from stdin then the menu.html
+file is not written.
 .Pp
 Items with a timestamp from the last day compared to the system time at the
 time of formatting are counted and marked as new.
+Items are marked as new using a bold markup.
+.Pp
+There is an example style.css stylesheet file included in the distribution.
 .Sh FILES WRITTEN
 .Bl -tag -width 13n
 .It index.html
-The main HTML file referencing to the frames items.html and menu.html.
+The main HTML file referencing the files for the frames: items.html and
+menu.html.
 .It items.html
-The items frame contains all the item HTML links to the remote content.
+The HTML file of the items frame which contains all the item links to the
+feeds.
 .It menu.html
-The menu frame which contains navigation "anchor" links to the feed names in
-items.html.
+The HTML file of the menu frame which contains navigation "anchor" links (like
+"#feedname") to the feed names in items.html.
 .El
 .Sh EXIT STATUS
 .Ex -std
+.Sh EXAMPLES
+.Bd -literal
+sfeed_frames ~/.sfeed/feeds/*
+.Ed
 .Sh SEE ALSO
 .Xr sfeed 1 ,
 .Xr sfeed_html 1 ,

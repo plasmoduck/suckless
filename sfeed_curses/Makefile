@@ -1,7 +1,10 @@
 .POSIX:
 
 NAME = sfeed_curses
-VERSION = 0.9.6
+VERSION = 0.9.13
+
+# theme, see themes/ directory.
+SFEED_THEME = newsboat
 
 # paths
 PREFIX = /usr/local
@@ -10,8 +13,9 @@ DOCPREFIX = ${PREFIX}/share/doc/${NAME}
 
 # use system flags.
 SFEED_CFLAGS = ${CFLAGS}
-SFEED_LDFLAGS = ${LDFLAGS} -lcurses
-SFEED_CPPFLAGS = -D_BSD_SOURCE
+SFEED_LDFLAGS = ${LDFLAGS} -lncurses
+SFEED_CPPFLAGS = -D_BSD_SOURCE \
+	-DSFEED_THEME=\"themes/${SFEED_THEME}.h\"
 
 # Linux: some distros use ncurses and require -lncurses.
 #SFEED_LDFLAGS = ${LDFLAGS} -lncurses
@@ -19,7 +23,11 @@ SFEED_CPPFLAGS = -D_BSD_SOURCE
 # Gentoo Linux: some distros might also require -ltinfo and -D_DEFAULT_SOURCE
 # to prevent warnings about feature macros.
 #SFEED_LDFLAGS = ${LDFLAGS} -lcurses -ltinfo
-#SFEED_CPPFLAGS = -D_DEFAULT_SOURCE -D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700 -D_BSD_SOURCE
+
+# use minicurses with hardcoded escape sequences (not the system curses).
+#SFEED_CPPFLAGS = -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -D_BSD_SOURCE \
+#	-DSFEED_THEME=\"themes/${SFEED_THEME}.h\" -DSFEED_MINICURSES
+#SFEED_LDFLAGS = ${LDFLAGS}
 
 BIN = sfeed_curses
 SCRIPTS = sfeed_content sfeed_markread
@@ -50,7 +58,7 @@ ${OBJ}:
 dist:
 	rm -rf "${NAME}-${VERSION}"
 	mkdir -p "${NAME}-${VERSION}"
-	cp -f ${MAN1} ${DOC} ${HDR} ${SRC} ${SCRIPTS} Makefile \
+	cp -fR ${MAN1} ${DOC} ${HDR} ${SRC} ${SCRIPTS} Makefile themes \
 		"${NAME}-${VERSION}"
 	# make tarball
 	tar cf - "${NAME}-${VERSION}" | \

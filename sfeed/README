@@ -111,13 +111,14 @@ Optional dependencies
 OS tested
 ---------
 
-- Linux (compilers: clang, cproc, gcc, pcc, tcc, libc: glibc, musl).
+- Linux (compilers: clang, cproc, gcc, lacc, pcc, tcc, libc: glibc, musl).
 - OpenBSD (clang, gcc).
 - NetBSD
 - FreeBSD
 - DragonFlyBSD
 - Windows (cygwin gcc, mingw).
-- HaikuOS (using libbsd).
+- HaikuOS
+- SerenityOS
 - FreeDOS (djgpp).
 - FUZIX (sdcc -mz80).
 
@@ -125,7 +126,7 @@ OS tested
 Architectures tested
 --------------------
 
-amd64, ARM, aarch64, HPPA, i386, SPARC64, Z80.
+amd64, ARM, aarch64, HPPA, i386, MIPS32-BE, SPARC64, Z80.
 
 
 Files
@@ -143,7 +144,7 @@ sfeed_mbox        - Format feed data (TSV) to mbox.
 sfeed_plain       - Format feed data (TSV) to a plain-text list.
 sfeed_twtxt       - Format feed data (TSV) to a twtxt feed.
 sfeed_update      - Update feeds and merge items.
-sfeed_web         - Find urls to RSS/Atom feed from a webpage.
+sfeed_web         - Find URLs to RSS/Atom feed from a webpage.
 sfeed_xmlenc      - Detect character-set encoding from a XML stream.
 sfeedrc.example   - Example config file. Can be copied to $HOME/.sfeed/sfeedrc.
 style.css         - Example stylesheet to use with sfeed_html(1) and
@@ -156,7 +157,7 @@ Files read at runtime by sfeed_update(1)
 sfeedrc - Config file. This file is evaluated as a shellscript in
           sfeed_update(1).
 
-Atleast the following functions can be overridden per feed:
+At least the following functions can be overridden per feed:
 
 - fetch: to use wget(1), OpenBSD ftp(1) or an other download program.
 - filter: to filter on fields.
@@ -190,7 +191,7 @@ man 1 sfeed
 Usage and examples
 ------------------
 
-Find RSS/Atom feed urls from a webpage:
+Find RSS/Atom feed URLs from a webpage:
 
 	url="https://codemadness.org"; curl -L -s "$url" | sfeed_web "$url"
 
@@ -226,7 +227,7 @@ View formatted output in your editor:
 - - -
 
 Example script to view feed items in a vertical list/menu in dmenu(1). It opens
-the selected url in the browser set in $BROWSER:
+the selected URL in the browser set in $BROWSER:
 
 	#!/bin/sh
 	url=$(sfeed_plain "$HOME/.sfeed/feeds/"* | dmenu -l 35 -i | \
@@ -252,7 +253,7 @@ argument is optional):
 - - -
 
 The filter function can be overridden in your sfeedrc file. This allows
-filtering items per feed. It can be used to shorten urls, filter away
+filtering items per feed. It can be used to shorten URLs, filter away
 advertisements, strip tracking parameters and more.
 
 	# filter fields.
@@ -308,22 +309,10 @@ advertisements, strip tracking parameters and more.
 				$8 = filterlink($8); # enclosure
 
 				# try to remove tracking pixels: <img/> tags with 1px width or height.
-				gsub("<img[^>]*(width|height)[\s]*=[\s]*[\"'"'"' ]?1[\"'"'"' ]?[^0-9>]+[^>]*>", "", $4);
+				gsub("<img[^>]*(width|height)[[:space:]]*=[[:space:]]*[\"'"'"' ]?1[\"'"'"' ]?[^0-9>]+[^>]*>", "", $4);
 
 				print $0;
 			}'
-	}
-
-- - -
-
-The fetch function can be overridden in your sfeedrc file. This allows to
-replace the default curl(1) for sfeed_update with any other client to fetch the
-RSS/Atom data:
-
-	# fetch a feed via HTTP/HTTPS etc.
-	# fetch(name, url, feedfile)
-	fetch() {
-		hurl -m 1048576 -t 15 "$2" 2>/dev/null
 	}
 
 - - -
@@ -379,7 +368,7 @@ cut -b is used to trim the "N " prefix of sfeed_plain(1).
 - - -
 
 For some podcast feed the following code can be used to filter the latest
-enclosure url (probably some audio file):
+enclosure URL (probably some audio file):
 
 	awk -F '\t' 'BEGIN { latest = 0; }
 	length($8) {
@@ -390,6 +379,10 @@ enclosure url (probably some audio file):
 		}
 	}
 	END { if (length(url)) { print url; } }'
+
+... or on a file already sorted from newest to oldest:
+
+	awk -F '\t' '$8 { print $8; exit }'
 
 - - -
 
@@ -419,7 +412,7 @@ fdm config file (~/.sfeed/fdm.conf):
 		cache "${cachepath}"
 		$maildir = "%[home]/feeds/"
 
-		# Check if message is in in cache by Message-ID.
+		# Check if message is in the cache by Message-ID.
 		match case "^Message-ID: (.*)" in headers
 			action {
 				tag "msgid" value "%1"
@@ -463,7 +456,7 @@ fdm config file (~/.sfeed/fdm.conf):
 		$cachepath = "%[home]/.sfeed/fdm.cache"
 		cache "${cachepath}"
 
-		# Check if message is in in cache by Message-ID.
+		# Check if message is in the cache by Message-ID.
 		match case "^Message-ID: (.*)" in headers
 			action {
 				tag "msgid" value "%1"
@@ -552,28 +545,19 @@ Now you can view feeds in mutt(1) for example.
 
 - - -
 
-Incremental data updates using If-Modified-Since
+The fetch function can be overridden in your sfeedrc file. This allows to
+replace the default curl(1) for sfeed_update with any other client to fetch the
+RSS/Atom data or change the default curl options:
 
-For servers that support it some incremental updates and bandwidth-saving can
-be done by using the "If-Modified-Since" HTTP header.
-
-The curl -z option can be used to send the modification date of the local feed
-file so the server can make the decision to respond with incremental data.
-
-You can do this by overriding the fetch() function in the sfeedrc file and
-adding the -z option:
-
+	# fetch a feed via HTTP/HTTPS etc.
 	# fetch(name, url, feedfile)
 	fetch() {
-		curl -z "$3" "$2"
+		hurl -m 1048576 -t 15 "$2" 2>/dev/null
 	}
-
-This comes at a cost of some privacy. For example there can be a fingerprinting
-vector of the local modification date of the feed file.
 
 - - -
 
-Incremental data updates using ETag caching
+Caching, incremental data updates and bandwidth-saving
 
 For servers that support it some incremental updates and bandwidth-saving can
 be done by using the "ETag" HTTP header.
@@ -582,22 +566,38 @@ Create a directory for storing the ETags per feed:
 
 	mkdir -p ~/.sfeed/etags/
 
-The curl ETag options can be used to send the previous ETag header value.  You
-can do this by overriding the fetch() function in the sfeedrc file and adding
-the --etag-save and --etag-compare options:
+The curl ETag options (--etag-save and --etag-compare) can be used to store and
+send the previous ETag header value. curl version 7.73+ is recommended for it
+to work properly.
+
+The curl -z option can be used to send the modification date of a local file as
+a HTTP "If-Modified-Since" request header. The server can then respond if the
+data is modified or not or respond with only the incremental data.
+
+The curl --compressed option can be used to indicate the client supports
+decompression. Because RSS/Atom feeds are textual XML content this generally
+compresses very well.
+
+These options can be set by overriding the fetch() function in the sfeedrc
+file:
 
 	# fetch(name, url, feedfile)
 	fetch() {
 		etag="$HOME/.sfeed/etags/$(basename "$3")"
-		curl --etag-save "${etag}" --etag-compare "${etag}" "$2"
+		curl \
+			-L --max-redirs 0 -H "User-Agent:" -f -s -m 15 \
+			--compressed \
+			--etag-save "${etag}" --etag-compare "${etag}" \
+			-z "${etag}" \
+			"$2" 2>/dev/null
 	}
 
-This comes at a cost of some privacy. For example there can be a unique
-generated ETag.
+These options can come at a cost of some privacy, because it exposes
+additional metadata from the previous request.
 
 - - -
 
-CDN's blocking requests due to missing User-Agent
+CDNs blocking requests due to a missing HTTP User-Agent request header
 
 sfeed_update will not send the "User-Agent" header by default for privacy
 reasons.  Some CDNs like Cloudflare don't like this and will block such HTTP
@@ -612,17 +612,82 @@ Firefox 78.
 
 - - -
 
+Page redirects
+
+For security and efficiency reasons by default redirects are not allowed and
+are treated as an error.
+
+For example to prevent hijacking an unencrypted http:// to https:// redirect or
+to not add time of an unnecessary page redirect each time.  It is encouraged to
+use the final redirected URL in the sfeedrc config file.
+
+If you want to ignore this advise you can override the fetch() function in the
+sfeedrc file and change the curl options "-L --max-redirs 0".
+
+- - -
+
+Shellscript to update feeds in parallel more efficiently using xargs -P.
+
+It creates a queue of the feeds with its settings, then uses xargs to process
+them in parallel using the common, but non-POSIX -P option. This is more
+efficient than the more portable solution in sfeed_update which can stall a
+batch of $maxjobs in the queue if one item is slow.
+
+sfeed_update_xargs shellscript:
+
+	#!/bin/sh
+	# update feeds, merge with old feeds using xargs in parallel mode (non-POSIX).
+	
+	# include script and reuse its functions, but do not start main().
+	SFEED_UPDATE_INCLUDE="1" . sfeed_update
+	# load config file, sets $config.
+	loadconfig "$1"
+	
+	# process a single feed.
+	# args are: config, tmpdir, name, feedurl, basesiteurl, encoding
+	if [ "${SFEED_UPDATE_CHILD}" = "1" ]; then
+		sfeedtmpdir="$2"
+		_feed "$3" "$4" "$5" "$6"
+		exit $?
+	fi
+	
+	# ...else parent mode:
+	
+	# feed(name, feedurl, basesiteurl, encoding)
+	feed() {
+		# workaround: *BSD xargs doesn't handle empty fields in the middle.
+		name="${1:-$$}"
+		feedurl="${2:-http://}"
+		basesiteurl="${3:-${feedurl}}"
+		encoding="$4"
+	
+		printf '%s\0%s\0%s\0%s\0%s\0%s\0' "${config}" "${sfeedtmpdir}" \
+			"${name}" "${feedurl}" "${basesiteurl}" "${encoding}"
+	}
+	
+	# fetch feeds and store in temporary directory.
+	sfeedtmpdir="$(mktemp -d '/tmp/sfeed_XXXXXX')"
+	# make sure path exists.
+	mkdir -p "${sfeedpath}"
+	# print feeds for parallel processing with xargs.
+	feeds | SFEED_UPDATE_CHILD="1" xargs -r -0 -P "${maxjobs}" -L 6 "$(readlink -f "$0")"
+	# cleanup temporary files etc.
+	cleanup
+
+- - -
+
 Shellscript to export existing newsboat cached items from sqlite3 to the sfeed
 TSV format.
-	
+
 	#!/bin/sh
 	# Export newsbeuter/newsboat cached items from sqlite3 to the sfeed TSV format.
 	# The data is split per file per feed with the name of the newsboat title/url.
+	# It writes the URLs of the read items line by line to a "urls" file.
+	#
 	# Dependencies: sqlite3, awk.
 	#
 	# Usage: create some directory to store the feeds, run this script.
 	#
-	# Assumes "html" for content-type (Newsboat only handles HTML content).
 	# Assumes feednames are unique and a feed title is set.
 	
 	# newsboat cache.db file.
@@ -637,11 +702,10 @@ TSV format.
 	.mode ascii
 	.output
 	SELECT
-		i.pubDate, i.title, i.url, i.content, i.guid, i.author,
-		i.enclosure_url,
-		f.rssurl AS rssurl, f.title AS feedtitle --,
-		-- i.id, i.unread, i.enclosure_type, i.enqueued, i.flags, i.deleted,
-		-- i.base
+		i.pubDate, i.title, i.url, i.content, i.content_mime_type,
+		i.guid, i.author, i.enclosure_url,
+		f.rssurl AS rssurl, f.title AS feedtitle, i.unread
+		-- i.id, i.enclosure_type, i.enqueued, i.flags, i.deleted, i.base
 	FROM rss_feed f
 	INNER JOIN rss_item i ON i.feedurl = f.rssurl
 	ORDER BY
@@ -654,13 +718,19 @@ TSV format.
 		FS = "\x1f";
 		RS = "\x1e";
 	}
-	# strip all control-chars for normal fields.
-	function strip(s) {
+	# normal non-content fields.
+	function field(s) {
+		gsub("^[[:space:]]*", "", s);
+		gsub("[[:space:]]*$", "", s);
+		gsub("[[:space:]]", " ", s);
 		gsub("[[:cntrl:]]", "", s);
 		return s;
 	}
-	# escape chars in content field.
-	function escape(s) {
+	# content field.
+	function content(s) {
+		gsub("^[[:space:]]*", "", s);
+		gsub("[[:space:]]*$", "", s);
+		# escape chars in content field.
 		gsub("\\\\", "\\\\", s);
 		gsub("\n", "\\n", s);
 		gsub("\t", "\\t", s);
@@ -671,14 +741,27 @@ TSV format.
 		return title;
 	}
 	{
-		fname = feedname($8, $9);
+		fname = feedname($9, $10);
 		if (!feed[fname]++) {
-			print "Writing file: \"" fname "\" (title: " $9 ", url: " $8 ")" > "/dev/stderr";
+			print "Writing file: \"" fname "\" (title: " $10 ", url: " $9 ")" > "/dev/stderr";
 		}
 	
-		print $1 "\t" strip($2) "\t" strip($3) "\t" escape($4) "\t" \
-			"html" "\t" strip($5) "\t" strip($6) "\t" strip($7) \
+		contenttype = field($5);
+		if (contenttype == "")
+			contenttype = "html";
+		else if (index(contenttype, "/html") || index(contenttype, "/xhtml"))
+			contenttype = "html";
+		else
+			contenttype = "plain";
+	
+		print $1 "\t" field($2) "\t" field($3) "\t" content($4) "\t" \
+			contenttype "\t" field($6) "\t" field($7) "\t" field($8) "\t" \
 			> fname;
+	
+		# write URLs of the read items to a file line by line.
+		if ($11 == "0") {
+			print $3 > "urls";
+		}
 	}'
 
 

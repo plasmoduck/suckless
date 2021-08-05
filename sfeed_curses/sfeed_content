@@ -1,16 +1,21 @@
 #!/bin/sh
-# RSS/Atom content viewer for a sfeed(5) line.
-#
-# Dependencies:
-# - awk, sh, less or an other pager.
-# - lynx (or an other tool) for converting HTML to plain-text.
+# Content viewer for sfeed(5) lines.
 
 awk -F '\t' '
 function unescape(s) {
-	gsub("\\\\t", "\t", s);
-	gsub("\\\\n", "\n", s);
-	gsub("\\\\\\\\", "\\", s);
-	return s;
+	for (data = ""; (idx = index(s, "\\")); s = substr(s, idx + 2)) {
+		prev = substr(s, 1, idx - 1)
+		c = substr(s, idx + 1, 1)
+		if (c == "t")
+			data = data prev "\t"
+		else if (c == "n")
+			data = data prev "\n"
+		else if (c == "\\")
+			data = data prev "\\"
+		else
+			data = data prev # ignore other.
+	}
+	return data s # rest
 }
 BEGIN {
 	htmlconv = "lynx -stdin -dump " \
@@ -18,6 +23,10 @@ BEGIN {
 		"-display_charset=\"utf-8\" -assume_charset=\"utf-8\" ";
 }
 {
+	if (previtem)
+		print "\f";
+	previtem = 1;
+
 	print "Title:     " $2;
 	if (length($7))
 		print "Author:    " $7;
@@ -30,13 +39,14 @@ BEGIN {
 		print "Link:      " $3;
 	if (length($8))
 		print "Enclosure: " $8;
+	if (!length($4))
+		next;
 	print "";
-	if ($5 == "plain") {
-		print unescape($4);
-	} else {
+	if ($5 == "html") {
 		print unescape($4) | htmlconv;
 		close(htmlconv);
+	} else {
+		print unescape($4);
 	}
-	exit;
-}' | \
+}' "$@" | \
 ${PAGER:-less -R}

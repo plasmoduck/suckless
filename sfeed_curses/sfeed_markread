@@ -1,28 +1,35 @@
 #!/bin/sh
-# usage: $0 <read|unread>
-# input is the read / unread url per line.
+# Mark items as read/unread: the input is the read / unread URL per line.
 
-if test -z "$SFEED_URL_FILE"; then
-	echo "\$SFEED_URL_FILE must be set" >&2
+usage() {
+	echo "usage: $0 <read|unread> [urlfile]" >&2
+	echo "" >&2
+	echo "An urlfile must be specified as an argument or with the environment variable \$SFEED_URL_FILE" >&2
 	exit 1
+}
+
+urlfile="${2:-${SFEED_URL_FILE}}"
+if test -z "${urlfile}"; then
+	usage
 fi
 
 case "$1" in
 read)
-	cat >> "$SFEED_URL_FILE";;
+	cat >> "${urlfile}"
+	;;
 unread)
 	tmp=$(mktemp)
-	trap "rm -f $tmp" EXIT
+	trap "rm -f ${tmp}" EXIT
+	test -f "${urlfile}" || touch "${urlfile}" 2>/dev/null
 	LC_CTYPE=C awk -F '\t' '
 	{ FILENR += (FNR == 1)	}
 	FILENR == 1 { urls[$0] = 1 }
 	FILENR == 2 { if (!urls[$0]) { print $0 } }
 	END { exit(FILENR != 2) }' \
-		"/dev/stdin" "$SFEED_URL_FILE" > "$tmp" && \
-		mv "$tmp" "$SFEED_URL_FILE"
+		"-" "${urlfile}" > "${tmp}" && \
+		cp "${tmp}" "${urlfile}"
 	;;
 *)
-	echo "$0 <read|unread>" >&2
-	exit 1
+	usage
 	;;
 esac

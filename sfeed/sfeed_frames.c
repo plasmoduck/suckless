@@ -1,6 +1,5 @@
 #include <sys/types.h>
 
-#include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,7 +11,7 @@ static struct feed *feeds;
 static char *line;
 static size_t linesize;
 static time_t comparetime;
-static unsigned long totalnew;
+static unsigned long totalnew, total;
 
 static void
 printfeed(FILE *fpitems, FILE *fpin, struct feed *f)
@@ -20,7 +19,7 @@ printfeed(FILE *fpitems, FILE *fpin, struct feed *f)
 	char *fields[FieldLast];
 	ssize_t linelen;
 	unsigned int isnew;
-	struct tm *tm;
+	struct tm rtm, *tm;
 	time_t parsedtime;
 
 	/* menu if not unnamed */
@@ -42,7 +41,7 @@ printfeed(FILE *fpitems, FILE *fpin, struct feed *f)
 
 		parsedtime = 0;
 		if (!strtotime(fields[FieldUnixTimestamp], &parsedtime) &&
-		    (tm = localtime(&parsedtime))) {
+		    (tm = localtime_r(&parsedtime, &rtm))) {
 			isnew = (parsedtime >= comparetime) ? 1 : 0;
 			totalnew += isnew;
 			f->totalnew += isnew;
@@ -54,6 +53,7 @@ printfeed(FILE *fpitems, FILE *fpin, struct feed *f)
 			fputs("                 ", fpitems);
 		}
 		f->total++;
+		total++;
 
 		if (fields[FieldLink][0]) {
 			fputs("<a href=\"", fpitems);
@@ -159,9 +159,9 @@ main(int argc, char *argv[])
 	fputs("<!DOCTYPE html>\n<html>\n<head>\n"
 	      "\t<meta name=\"referrer\" content=\"no-referrer\" />\n"
 	      "\t<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n"
-	      "\t<title>Newsfeed (", fpindex);
-	fprintf(fpindex, "%lu", totalnew);
-	fputs(")</title>\n\t<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />\n"
+	      "\t<title>(", fpindex);
+	fprintf(fpindex, "%lu/%lu", totalnew, total);
+	fputs(") - Newsfeed</title>\n\t<link rel=\"stylesheet\" type=\"text/css\" href=\"style.css\" />\n"
 	      "</head>\n", fpindex);
 	if (showsidebar) {
 		fputs("<frameset framespacing=\"0\" cols=\"250,*\" frameborder=\"1\">\n"

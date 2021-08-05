@@ -1,5 +1,5 @@
 version = 26
-
+include config.mk
 srcdir = .
 VPATH = $(srcdir)
 

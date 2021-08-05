@@ -1,4 +1,4 @@
-.Dd March 15, 2020
+.Dd August 4, 2021
 .Dt SFEED_MBOX 1
 .Os
 .Sh NAME
@@ -6,37 +6,57 @@
 .Nd format feed data to mboxrd
 .Sh SYNOPSIS
 .Nm
-.Op Ar file...
+.Op Ar
 .Sh DESCRIPTION
 .Nm
 formats feed data (TSV) from
 .Xr sfeed 1
-from stdin or
+from stdin or for each
 .Ar file
 to stdout in the mboxrd format.
 If one or more
 .Ar file
-are specified, the basename of the
+arguments are specified then the basename of the
 .Ar file
 is used as the feed name in the output.
 If no
 .Ar file
-parameters are specified and so the data is read from stdin the feed name
+arguments are specified and so the data is read from stdin then the feed name
 is empty.
 The mbox data can be further processed by tools like
 .Xr procmail 1
 or
 .Xr fdm 1
 for example.
-See the README file for some useful examples.
+See the README file for some examples.
 .Sh CUSTOM HEADERS
 To make further filtering simpler some custom headers are set:
 .Bl -tag -width Ds
 .It X-Feedname
-The feedname (as set in sfeedrc).
+The feed name, this is the basename of the feed
+.Ar file .
+.El
+.Sh ENVIRONMENT VARIABLES
+.Bl -tag -width Ds
+.It Ev SFEED_MBOX_CONTENT
+Include the content.
+This can be insecure for some of the mail clients that interpret HTML code in
+an unsafe way.
+By default this is set to "0".
 .El
 .Sh EXIT STATUS
 .Ex -std
+.Sh EXAMPLES
+.Bd -literal
+sfeed_mbox ~/.sfeed/feeds/*
+.Ed
+.Pp
+To include the content.
+This can be insecure for some of the mail clients that interpret HTML code in
+an unsafe way:
+.Bd -literal
+SFEED_MBOX_CONTENT=1 sfeed_mbox ~/.sfeed/feeds/*
+.Ed
 .Sh SEE ALSO
 .Xr fdm 1 ,
 .Xr procmail 1 ,

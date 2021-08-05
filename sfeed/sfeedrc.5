@@ -1,4 +1,4 @@
-.Dd February 4, 2020
+.Dd August 3, 2021
 .Dt SFEEDRC 5
 .Os
 .Sh NAME
@@ -35,15 +35,16 @@ function, its arguments are:
 .It Fa name
 Name of the feed, this is also used as the filename for the TAB-separated
 feed file.
-The feedname cannot contain '/' characters, they will be replaced with '_'.
+The feed name cannot contain the '/' character because it is a path separator,
+they will be replaced with '_'.
 .It Fa feedurl
-Url to fetch the RSS/Atom data from, usually a HTTP or HTTPS url.
+URL to fetch the RSS/Atom data from, usually a HTTP or HTTPS URL.
 .It Op Fa basesiteurl
 Baseurl of the feed links.
 This argument allows to fix relative item links.
 .Pp
 According to the RSS and Atom specification feeds should always have absolute
-urls, however this is not always the case in practise.
+URLs, however this is not always the case in practise.
 .It Op Fa encoding
 Feeds are decoded from this name to UTF-8, the name should be a usable
 character-set for the
@@ -58,7 +59,7 @@ is a shellscript each function can be overridden to change its behaviour,
 notable functions are:
 .Bl -tag -width Ds
 .It Fn fetch "name" "url" "feedfile"
-Fetch feed from url and writes data to stdout, its arguments are:
+Fetch feed from URL and writes data to stdout, its arguments are:
 .Bl -tag -width Ds
 .It Fa name
 Specified name in configuration file (useful for logging).
@@ -71,10 +72,12 @@ Used feedfile (useful for comparing modification times).
 By default the tool
 .Xr curl 1
 is used.
-.It Fn convertencoding "from" "to"
+.It Fn convertencoding "name" "from" "to"
 Convert from text-encoding to another and writes it to stdout, its arguments
 are:
 .Bl -tag -width Ds
+.It Fa name
+Feed name.
 .It Fa from
 From text-encoding.
 .It Fa to
@@ -84,6 +87,19 @@ To text-encoding.
 By default the tool
 .Xr iconv 1
 is used.
+.It Fn parse "name" "feedurl" "basesiteurl"
+Parse and convert RSS/Atom XML to the
+.Xr sfeed 5
+TSV format.
+.Bl -tag -width Ds
+.It Fa name
+Name of the feed.
+.It Fa feedurl
+URL of the feed.
+.It Fa basesiteurl
+Baseurl of the feed links.
+This argument allows to fix relative item links.
+.El
 .It Fn filter "name"
 Filter
 .Xr sfeed 5
@@ -130,6 +146,22 @@ feeds() {
 	# get youtube Atom feed: curl -s -L 'https://www.youtube.com/user/gocoding/videos' | sfeed_web | cut -f 1
 	feed "youtube golang" "https://www.youtube.com/feeds/videos.xml?channel_id=UCO3LEtymiLrgvpb59cNsb8A"
 	feed "xkcd" "https://xkcd.com/atom.xml" "https://xkcd.com"
+}
+.Ed
+.Pp
+To change the default
+.Xr curl 1
+options for fetching the data, the
+.Fn fetch
+function can be overridden and added at the top of the
+.Nm
+file:
+.Bd -literal
+# fetch(name, url, feedfile)
+fetch() {
+	# allow for 1 redirect, hide User-Agent, timeout is 15 seconds.
+	curl -L --max-redirs 1 -H "User-Agent:" -f -s -m 15 \\
+		"$2" 2>/dev/null
 }
 .Ed
 .Sh SEE ALSO

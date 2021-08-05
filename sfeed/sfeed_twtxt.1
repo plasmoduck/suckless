@@ -1,4 +1,4 @@
-.Dd March 15, 2020
+.Dd July 31, 2021
 .Dt SFEED_TWTXT 1
 .Os
 .Sh NAME
@@ -6,25 +6,35 @@
 .Nd format feed data to a twtxt feed
 .Sh SYNOPSIS
 .Nm
-.Op Ar file...
+.Op Ar
 .Sh DESCRIPTION
 .Nm
 formats feed data (TSV) from
 .Xr sfeed 1
-from stdin or
+from stdin or for each
 .Ar file
 to stdout as a twtxt feed.
 If one or more
 .Ar file
-are specified, the basename of the
+arguments are specified then the basename of the
 .Ar file
 is used as the feed name in the output.
 If no
 .Ar file
-parameters are specified and so the data is read from stdin the feed name
+arguments are specified and so the data is read from stdin then the feed name
 is empty.
+.Pp
+If
+.Nm
+is reading from one or more
+.Ar file
+arguments it will prefix the entry title with "[feed name] ".
 .Sh EXIT STATUS
 .Ex -std
+.Sh EXAMPLES
+.Bd -literal
+curl -s 'https://codemadness.org/atom.xml' | sfeed | sfeed_twtxt
+.Ed
 .Sh SEE ALSO
 .Xr sfeed 1 ,
 .Xr sfeed_plain 1 ,

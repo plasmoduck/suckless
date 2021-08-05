@@ -1,7 +1,6 @@
 #include <sys/types.h>
 
 #include <ctype.h>
-#include <err.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -58,7 +57,8 @@ enum TagId {
 	RSSTagAuthor, RSSTagDccreator,
 	RSSTagCategory,
 	/* Atom */
-	AtomTagUpdated, AtomTagPublished, /* creation date has higher priority */
+	/* creation date has higher priority */
+	AtomTagModified, AtomTagUpdated, AtomTagIssued, AtomTagPublished,
 	AtomTagTitle,
 	AtomTagMediaDescription, AtomTagSummary, AtomTagContent,
 	AtomTagId,
@@ -151,9 +151,11 @@ static FeedTag atomtags[] = {
 	{ STRP("category"),          AtomTagCategory         },
 	{ STRP("content"),           AtomTagContent          },
 	{ STRP("id"),                AtomTagId               },
+	{ STRP("issued"),            AtomTagIssued           }, /* Atom 0.3 */
 	/* Atom: <link href="" />, RSS has <link></link> */
 	{ STRP("link"),              AtomTagLink             },
 	{ STRP("media:description"), AtomTagMediaDescription },
+	{ STRP("modified"),          AtomTagModified         }, /* Atom 0.3 */
 	{ STRP("published"),         AtomTagPublished        },
 	{ STRP("summary"),           AtomTagSummary          },
 	{ STRP("title"),             AtomTagTitle            },
@@ -186,7 +188,9 @@ static int fieldmap[TagLast] = {
 	[RSSTagDccreator]          = FeedFieldAuthor,
 	[RSSTagCategory]           = FeedFieldCategory,
 	/* Atom */
+	[AtomTagModified]          = FeedFieldTime,
 	[AtomTagUpdated]           = FeedFieldTime,
+	[AtomTagIssued]            = FeedFieldTime,
 	[AtomTagPublished]         = FeedFieldTime,
 	[AtomTagTitle]             = FeedFieldTitle,
 	[AtomTagMediaDescription]  = FeedFieldContent,
@@ -204,12 +208,12 @@ static int fieldmap[TagLast] = {
 static const int FieldSeparator = '\t';
 /* separator for multiple values in a field, separator should be 1 byte */
 static const char *FieldMultiSeparator = "|";
-static const char *baseurl = "";
+static struct uri baseuri;
+static const char *baseurl;
 
 static FeedContext ctx;
 static XMLParser parser; /* XML parser state */
-static String tmpstr;
-static enum ContentType tmpcontenttype; /* content-type for item */
+static String attrispermalink, attrrel, attrtype, tmpstr;
 
 int
 tagcmp(const void *v1, const void *v2)
@@ -332,7 +336,7 @@ string_print_encoded(String *s)
 }
 
 static void
-printtrimmed(char *s)
+printtrimmed(const char *s)
 {
 	char *p, *e;
 
@@ -381,23 +385,33 @@ string_print_trimmed_multi(String *s)
 	}
 }
 
-/* always print absolute urls (using global baseurl) */
+/* print URL, if it's a relative URL then it uses global baseurl */
 void
 printuri(char *s)
 {
 	char link[4096], *p, *e;
-	int c;
+	struct uri newuri, olduri;
+	int c, r = -1;
 
 	p = ltrim(s);
 	e = rtrim(p);
 	c = *e;
 	*e = '\0';
-	if (absuri(link, sizeof(link), p, baseurl) != -1)
-		fputs(link, stdout);
+
+	if (baseurl && !uri_hasscheme(p) &&
+	    uri_parse(p, &olduri) != -1 && !olduri.proto[0] &&
+	    uri_makeabs(&newuri, &olduri, &baseuri) != -1 && newuri.proto[0])
+		r = uri_format(link, sizeof(link), &newuri);
+
+	if (r >= 0 && (size_t)r < sizeof(link))
+		printtrimmed(link);
+	else
+		printtrimmed(p);
+
 	*e = c; /* restore NUL byte to original character */
 }
 
-/* always print absolute urls (using global baseurl) */
+/* print URL, if it's a relative URL then it uses global baseurl */
 void
 string_print_uri(String *s)
 {
@@ -559,10 +573,7 @@ parsetime(const char *s, time_t *tp)
 	    isdigit((unsigned char)s[2]) &&
 	    isdigit((unsigned char)s[3])) {
 		/* formats "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S" or "%Y%m%d%H%M%S" */
-		va[0] = ((s[0] - '0') * 1000) + ((s[1] - '0') * 100) +
-		         ((s[2] - '0') * 10) + (s[3] - '0');
-		vi = 1;
-		s += 4;
+		vi = 0;
 	} else {
 		/* format: "[%a, ]%d %b %Y %H:%M:%S" */
 		/* parse "[%a, ]%d %b %Y " part, then use time parsing as above */
@@ -600,6 +611,9 @@ parsetime(const char *s, time_t *tp)
 			;
 		for (v = 0, i = 0; i < 4 && isdigit((unsigned char)*s); s++, i++)
 			v = (v * 10) + (*s - '0');
+		/* obsolete short year: RFC2822 4.3 */
+		if (i <= 3)
+			v += (v >= 0 && v <= 49) ? 2000 : 1900;
 		va[0] = v; /* year */
 		for (; isspace((unsigned char)*s); s++)
 			;
@@ -608,16 +622,17 @@ parsetime(const char *s, time_t *tp)
 	}
 
 	/* parse time parts (and possibly remaining date parts) */
-	for (; *s && vi < 6; ) {
-		if (isdigit((unsigned char)s[0]) && isdigit((unsigned char)s[1])) {
-			va[vi++] = ((s[0] - '0') * 10) + (s[1] - '0');
-			s += 2;
-		} else if (vi > 2 && (*s == '-' || *s == '+' || *s == '.' ||
-		           isspace((unsigned char)*s))) {
-			break;
-		} else {
-			s++;
+	for (; *s && vi < 6; vi++) {
+		for (i = 0, v = 0; i < ((vi == 0) ? 4 : 2) &&
+		                   isdigit((unsigned char)*s); s++, i++) {
+			v = (v * 10) + (*s - '0');
 		}
+		va[vi] = v;
+
+		if ((vi < 2 && *s == '-') ||
+		    (vi == 2 && (*s == 'T' || isspace((unsigned char)*s))) ||
+		    (vi > 2 && *s == ':'))
+			s++;
 	}
 
 	/* skip milliseconds in for example: "%Y-%m-%dT%H:%M:%S.000Z" */
@@ -693,18 +708,8 @@ xmlattr(XMLParser *p, const char *t, size_t tl, const char *n, size_t nl,
 	/* content-type may be: Atom: text, xhtml, html or mime-type.
 	   MRSS (media:description): plain, html. */
 	if (ISCONTENTTAG(ctx)) {
-		if (isattr(n, nl, STRP("type"))) {
-			if (isattr(v, vl, STRP("html")) ||
-			    isattr(v, vl, STRP("xhtml")) ||
-			    isattr(v, vl, STRP("text/html")) ||
-			    isattr(v, vl, STRP("text/xhtml"))) {
-				tmpcontenttype = ContentTypeHTML;
-			} else if (isattr(v, vl, STRP("text")) ||
-			           isattr(v, vl, STRP("plain")) ||
-				   isattr(v, vl, STRP("text/plain"))) {
-				tmpcontenttype = ContentTypePlain;
-			}
-		}
+		if (isattr(n, nl, STRP("type")))
+			string_append(&attrtype, v, vl);
 		return;
 	}
 
@@ -712,30 +717,15 @@ xmlattr(XMLParser *p, const char *t, size_t tl, const char *n, size_t nl,
 		if (ctx.tag.id == RSSTagEnclosure &&
 		    isattr(n, nl, STRP("url"))) {
 			string_append(&tmpstr, v, vl);
-		} else if ((ctx.tag.id == RSSTagGuid ||
-		            ctx.tag.id == RSSTagGuidPermalinkFalse ||
-			    ctx.tag.id == RSSTagGuidPermalinkTrue) &&
+		} else if (ctx.tag.id == RSSTagGuid &&
 		           isattr(n, nl, STRP("ispermalink"))) {
-			if (isattr(v, vl, STRP("true")))
-				ctx.tag.id = RSSTagGuidPermalinkTrue;
-			else
-				ctx.tag.id = RSSTagGuidPermalinkFalse;
+			string_append(&attrispermalink, v, vl);
 		}
 	} else if (ctx.feedtype == FeedTypeAtom) {
-		if (ctx.tag.id == AtomTagLink ||
-		    ctx.tag.id == AtomTagLinkAlternate ||
-		    ctx.tag.id == AtomTagLinkEnclosure) {
+		if (ctx.tag.id == AtomTagLink) {
 			if (isattr(n, nl, STRP("rel"))) {
-				/* empty or "alternate": other types could be
-				   "enclosure", "related", "self" or "via" */
-				if (!vl || isattr(v, vl, STRP("alternate")))
-					ctx.tag.id = AtomTagLinkAlternate;
-				else if (isattr(v, vl, STRP("enclosure")))
-					ctx.tag.id = AtomTagLinkEnclosure;
-				else
-					ctx.tag.id = AtomTagLink; /* unknown */
-			} else if (ctx.tag.id != AtomTagLink &&
-			           isattr(n, nl, STRP("href"))) {
+				string_append(&attrrel, v, vl);
+			} else if (isattr(n, nl, STRP("href"))) {
 				string_append(&tmpstr, v, vl);
 			}
 		} else if (ctx.tag.id == AtomTagCategory &&
@@ -797,6 +787,18 @@ xmlattrstart(XMLParser *p, const char *t, size_t tl, const char *n, size_t nl)
 		}
 		return;
 	}
+
+	if (attrispermalink.len && isattr(n, nl, STRP("ispermalink")))
+		string_clear(&attrispermalink);
+	else if (attrrel.len && isattr(n, nl, STRP("rel")))
+		string_clear(&attrrel);
+	else if (attrtype.len && isattr(n, nl, STRP("type")))
+		string_clear(&attrtype);
+	else if (tmpstr.len &&
+	    (isattr(n, nl, STRP("href")) ||
+	     isattr(n, nl, STRP("term")) ||
+	     isattr(n, nl, STRP("url"))))
+		string_clear(&tmpstr); /* use the last value for multiple attribute values */
 }
 
 /* NOTE: this handler can be called multiple times if the data in this
@@ -871,30 +873,10 @@ xmltagstart(XMLParser *p, const char *t, size_t tl)
 		memcpy(&(ctx.tag), f, sizeof(ctx.tag));
 	}
 
-	switch (ctx.tag.id) {
-	case AtomTagLink:
-		/* without a rel attribute the default link type is "alternate" */
-		ctx.tag.id = AtomTagLinkAlternate;
-		break;
-	case RSSTagGuid:
-		/* without a ispermalink attribute the default value is "true" */
-		ctx.tag.id = RSSTagGuidPermalinkTrue;
-		break;
-	case RSSTagContentEncoded:
-	case RSSTagDescription:
-		tmpcontenttype = ContentTypeHTML; /* default content-type */
-		ctx.iscontenttag = 1;
-		break;
-	case RSSTagMediaDescription:
-	case AtomTagContent:
-	case AtomTagMediaDescription:
-	case AtomTagSummary:
-		tmpcontenttype = ContentTypePlain; /* default content-type */
-		ctx.iscontenttag = 1;
-		break;
-	default:
-		break;
-	}
+	ctx.iscontenttag = (fieldmap[ctx.tag.id] == FeedFieldContent);
+	string_clear(&attrispermalink);
+	string_clear(&attrrel);
+	string_clear(&attrtype);
 }
 
 static void
@@ -912,6 +894,25 @@ xmltagstartparsed(XMLParser *p, const char *t, size_t tl, int isshort)
 		return;
 	}
 
+	/* set tag type based on it's attribute value */
+	if (ctx.tag.id == RSSTagGuid) {
+		/* if empty the default is "true" */
+		if (!attrispermalink.len ||
+		    isattr(attrispermalink.data, attrispermalink.len, STRP("true")))
+			ctx.tag.id = RSSTagGuidPermalinkTrue;
+		else
+			ctx.tag.id = RSSTagGuidPermalinkFalse;
+	} else if (ctx.tag.id == AtomTagLink) {
+		/* empty or "alternate": other types could be
+		   "enclosure", "related", "self" or "via" */
+		if (!attrrel.len || isattr(attrrel.data, attrrel.len, STRP("alternate")))
+			ctx.tag.id = AtomTagLinkAlternate;
+		else if (isattr(attrrel.data, attrrel.len, STRP("enclosure")))
+			ctx.tag.id = AtomTagLinkEnclosure;
+		else
+			ctx.tag.id = AtomTagLink; /* unknown */
+	}
+
 	tagid = ctx.tag.id;
 
 	/* map tag type to field: unknown or lesser priority is ignored,
@@ -925,7 +926,24 @@ xmltagstartparsed(XMLParser *p, const char *t, size_t tl, int isshort)
 	if (ctx.iscontenttag) {
 		ctx.iscontent = 1;
 		ctx.iscontenttag = 0;
-		ctx.contenttype = tmpcontenttype;
+
+		/* detect content-type based on type attribute */
+		if (attrtype.len) {
+			if (isattr(attrtype.data, attrtype.len, STRP("html")) ||
+			    isattr(attrtype.data, attrtype.len, STRP("xhtml")) ||
+			    isattr(attrtype.data, attrtype.len, STRP("text/html")) ||
+			    isattr(attrtype.data, attrtype.len, STRP("text/xhtml")) ||
+			    isattr(attrtype.data, attrtype.len, STRP("application/xhtml+xml")))
+				ctx.contenttype = ContentTypeHTML;
+			else /* unknown: handle as base64 text data */
+				ctx.contenttype = ContentTypePlain;
+		} else {
+			/* default content-type */
+			if (tagid == RSSTagContentEncoded || tagid == RSSTagDescription)
+				ctx.contenttype = ContentTypeHTML;
+			else
+				ctx.contenttype = ContentTypePlain;
+		}
 	}
 
 	ctx.field = &(ctx.fields[fieldmap[tagid]].str);
@@ -958,7 +976,7 @@ xmltagend(XMLParser *p, const char *t, size_t tl, int isshort)
 	} else if (ctx.tag.id && istag(ctx.tag.name, ctx.tag.len, t, tl)) {
 		/* matched tag end: close it */
 		/* copy also to the link field if the attribute isPermaLink="true"
-		    and it is not set by a tag with higher prio. */
+		   and it is not set by a tag with higher prio. */
 		if (ctx.tag.id == RSSTagGuidPermalinkTrue && ctx.field &&
 		    ctx.tag.id > ctx.fields[FeedFieldLink].tagid) {
 			string_clear(&ctx.fields[FeedFieldLink].str);
@@ -1018,8 +1036,12 @@ main(int argc, char *argv[])
 	if (pledge("stdio", NULL) == -1)
 		err(1, "pledge");
 
-	if (argc > 1)
-		baseurl = argv[1];
+	if (argc > 1) {
+		if (uri_parse(argv[1], &baseuri) != -1 && baseuri.proto[0])
+			baseurl = argv[1];
+		else
+			errx(1, "baseurl incorrect or too long");
+	}
 
 	memcpy(&(ctx.tag), &notag, sizeof(ctx.tag));
 

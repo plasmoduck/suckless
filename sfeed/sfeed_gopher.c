@@ -1,6 +1,5 @@
 #include <sys/types.h>
 
-#include <err.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,7 +27,7 @@ gophertext(FILE *fp, const char *s)
 			fputs("        ", fp);
 			break;
 		default:
-			fputc(*s, fp);
+			putc(*s, fp);
 			break;
 		}
 	}
@@ -38,10 +37,11 @@ static void
 printfeed(FILE *fpitems, FILE *fpin, struct feed *f)
 {
 	struct uri u;
-	char *fields[FieldLast], *itemhost, *itemport, *itempath;
+	char *fields[FieldLast];
+	char *itemhost, *itemport, *itempath, *itemquery, *itemfragment;
 	ssize_t linelen;
 	unsigned int isnew;
-	struct tm *tm;
+	struct tm rtm, *tm;
 	time_t parsedtime;
 	int itemtype;
 
@@ -59,15 +59,20 @@ printfeed(FILE *fpitems, FILE *fpin, struct feed *f)
 		itemport = port;
 		itemtype = 'i';
 		itempath = fields[FieldLink];
+		itemquery = "";
+		itemfragment = "";
 
 		if (fields[FieldLink][0]) {
 			itemtype = 'h';
+			/* if it's a gopher URL then change it into a direntry */
 			if (!strncmp(fields[FieldLink], "gopher://", 9) &&
-			    parseuri(fields[FieldLink], &u, 0) != -1) {
+			    uri_parse(fields[FieldLink], &u) != -1) {
 				itemhost = u.host;
 				itemport = u.port[0] ? u.port : "70";
 				itemtype = '1';
 				itempath = u.path;
+				itemquery = u.query;
+				itemfragment = u.fragment;
 
 				if (itempath[0] == '/') {
 					itempath++;
@@ -81,7 +86,7 @@ printfeed(FILE *fpitems, FILE *fpin, struct feed *f)
 
 		parsedtime = 0;
 		if (!strtotime(fields[FieldUnixTimestamp], &parsedtime) &&
-		    (tm = localtime(&parsedtime))) {
+		    (tm = localtime_r(&parsedtime, &rtm))) {
 			isnew = (parsedtime >= comparetime) ? 1 : 0;
 			f->totalnew += isnew;
 
@@ -100,6 +105,14 @@ printfeed(FILE *fpitems, FILE *fpin, struct feed *f)
 		if (itemtype == 'h' && fields[FieldLink] == itempath)
 			fputs("URL:", fpitems);
 		gophertext(fpitems, itempath);
+		if (itemquery[0]) {
+			fputs("?", fpitems);
+			gophertext(fpitems, itemquery);
+		}
+		if (itemfragment[0]) {
+			fputs("#", fpitems);
+			gophertext(fpitems, itemfragment);
+		}
 		fprintf(fpitems, "\t%s\t%s\r\n", itemhost, itemport);
 	}
 	fputs(".\r\n", fpitems);
@@ -112,8 +125,17 @@ main(int argc, char *argv[])
 	char *name, *p, path[PATH_MAX + 1];
 	int i, r;
 
-	if (pledge(argc == 1 ? "stdio" : "stdio rpath wpath cpath", NULL) == -1)
-		err(1, "pledge");
+	if (argc == 1) {
+		if (pledge("stdio", NULL) == -1)
+			err(1, "pledge");
+	} else {
+		if (unveil("/", "r") == -1)
+			err(1, "unveil: /");
+		if (unveil(".", "rwc") == -1)
+			err(1, "unveil: .");
+		if (pledge("stdio rpath wpath cpath", NULL) == -1)
+			err(1, "pledge");
+	}
 
 	if ((comparetime = time(NULL)) == -1)
 		err(1, "time");

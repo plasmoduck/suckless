@@ -1,4 +1,4 @@
-.Dd October 24, 2020
+.Dd July 25, 2021
 .Dt SFEED_CONTENT 1
 .Os
 .Sh NAME
@@ -6,17 +6,51 @@
 .Nd view RSS/Atom content
 .Sh SYNOPSIS
 .Nm
+.Op Ar
 .Sh DESCRIPTION
 .Nm
-expects to receive a TSV line from stdin in the
-.Xr sfeed 5
-format.
-By default it will format the data to a readable plain-text format and use the
-pager.
+formats feed data (TSV) from
+.Xr sfeed 1
+from stdin or for each
+.Ar file
+to stdout as plain-text content.
+For HTML content it uses
+.Xr lynx 1
+to convert it to plain-text.
+At the end it uses the pager to view the output.
+The
+.Nm
+script can be used by
+.Xr sfeed_curses 1
+to view content.
+.Sh ENVIRONMENT VARIABLES
+.Bl -tag -width Ds
+.It Ev PAGER
+The pager used to view the content.
+If it is not set it will use "less -R" by default.
+.El
 .Sh EXIT STATUS
 .Ex -std
+.Sh EXAMPLES
+.Bd -literal
+curl -s 'https://codemadness.org/atom_content.xml' | sfeed | sfeed_content
+.Ed
+.Pp
+The output format looks like this:
+.Bd -literal
+Title:     The title.
+Author:    The line with the author if it is set.
+Category:  The line with the categories if it is set.
+Link:      The line with the link if it is set.
+Enclosure: The line with the enclosure if it is set.
+
+The content converted to plain-text.
+
+<form feed character> if there are multiple items.
+.Ed
 .Sh SEE ALSO
 .Xr awk 1 ,
+.Xr less 1 ,
 .Xr lynx 1 ,
 .Xr sfeed_curses 1
 .Sh AUTHORS

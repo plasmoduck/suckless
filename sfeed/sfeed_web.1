@@ -1,41 +1,46 @@
-.Dd October 22, 2020
+.Dd July 27, 2021
 .Dt SFEED_WEB 1
 .Os
 .Sh NAME
 .Nm sfeed_web
-.Nd finds urls to feeds from a HTML webpage
+.Nd finds URLs to feeds from a HTML webpage
 .Sh SYNOPSIS
 .Nm
 .Op Ar baseurl
 .Sh DESCRIPTION
 .Nm
-reads the HTML website as XML or HTML data from stdin and writes the found
-urls to stdout.
+reads the HTML data of the webpage from stdin and writes the found URLs to
+stdout.
+.Pp
+Such a link reference in HTML code looks like:
+.Bd -literal
+	<link rel="alternate" href="atom.xml" type="application/atom+xml" />
+.Ed
 .Sh OPTIONS
 .Bl -tag -width 8n
 .It Ar baseurl
-Optional base url to use for found feed urls that are relative.
+Optional base URL to use for found feed URLs that are relative.
 .El
 .Sh OUTPUT FORMAT
-url<TAB>content\-type<newline>
+url<TAB>content-type<newline>
 .Bl -tag -width Ds
-.It url
-Found relative or absolute url.
+.It URL
+Found relative or absolute URL.
 .Pp
-For relative urls if a <base href="..." /> tag is found it will be used,
+For relative URLs if a <base href="..." /> tag is found it will be used,
 otherwise if the
 .Ar baseurl
-option is specified then that is used, if neither are set then the relative url
+option is specified then that is used, if neither are set then the relative URL
 is printed.
-.It content\-type
+.It content-type
 Usually application/atom+xml or application/rss+xml.
 .El
 .Sh EXIT STATUS
 .Ex -std
 .Sh EXAMPLES
-Get urls from xkcd website:
+Get URLs from a website:
 .Bd -literal
-curl -s -L http://www.xkcd.com | sfeed_web "http://www.xkcd.com/"
+curl -s -L 'https://codemadness.org/' | sfeed_web 'https://codemadness.org/'
 .Ed
 .Sh SEE ALSO
 .Xr sfeed_update 1 ,

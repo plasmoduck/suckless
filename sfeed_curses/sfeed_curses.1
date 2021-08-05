@@ -1,38 +1,37 @@
-.Dd December 18, 2020
+.Dd August 3, 2021
 .Dt SFEED_CURSES 1
 .Os
 .Sh NAME
 .Nm sfeed_curses
-.Nd curses UI for viewing feed items
+.Nd curses UI for viewing feed data
 .Sh SYNOPSIS
 .Nm
-.Op Ar file...
+.Op Ar
 .Sh DESCRIPTION
 .Nm
-shows the feed data which is in the
-.Xr sfeed 5
-format into a UI.
-.Pp
-.Nm
-can read this feed data from stdin or one or more
-.Ar files .
-If no
-.Ar files
-are specified then the data is read from stdin and the feed name is "stdin".
-No sidebar is visible by default in this case.
+formats feed data (TSV) from
+.Xr sfeed 1
+from stdin or for each
+.Ar file
+into a curses UI.
 If one or more
-.Ar files
-are specified, the basename of the
+.Ar file
+arguments are specified then the basename of the
 .Ar file
 is used as the feed name in the output such as the feeds sidebar.
 The
-.Ar files
-are processed and shown in the specified argument order in the feeds sidebar.
+.Ar file
+arguments are processed and shown in the specified argument order in the feeds
+sidebar.
+If no
+.Ar file
+arguments are specified then the data is read from stdin and the feed name is
+"stdin" and no sidebar is visible by default in this case.
 .Pp
 Items with a timestamp from the last day compared to the system time at the
-time of loading the feed are automatically marked as new and bold.
+time of loading the feed are marked as new and bold.
 There is also an alternative mode available to mark items as read by matching
-it against a list of urls from a plain-text file.
+it against a list of URLs from a plain-text file.
 .Pp
 .Nm
 aligns the output.
@@ -49,10 +48,14 @@ and
 Go one row up.
 .It j, ARROW DOWN
 Go one row down.
+.It K
+Go one row up and open the item.
+.It J
+Go one row down and open the item.
 .It h, ARROW LEFT
-Focus pane to the left (feeds).
+Focus feeds pane.
 .It l, ARROW RIGHT
-Focus pane to the right (items).
+Focus items pane.
 .It TAB
 Cycle focused pane (between feeds and items).
 .It g
@@ -67,6 +70,10 @@ Scroll one page down.
 Prompt for a new search and search forward (case-insensitive).
 .It ?
 Prompt for a new search and search backward (case-insensitive).
+.It \&[
+Go to the previous feed in the feeds pane and open it.
+.It ]
+Go to the next feed in the feeds pane and open it.
 .It n
 Search forward with the previously set search term.
 .It N
@@ -77,23 +84,33 @@ Redraw screen.
 Reload all feed files which were specified as arguments on startup.
 .It m
 Toggle mouse-mode.
+It supports xterm X10 and extended SGR encoding.
 .It s
-Toggle showing the feeds pane sidebar.
+Toggle between monocle layout and the previous non-monocle layout.
 .It <
-Use fixed sidebar width and decrease fixed width by 1 column.
+Use a fixed sidebar size for the current layout and decrease the fixed width or
+height by 1 column.
 .It >
-Use fixed sidebar width and increase fixed width by 1 column.
+Use a fixed sidebar size for the current layout and increase the fixed width or
+height by 1 column.
 .It =
-Reset sidebar width to automatic adjustment.
+Reset the sidebar size to automaticly adjust for the current layout.
+With the vertical layout the width is the longest feed name with the item
+counts right-aligned.
+With the horizontal layout the height is half of the window height (minus the
+statusbar) or otherwise the total amount of visible feeds, whichever fits the
+best.
 .It t
 Toggle showing only feeds with new items in the sidebar.
 .It a, e, @
-Plumb url of the enclosure.
-The url is passed as a parameter to the program specified in
+Plumb URL of the enclosure.
+The URL is passed as a parameter to the program specified in
 .Ev SFEED_PLUMBER .
 .It o, ENTER, RETURN
 Feeds pane: load feed and its items.
-Items pane: plumb current item url, the url is passed as a parameter to
+In the monocle layout it will also switch to the items pane after loading the
+feed items.
+Items pane: plumb current item URL, the URL is passed as a parameter to
 the program specified in
 .Ev SFEED_PLUMBER .
 .It c, p, |
@@ -101,7 +118,7 @@ Pipe the whole TAB-Separated Value line to a program.
 This program can be specified with
 .Ev SFEED_PIPER .
 .It y
-Pipe the TAB-Separated Value field for yanking the url to a program.
+Pipe the TAB-Separated Value field for yanking the URL to a program.
 This program can be specified with
 .Ev SFEED_YANKER .
 .It E
@@ -128,6 +145,15 @@ Mark all items of the current loaded feed as unread.
 This will only work when
 .Ev SFEED_URL_FILE
 is set.
+.It 1
+Set the current layout to a vertical mode.
+Showing a feeds sidebar to the left and the feed items to the right.
+.It 2
+Set the current layout to a horizontal mode.
+Showing a feeds sidebar on the top and the feed items on the bottom.
+.It 3
+Set the current layout to a monocle mode.
+Showing either a feeds or an feed items pane.
 .It q, EOF
 Quit
 .El
@@ -136,6 +162,8 @@ When mouse-mode is enabled the below actions are available.
 .Bl -tag -width Ds
 .It LEFT-CLICK
 Feeds pane: select and load the feed and its items.
+In the monocle layout it will also switch to the items pane after loading the
+feed items.
 Items pane: select item, when already selected then plumb it.
 .It RIGHT-CLICK
 Feeds pane: select feed, but do not load it.
@@ -144,6 +172,10 @@ Items pane: pipe the item.
 Scroll one page up.
 .It SCROLL DOWN
 Scroll one page down.
+.It FORWARD
+Switch to the items pane.
+.It BACKWARD
+Switch to the feeds pane.
 .El
 .Sh SIGNALS
 .Bl -tag -width Ds
@@ -156,6 +188,10 @@ Resize the pane dimensions relative to the terminal size.
 .El
 .Sh ENVIRONMENT VARIABLES
 .Bl -tag -width Ds
+.It Ev SFEED_AUTOCMD
+Read and process a sequence of keys as input commands from this environment
+variable first, afterwards read from stdin as usual.
+This can be useful to automate certain actions at the start.
 .It Ev SFEED_PIPER
 A program where the whole TAB-Separated Value line is piped to.
 By default this is "sfeed_content".
@@ -167,7 +203,7 @@ will wait until the program is finished.
 If set to "0" then it will suppress stdout and stderr output.
 By default this is set to "1".
 .It Ev SFEED_PLUMBER
-A program that received the link url or enclosure url as a parameter.
+A program that received the link URL or enclosure URL as a parameter.
 By default this is "xdg-open".
 .It Ev SFEED_PLUMBER_INTERACTIVE
 Handle the program interactively in the same terminal or not.
@@ -179,7 +215,7 @@ For example this option is useful to open a text-mode browser in the same
 terminal.
 By default this is set to "0".
 .It Ev SFEED_YANKER
-A program where the url or enclosure field is piped to, to copy it to a
+A program where the URL or enclosure field is piped to, to copy it to a
 clipboard.
 By default this is "xclip -r".
 .It Ev SFEED_YANKER_INTERACTIVE
@@ -192,22 +228,26 @@ By default this is set to "0".
 .It Ev SFEED_URL_FILE
 If this variable is set then a different mode is used to mark items as read,
 instead of checking the timestamp, which is the default.
-The value specified is a plain-text file containing a list of read urls, one
-url per line.
-This url is matched on the link field as specified in
-.Xr sfeed 5 .
+The value specified is a plain-text file containing a list of read URLs, one
+URL per line.
+This URL is matched on the link field if it is set, otherwise it is matched on
+the id field.
 .It Ev SFEED_MARK_READ
 A program to mark items as read if
 .Ev SFEED_URL_FILE
 is also set, if unset the default program used is "sfeed_markread read".
-The marked items are piped to the program.
+The marked items are piped to the program line by line.
+If the feed item has a link then this line is the link field, otherwise it is
+the id field.
 The program is expected to merge items in a safe/transactional manner.
 The program should return the exit status 0 on success or non-zero on failure.
 .It Ev SFEED_MARK_UNREAD
 A program to mark items as unread if
 .Ev SFEED_URL_FILE
 is also set, if unset the default program used is "sfeed_markread unread".
-The marked items are piped to the program.
+The unmarked items are piped to the program line by line.
+If the feed item has a link then this line is the link field, otherwise it is
+the id field.
 The program is expected to merge items in a safe/transactional manner.
 The program should return the exit status 0 on success or non-zero on failure.
 .It Ev SFEED_LAZYLOAD
@@ -232,6 +272,10 @@ It can be used by the plumb or pipe program for scripting purposes.
 .El
 .Sh EXIT STATUS
 .Ex -std
+.Sh EXAMPLES
+.Bd -literal
+sfeed_curses ~/.sfeed/feeds/*
+.Ed
 .Sh SEE ALSO
 .Xr sfeed 1 ,
 .Xr sfeed_content 1 ,

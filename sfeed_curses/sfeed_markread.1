@@ -1,4 +1,4 @@
-.Dd August 2, 2020
+.Dd July 25, 2021
 .Dt SFEED_MARKREAD 1
 .Os
 .Sh NAME
@@ -7,18 +7,39 @@
 .Sh SYNOPSIS
 .Nm
 .Ar read | Ar unread
+.Op Ar urlfile
 .Sh DESCRIPTION
 .Nm
-expects to receive a plain-text list with one or more urls from stdin.
-The received format from stdin is one url per line.
+reads a plain-text list of URLs from stdin.
+The file format for the list of URLs is one URL per line.
+.Nm
+will write to the file specified as
+.Ar urlfile
+or with the environment variable
+.Ev SFEED_URL_FILE .
+The
+.Nm
+script can be used by
+.Xr sfeed_curses 1
+to mark items as read and unread.
 .Sh ENVIRONMENT VARIABLES
 .Bl -tag -width Ds
 .It Ev SFEED_URL_FILE
-This variable must be set to use as the path to the file containing a
-plain-text list of read urls.
+This variable can be set to use as the path to the file containing a
+plain-text list of read URLs.
 .El
 .Sh EXIT STATUS
 .Ex -std
+.Sh EXAMPLES
+.Bd -literal
+export SFEED_URL_FILE="$HOME/.sfeed/urls"
+echo 'https://codemadness.org/sfeed.html' | sfeed_markread read
+.Ed
+.Pp
+or
+.Bd -literal
+echo 'https://codemadness.org/sfeed.html' | sfeed_markread read ~/.sfeed/urls
+.Ed
 .Sh SEE ALSO
 .Xr awk 1 ,
 .Xr sfeed_curses 1

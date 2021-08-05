@@ -6,7 +6,7 @@ sfeed_curses is a curses UI front-end for sfeed.
 It shows the TAB-separated feed items in a graphical command-line UI. The
 interface has a look inspired by the mutt mail client. It has a sidebar panel
 for the feeds, a panel with a listing of the items and a small statusbar for
-the selected item/url. Some functions like searching and scrolling are
+the selected item/URL. Some functions like searching and scrolling are
 integrated in the interface itself.
 
 
@@ -30,8 +30,8 @@ Like the format programs included in sfeed you can run it like this:
 
 By default sfeed_curses marks the items of the last day as new/bold. To manage
 read/unread items in a different way a plain-text file with a list of the read
-urls can be used. To enable this behaviour the path to this file can be
-specified by setting the environment variable $SFEED_URL_FILE to the url file:
+URLs can be used. To enable this behaviour the path to this file can be
+specified by setting the environment variable $SFEED_URL_FILE to the URL file:
 
 	SFEED_URL_FILE=~/.sfeed/urls sfeed_curses ~/.sfeed/feeds/*
 
@@ -64,7 +64,7 @@ Run-time dependencies
 Optional run-time dependencies
 ------------------------------
 
-- xclip for yanking the url or enclosure. See $SFEED_YANKER to change it.
+- xclip for yanking the URL or enclosure. See $SFEED_YANKER to change it.
 - xdg-open, used as a plumber by default. See $SFEED_PLUMBER to change it.
 - awk, used by the sfeed_content and sfeed_markread script.
   See the ENVIRONMENT VARIABLES section in the man page to change it.
@@ -102,39 +102,9 @@ testing.  Some of them might be fixed already upstream:
 Color themes
 ------------
 
-/* newsboat-like (blue, yellow) */
-#define THEME_ITEM_NORMAL()           do {                          } while(0)
-#define THEME_ITEM_FOCUS()            do {                          } while(0)
-#define THEME_ITEM_BOLD()             do { attrmode(ATTR_BOLD_ON);  } while(0)
-#define THEME_ITEM_SELECTED()         do { if (p->focused) ttywrite("\x1b[93;44m"); } while(0) /* bright yellow fg, blue bg */
-#define THEME_SCROLLBAR_FOCUS()       do { ttywrite("\x1b[34m");    } while(0) /* blue fg */
-#define THEME_SCROLLBAR_NORMAL()      do { ttywrite("\x1b[34m");    } while(0)
-#define THEME_SCROLLBAR_TICK_FOCUS()  do { ttywrite("\x1b[44m");    } while(0) /* blue bg */
-#define THEME_SCROLLBAR_TICK_NORMAL() do { ttywrite("\x1b[44m");    } while(0)
-#define THEME_STATUSBAR()             do { attrmode(ATTR_BOLD_ON); ttywrite("\x1b[93;44m"); } while(0)
-#define THEME_INPUT_LABEL()           do {                          } while(0)
-#define THEME_INPUT_NORMAL()          do {                          } while(0)
-
-
-/* TempleOS-like (for fun and god) */
-/* set true-color foreground / background, Terry would've preferred ANSI */
-#define SETFGCOLOR(r,g,b)    ttywritef("\x1b[38;2;%d;%d;%dm", r, g, b)
-#define SETBGCOLOR(r,g,b)    ttywritef("\x1b[48;2;%d;%d;%dm", r, g, b)
-
-#define THEME_ITEM_NORMAL()           do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
-#define THEME_ITEM_FOCUS()            do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
-#define THEME_ITEM_BOLD()             do { attrmode(ATTR_BOLD_ON); SETFGCOLOR(0xaa, 0x00, 0x00); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
-#define THEME_ITEM_SELECTED()         do { if (p->focused) attrmode(ATTR_REVERSE_ON); } while(0)
-#define THEME_SCROLLBAR_FOCUS()       do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
-#define THEME_SCROLLBAR_NORMAL()      do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
-#define THEME_SCROLLBAR_TICK_FOCUS()  do { SETBGCOLOR(0x00, 0x00, 0xaa); SETFGCOLOR(0xff, 0xff, 0xff); } while(0)
-#define THEME_SCROLLBAR_TICK_NORMAL() do { SETBGCOLOR(0x00, 0x00, 0xaa); SETFGCOLOR(0xff, 0xff, 0xff); } while(0)
-#define THEME_STATUSBAR()             do { ttywrite("\x1b[6m"); SETBGCOLOR(0x00, 0x00, 0xaa); SETFGCOLOR(0xff, 0xff, 0xff); } while(0) /* blink statusbar */
-#define THEME_INPUT_LABEL()           do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
-#define THEME_INPUT_NORMAL()          do { SETFGCOLOR(0x00, 0x00, 0xaa); SETBGCOLOR(0xff, 0xff, 0xff); } while(0)
-
-#undef SCROLLBAR_SYMBOL_BAR
-#define SCROLLBAR_SYMBOL_BAR  "\xe2\x95\x91" /* symbol: "double vertical" */
+To change the default theme you can set SFEED_THEME using make or in the
+Makefile or include the a header file in sfeed_curses.c. See also the themes/
+directory.
 
 
 Running custom commands inside the program
@@ -159,10 +129,10 @@ or
 
 The specified script should be in $PATH or an absolute path.
 
-Example of a `markallread.sh` shellscript to mark all urls as read:
+Example of a `markallread.sh` shellscript to mark all URLs as read:
 
 	#!/bin/sh
-	# mark all items/urls as read.
+	# mark all items/URLs as read.
 
 	tmp=$(mktemp)
 	(cat ~/.sfeed/urls; cut -f 3 ~/.sfeed/feeds/*) | \
@@ -176,10 +146,10 @@ Example of a `syncnews.sh` shellscript to update the feeds and reload them:
 	sfeed_update && pkill -SIGHUP sfeed_curses
 
 
-Open an url directly in the same terminal
+Open an URL directly in the same terminal
 -----------------------------------------
 
-To open an url directly in the same terminal using the text-mode lynx browser:
+To open an URL directly in the same terminal using the text-mode lynx browser:
 
 	SFEED_PLUMBER=lynx SFEED_PLUMBER_INTERACTIVE=1 sfeed_curses ~/.sfeed/feeds/*
 

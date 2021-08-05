@@ -1,4 +1,4 @@
-.Dd March 15, 2020
+.Dd July 25, 2021
 .Dt SFEED_PLAIN 1
 .Os
 .Sh NAME
@@ -6,26 +6,27 @@
 .Nd format feed data to a plain-text list
 .Sh SYNOPSIS
 .Nm
-.Op Ar file...
+.Op Ar
 .Sh DESCRIPTION
 .Nm
 formats feed data (TSV) from
 .Xr sfeed 1
-from stdin or
+from stdin or for each
 .Ar file
 to stdout as a plain-text list.
 If one or more
 .Ar file
-are specified, the basename of the
+arguments are specified then the basename of the
 .Ar file
 is used as the feed name in the output.
 If no
 .Ar file
-parameters are specified and so the data is read from stdin the feed name
+arguments are specified and so the data is read from stdin then the feed name
 is empty.
 .Pp
 Items with a timestamp from the last day compared to the system time at the
 time of formatting are marked as new.
+Items are marked as new with the prefix "N".
 .Pp
 .Nm
 aligns the output.
@@ -40,6 +41,10 @@ and
 .Xr wcwidth 3 .
 .Sh EXIT STATUS
 .Ex -std
+.Sh EXAMPLES
+.Bd -literal
+curl -s 'https://codemadness.org/atom.xml' | sfeed | sfeed_plain
+.Ed
 .Sh SEE ALSO
 .Xr sfeed 1 ,
 .Xr sfeed_html 1 ,

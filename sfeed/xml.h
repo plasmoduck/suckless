@@ -24,7 +24,7 @@ typedef struct xmlparser {
 #ifndef GETNEXT
 	/* GETNEXT overridden to reduce function call overhead and further
 	   context optimizations. */
-	#define GETNEXT getchar
+	#define GETNEXT getchar_unlocked
 #endif
 
 	/* current tag */

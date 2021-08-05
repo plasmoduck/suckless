@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,167 +8,241 @@
 
 #include "util.h"
 
-int
-parseuri(const char *s, struct uri *u, int rel)
+/* print to stderr, print error message of errno and exit().
+   Unlike BSD err() it does not prefix __progname */
+__dead void
+err(int exitstatus, const char *fmt, ...)
 {
-	const char *p = s, *b;
-	char *endptr = NULL;
-	size_t i;
-	unsigned long l;
+	va_list ap;
+	int saved_errno;
 
-	u->proto[0] = u->host[0] = u->path[0] = u->port[0] = '\0';
-	if (!*s)
-		return 0;
+	saved_errno = errno;
 
-	/* prefix is "//", don't read protocol, skip to domain parsing */
-	if (!strncmp(p, "//", 2)) {
-		p += 2; /* skip "//" */
-	} else {
-		/* protocol part */
-		for (p = s; isalpha((unsigned char)*p) || isdigit((unsigned char)*p) ||
-			       *p == '+' || *p == '-' || *p == '.'; p++)
-			;
-		if (!strncmp(p, "://", 3)) {
-			if ((size_t)(p - s) >= sizeof(u->proto))
-				return -1; /* protocol too long */
-			memcpy(u->proto, s, p - s);
-			u->proto[p - s] = '\0';
-			p += 3; /* skip "://" */
-		} else {
-			p = s; /* no protocol format, set to start */
-			/* relative url: read rest as path, else as domain */
-			if (rel)
-				goto readpath;
-		}
+	if (fmt) {
+		va_start(ap, fmt);
+		vfprintf(stderr, fmt, ap);
+		va_end(ap);
+		fputs(": ", stderr);
 	}
+	fprintf(stderr, "%s\n", strerror(saved_errno));
+
+	exit(exitstatus);
+}
+
+/* print to stderr and exit().
+   Unlike BSD errx() it does not prefix __progname */
+__dead void
+errx(int exitstatus, const char *fmt, ...)
+{
+	va_list ap;
+
+	if (fmt) {
+		va_start(ap, fmt);
+		vfprintf(stderr, fmt, ap);
+		va_end(ap);
+	}
+	fputs("\n", stderr);
+
+	exit(exitstatus);
+}
+
+/* check if string has a non-empty scheme / protocol part */
+int
+uri_hasscheme(const char *s)
+{
+	const char *p = s;
+
+	for (; isalpha((unsigned char)*p) || isdigit((unsigned char)*p) ||
+		       *p == '+' || *p == '-' || *p == '.'; p++)
+		;
+	/* scheme, except if empty and starts with ":" then it is a path */
+	return (*p == ':' && p != s);
+}
+
+int
+uri_parse(const char *s, struct uri *u)
+{
+	const char *p = s;
+	char *endptr;
+	size_t i;
+	long l;
+
+	u->proto[0] = u->userinfo[0] = u->host[0] = u->port[0] = '\0';
+	u->path[0] = u->query[0] = u->fragment[0] = '\0';
+
+	/* protocol-relative */
+	if (*p == '/' && *(p + 1) == '/') {
+		p += 2; /* skip "//" */
+		goto parseauth;
+	}
+
+	/* scheme / protocol part */
+	for (; isalpha((unsigned char)*p) || isdigit((unsigned char)*p) ||
+		       *p == '+' || *p == '-' || *p == '.'; p++)
+		;
+	/* scheme, except if empty and starts with ":" then it is a path */
+	if (*p == ':' && p != s) {
+		if (*(p + 1) == '/' && *(p + 2) == '/')
+			p += 3; /* skip "://" */
+		else
+			p++; /* skip ":" */
+
+		if ((size_t)(p - s) >= sizeof(u->proto))
+			return -1; /* protocol too long */
+		memcpy(u->proto, s, p - s);
+		u->proto[p - s] = '\0';
+
+		if (*(p - 1) != '/')
+			goto parsepath;
+	} else {
+		p = s; /* no scheme format, reset to start */
+		goto parsepath;
+	}
+
+parseauth:
+	/* userinfo (username:password) */
+	i = strcspn(p, "@/?#");
+	if (p[i] == '@') {
+		if (i >= sizeof(u->userinfo))
+			return -1; /* userinfo too long */
+		memcpy(u->userinfo, p, i);
+		u->userinfo[i] = '\0';
+		p += i + 1;
+	}
+
 	/* IPv6 address */
 	if (*p == '[') {
-		/* bracket not found or host too long */
-		if (!(b = strchr(p, ']')) || (size_t)(b - p) < 3 ||
-		    (size_t)(b - p) >= sizeof(u->host))
+		/* bracket not found, host too short or too long */
+		i = strcspn(p, "]");
+		if (p[i] != ']' || i < 3)
 			return -1;
-		memcpy(u->host, p, b - p + 1);
-		u->host[b - p + 1] = '\0';
-		p = b + 1;
+		i++; /* including "]" */
 	} else {
 		/* domain / host part, skip until port, path or end. */
-		if ((i = strcspn(p, ":/")) >= sizeof(u->host))
-			return -1; /* host too long */
-		memcpy(u->host, p, i);
-		u->host[i] = '\0';
-		p = &p[i];
+		i = strcspn(p, ":/?#");
 	}
+	if (i >= sizeof(u->host))
+		return -1; /* host too long */
+	memcpy(u->host, p, i);
+	u->host[i] = '\0';
+	p += i;
+
 	/* port */
 	if (*p == ':') {
-		if ((i = strcspn(++p, "/")) >= sizeof(u->port))
+		p++;
+		if ((i = strcspn(p, "/?#")) >= sizeof(u->port))
 			return -1; /* port too long */
 		memcpy(u->port, p, i);
 		u->port[i] = '\0';
-		/* check for valid port: range 1 - 65535 */
+		/* check for valid port: range 1 - 65535, may be empty */
 		errno = 0;
-		l = strtoul(u->port, &endptr, 10);
-		if (errno || u->port[0] == '\0' || *endptr ||
-		    !l || l > 65535)
+		l = strtol(u->port, &endptr, 10);
+		if (i && (errno || *endptr || l <= 0 || l > 65535))
 			return -1;
-		p = &p[i];
+		p += i;
 	}
-readpath:
-	if (u->host[0]) {
-		p = &p[strspn(p, "/")];
-		strlcpy(u->path, "/", sizeof(u->path));
-	} else {
-		/* absolute uri must have a host specified */
-		if (!rel)
-			return -1;
-	}
-	/* treat truncation as an error */
-	if (strlcat(u->path, p, sizeof(u->path)) >= sizeof(u->path))
-		return -1;
-	return 0;
-}
 
-static int
-encodeuri(char *buf, size_t bufsiz, const char *s)
-{
-	static const char *table = "0123456789ABCDEF";
-	size_t i, b;
+parsepath:
+	/* path */
+	if ((i = strcspn(p, "?#")) >= sizeof(u->path))
+		return -1; /* path too long */
+	memcpy(u->path, p, i);
+	u->path[i] = '\0';
+	p += i;
 
-	for (i = 0, b = 0; s[i]; i++) {
-		if ((unsigned char)s[i] <= ' ' ||
-		    (unsigned char)s[i] >= 127) {
-			if (b + 3 >= bufsiz)
-				return -1;
-			buf[b++] = '%';
-			buf[b++] = table[((unsigned char)s[i] >> 4) & 15];
-			buf[b++] = table[(unsigned char)s[i] & 15];
-		} else if (b < bufsiz) {
-			buf[b++] = s[i];
-		} else {
-			return -1;
-		}
+	/* query */
+	if (*p == '?') {
+		p++;
+		if ((i = strcspn(p, "#")) >= sizeof(u->query))
+			return -1; /* query too long */
+		memcpy(u->query, p, i);
+		u->query[i] = '\0';
+		p += i;
 	}
-	if (b >= bufsiz)
-		return -1;
-	buf[b] = '\0';
+
+	/* fragment */
+	if (*p == '#') {
+		p++;
+		if ((i = strlen(p)) >= sizeof(u->fragment))
+			return -1; /* fragment too long */
+		memcpy(u->fragment, p, i);
+		u->fragment[i] = '\0';
+	}
 
 	return 0;
 }
 
-/* Get absolute uri; if `link` is relative use `base` to make it absolute.
- * the returned string in `buf` is uri encoded, see: encodeuri(). */
+/* Transform and try to make the URI `u` absolute using base URI `b` into `a`.
+   Follows some of the logic from "RFC 3986 - 5.2.2. Transform References".
+   Returns 0 on success, -1 on error or truncation. */
 int
-absuri(char *buf, size_t bufsiz, const char *link, const char *base)
+uri_makeabs(struct uri *a, struct uri *u, struct uri *b)
 {
-	struct uri ulink, ubase;
-	char tmp[4096], *host, *p, *port;
-	int c, r;
-	size_t i;
+	char *p;
+	int c;
 
-	buf[0] = '\0';
-	if (parseuri(base, &ubase, 0) == -1 ||
-	    parseuri(link, &ulink, 1) == -1 ||
-	    (!ulink.host[0] && !ubase.host[0]))
-		return -1;
+	strlcpy(a->fragment, u->fragment, sizeof(a->fragment));
 
-	if (!strncmp(link, "//", 2)) {
-		host = ulink.host;
-		port = ulink.port;
+	if (u->proto[0] || u->host[0]) {
+		strlcpy(a->proto, u->proto[0] ? u->proto : b->proto, sizeof(a->proto));
+		strlcpy(a->host, u->host, sizeof(a->host));
+		strlcpy(a->userinfo, u->userinfo, sizeof(a->userinfo));
+		strlcpy(a->host, u->host, sizeof(a->host));
+		strlcpy(a->port, u->port, sizeof(a->port));
+		strlcpy(a->path, u->path, sizeof(a->path));
+		strlcpy(a->query, u->query, sizeof(a->query));
+		return 0;
+	}
+
+	strlcpy(a->proto, b->proto, sizeof(a->proto));
+	strlcpy(a->host, b->host, sizeof(a->host));
+	strlcpy(a->userinfo, b->userinfo, sizeof(a->userinfo));
+	strlcpy(a->host, b->host, sizeof(a->host));
+	strlcpy(a->port, b->port, sizeof(a->port));
+
+	if (!u->path[0]) {
+		strlcpy(a->path, b->path, sizeof(a->path));
+	} else if (u->path[0] == '/') {
+		strlcpy(a->path, u->path, sizeof(a->path));
 	} else {
-		host = ulink.host[0] ? ulink.host : ubase.host;
-		port = ulink.port[0] ? ulink.port : ubase.port;
-	}
-	r = snprintf(tmp, sizeof(tmp), "%s://%s%s%s",
-		ulink.proto[0] ?
-			ulink.proto :
-			(ubase.proto[0] ? ubase.proto : "http"),
-		host,
-		port[0] ? ":" : "",
-		port);
-	if (r < 0 || (size_t)r >= sizeof(tmp))
-		return -1; /* error or truncation */
+		a->path[0] = (b->host[0] && b->path[0] != '/') ? '/' : '\0';
+		a->path[1] = '\0';
 
-	/* relative to root */
-	if (!ulink.host[0] && ulink.path[0] != '/') {
-		/* relative to base url path */
-		if (ulink.path[0]) {
-			if ((p = strrchr(ubase.path, '/'))) {
-				/* temporary null-terminate */
-				c = *(++p);
-				*p = '\0';
-				i = strlcat(tmp, ubase.path, sizeof(tmp));
-				*p = c; /* restore */
-				if (i >= sizeof(tmp))
-					return -1;
-			}
-		} else if (strlcat(tmp, ubase.path, sizeof(tmp)) >=
-		           sizeof(tmp)) {
-			return -1;
+		if ((p = strrchr(b->path, '/'))) {
+			c = *(++p);
+			*p = '\0'; /* temporary NUL-terminate */
+			if (strlcat(a->path, b->path, sizeof(a->path)) >= sizeof(a->path))
+				return -1;
+			*p = c; /* restore */
 		}
+		if (strlcat(a->path, u->path, sizeof(a->path)) >= sizeof(a->path))
+			return -1;
 	}
-	if (strlcat(tmp, ulink.path, sizeof(tmp)) >= sizeof(tmp))
-		return -1;
 
-	return encodeuri(buf, bufsiz, tmp);
+	if (u->path[0] || u->query[0])
+		strlcpy(a->query, u->query, sizeof(a->query));
+	else
+		strlcpy(a->query, b->query, sizeof(a->query));
+
+	return 0;
+}
+
+int
+uri_format(char *buf, size_t bufsiz, struct uri *u)
+{
+	return snprintf(buf, bufsiz, "%s%s%s%s%s%s%s%s%s%s%s%s",
+		u->proto,
+		u->userinfo[0] ? u->userinfo : "",
+		u->userinfo[0] ? "@" : "",
+		u->host,
+		u->port[0] ? ":" : "",
+		u->port,
+		u->host[0] && u->path[0] && u->path[0] != '/' ? "/" : "",
+		u->path,
+		u->query[0] ? "?" : "",
+		u->query,
+		u->fragment[0] ? "#" : "",
+		u->fragment);
 }
 
 /* Splits fields in the line buffer by replacing TAB separators with NUL ('\0')
@@ -204,7 +279,7 @@ strtotime(const char *s, time_t *t)
 	if (errno || *s == '\0' || *e)
 		return -1;
 	/* NOTE: assumes time_t is 64-bit on 64-bit platforms:
-	         long long (atleast 32-bit) to time_t. */
+	         long long (at least 32-bit) to time_t. */
 	if (t)
 		*t = (time_t)l;
 
@@ -222,7 +297,7 @@ xmlencode(const char *s, FILE *fp)
 		case '\'': fputs("&#39;",  fp); break;
 		case '&':  fputs("&amp;",  fp); break;
 		case '"':  fputs("&quot;", fp); break;
-		default:   fputc(*s, fp);
+		default:   putc(*s, fp);
 		}
 	}
 }
@@ -234,29 +309,49 @@ printutf8pad(FILE *fp, const char *s, size_t len, int pad)
 {
 	wchar_t wc;
 	size_t col = 0, i, slen;
-	int rl, w;
+	int inc, rl, w;
 
 	if (!len)
 		return;
 
 	slen = strlen(s);
-	for (i = 0; i < slen; i += rl) {
-		rl = w = 1;
-		if ((unsigned char)s[i] < 32)
-			continue;
-		if ((unsigned char)s[i] >= 127) {
-			if ((rl = mbtowc(&wc, s + i, slen - i < 4 ? slen - i : 4)) <= 0)
-				break;
-			if ((w = wcwidth(wc)) == -1)
+	for (i = 0; i < slen; i += inc) {
+		inc = 1; /* next byte */
+		if ((unsigned char)s[i] < 32) {
+			continue; /* skip control characters */
+		} else if ((unsigned char)s[i] >= 127) {
+			rl = mbtowc(&wc, s + i, slen - i < 4 ? slen - i : 4);
+			inc = rl;
+			if (rl < 0) {
+				mbtowc(NULL, NULL, 0); /* reset state */
+				inc = 1; /* invalid, seek next byte */
+				w = 1; /* replacement char is one width */
+			} else if ((w = wcwidth(wc)) == -1) {
 				continue;
-		}
-		if (col + w > len || (col + w == len && s[i + rl])) {
-			fputs("\xe2\x80\xa6", fp);
+			}
+
+			if (col + w > len || (col + w == len && s[i + inc])) {
+				fputs("\xe2\x80\xa6", fp); /* ellipsis */
+				col++;
+				break;
+			} else if (rl < 0) {
+				fputs("\xef\xbf\xbd", fp); /* replacement */
+				col++;
+				continue;
+			}
+			fwrite(&s[i], 1, rl, fp);
+			col += w;
+		} else {
+			/* optimization: simple ASCII character */
+			if (col + 1 > len || (col + 1 == len && s[i + 1])) {
+				fputs("\xe2\x80\xa6", fp); /* ellipsis */
+				col++;
+				break;
+			}
+			putc(s[i], fp);
 			col++;
-			break;
 		}
-		fwrite(&s[i], 1, rl, fp);
-		col += w;
+
 	}
 	for (; col < len; ++col)
 		putc(pad, fp);

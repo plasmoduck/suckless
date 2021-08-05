@@ -6,6 +6,7 @@
 #include <unistd.h>
 #else
 #define pledge(p1,p2) 0
+#define unveil(p1,p2) 0
 #endif
 
 #undef strlcat
@@ -20,12 +21,15 @@ struct feed {
 	unsigned long total;    /* total items */
 };
 
-/* uri */
+/* URI */
 struct uri {
-	char proto[48];
+	char proto[48];     /* scheme including ":" or "://" */
+	char userinfo[256]; /* username [:password] */
 	char host[256];
-	char path[2048];
-	char port[6];     /* numeric port */
+	char port[6];       /* numeric port */
+	char path[1024];
+	char query[1024];
+	char fragment[1024];
 };
 
 enum {
@@ -34,9 +38,20 @@ enum {
 	FieldLast
 };
 
-int  absuri(char *, size_t, const char *, const char *);
+/* hint for compilers and static analyzers that a function exits */
+#ifndef __dead
+#define __dead
+#endif
+
+__dead void err(int, const char *, ...);
+__dead void errx(int, const char *, ...);
+
+int uri_format(char *, size_t, struct uri *);
+int uri_hasscheme(const char *);
+int uri_makeabs(struct uri *, struct uri *, struct uri *);
+int uri_parse(const char *, struct uri *);
+
 void parseline(char *, char *[FieldLast]);
-int  parseuri(const char *, struct uri *, int);
 void printutf8pad(FILE *, const char *, size_t, int);
 int  strtotime(const char *, time_t *);
 void xmlencode(const char *, FILE *);

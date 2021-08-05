@@ -1,9 +1,9 @@
-.Dd March 15, 2020
+.Dd January 15, 2021
 .Dt SFEED_OPML_IMPORT 1
 .Os
 .Sh NAME
 .Nm sfeed_opml_import
-.Nd generate a sfeedrc config file from an OPML file
+.Nd generate a sfeedrc config file from an OPML subscription list
 .Sh SYNOPSIS
 .Nm
 .Sh DESCRIPTION
@@ -11,6 +11,10 @@
 reads the OPML XML data from stdin and writes the config file text to stdout.
 .Sh EXIT STATUS
 .Ex -std
+.Sh EXAMPLES
+.Bd -literal
+sfeed_opml_import < opmlfile.xml > ~/.sfeed/sfeedrc
+.Ed
 .Sh SEE ALSO
 .Xr sfeed_update 1 ,
 .Xr sfeedrc 5

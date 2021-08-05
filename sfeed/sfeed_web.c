@@ -1,5 +1,4 @@
 #include <ctype.h>
-#include <err.h>
 #include <stdio.h>
 #include <strings.h>
 
@@ -12,7 +11,6 @@
 static XMLParser parser;
 static int isbasetag, islinktag, ishrefattr, istypeattr;
 static char linkhref[4096], linktype[256], basehref[4096];
-static char abslink[4096];
 
 static void
 printvalue(const char *s)
@@ -39,6 +37,10 @@ xmltagstart(XMLParser *p, const char *t, size_t tl)
 static void
 xmltagstartparsed(XMLParser *p, const char *t, size_t tl, int isshort)
 {
+	struct uri baseuri, linkuri, u;
+	char buf[4096];
+	int r = -1;
+
 	if (!islinktag)
 		return;
 
@@ -47,10 +49,18 @@ xmltagstartparsed(XMLParser *p, const char *t, size_t tl, int isshort)
 	    strncasecmp(linktype, STRP("application/rss")))
 		return;
 
-	if (absuri(abslink, sizeof(abslink), linkhref, basehref) != -1)
-		printvalue(abslink);
+	/* parse base URI each time: it can change. */
+	if (basehref[0] &&
+	    uri_parse(linkhref, &linkuri) != -1 && !linkuri.proto[0] &&
+	    uri_parse(basehref, &baseuri) != -1 &&
+	    uri_makeabs(&u, &linkuri, &baseuri) != -1 && u.proto[0])
+		r = uri_format(buf, sizeof(buf), &u);
+
+	if (r >= 0 && (size_t)r < sizeof(buf))
+		printvalue(buf);
 	else
 		printvalue(linkhref);
+
 	putchar('\t');
 	printvalue(linktype);
 	putchar('\n');

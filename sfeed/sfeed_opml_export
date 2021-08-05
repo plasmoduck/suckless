@@ -4,25 +4,27 @@
 # loadconfig(configfile)
 loadconfig() {
 	# allow to specify config via argv[1].
-	if [ ! x"$1" = x"" ]; then
-		# get absolute path of config file.
-		config=$(readlink -f "$1")
+	if [ "$1" != "" ]; then
+		# get absolute path of config file required for including.
+		config="$1"
+		path=$(readlink -f "${config}" 2>/dev/null)
 	else
 		# default config location.
 		config="$HOME/.sfeed/sfeedrc"
+		path="${config}"
 	fi
 
-	# load config: config is loaded here to be able to override above variables
-	# (sfeedpath, sfeedfile, etc).
-	if [ -r "$config" ]; then
-		. "$config"
+	# config is loaded here to be able to override $sfeedpath or functions.
+	if [ -r "${path}" ]; then
+		. "${path}"
 	else
-		echo "Configuration file \"$config\" does not exist or is not readable." >&2
+		echo "Configuration file \"${config}\" cannot be read." >&2
+		echo "See sfeedrc.example for an example." >&2
 		exit 1
 	fi
 }
 
-# override feeds function to ouput opml XML.
+# override feed function to output OPML XML.
 # feed(name, feedurl, [basesiteurl], [encoding])
 feed() {
 	# NOTE: TABs in field values are unsupported, be sane.

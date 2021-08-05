@@ -1,4 +1,4 @@
-.Dd September 19, 2020
+.Dd August 3, 2021
 .Dt SFEED_UPDATE 1
 .Os
 .Sh NAME
@@ -11,7 +11,7 @@
 .Nm
 writes TAB-separated feed files and merges new items with the items in any
 existing files.
-The items are stored in one file per feed in the directory
+The items are stored as one file per feed in the directory
 .Pa $HOME/.sfeed/feeds
 by default.
 The directory can be changed in the
@@ -42,7 +42,17 @@ format containing all items per feed.
 The
 .Nm
 script merges new items with this file.
-The feedname cannot contain '/' characters, they will be replaced with '_'.
+The feed name cannot contain the '/' character because it is a path separator,
+they will be replaced with '_'.
+.El
+.Sh ENVIRONMENT VARIABLES
+.Bl -tag -width Ds
+.It SFEED_UPDATE_INCLUDE
+When set to "1"
+.Nm
+can be sourced as a script, but it won't run the
+.Fn main
+entry-point.
 .El
 .Sh EXIT STATUS
 .Ex -std
@@ -52,11 +62,11 @@ To update your feeds and format them in various formats:
 # Update
 sfeed_update "configfile"
 # Plain-text list
-sfeed_plain $HOME/.sfeed/feeds/* > $HOME/.sfeed/feeds.txt
+sfeed_plain ~/.sfeed/feeds/* > ~/.sfeed/feeds.txt
 # HTML
-sfeed_html $HOME/.sfeed/feeds/* > $HOME/.sfeed/feeds.html
+sfeed_html ~/.sfeed/feeds/* > ~/.sfeed/feeds.html
 # HTML with frames
-mkdir -p somedir && cd somedir && sfeed_frames $HOME/.sfeed/feeds/*
+mkdir -p somedir && cd somedir && sfeed_frames ~/.sfeed/feeds/*
 .Ed
 .Sh SEE ALSO
 .Xr sfeed 1 ,

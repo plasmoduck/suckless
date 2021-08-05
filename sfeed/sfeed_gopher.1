@@ -1,4 +1,4 @@
-.Dd March 15, 2020
+.Dd July 31, 2021
 .Dt SFEED_GOPHER 1
 .Os
 .Sh NAME
@@ -6,31 +6,33 @@
 .Nd format feed data to Gopher files
 .Sh SYNOPSIS
 .Nm
-.Op Ar file...
+.Op Ar
 .Sh DESCRIPTION
 .Nm
 formats feed data (TSV) from
 .Xr sfeed 1
-from stdin or
+from stdin or for each
 .Ar file
 to stdout in the raw Gopher output format.
 .Pp
 If one or more
 .Ar file
-are specified, the basename of the
+arguments are specified then the basename of the
 .Ar file
 is used as the feed name in the output.
 .Nm
 creates an index file named "index" and for each feed it creates a file with
-the same name as the feedname.
+the same name as the basename of the feed
+.Ar file .
 .Pp
 If no
 .Ar file
-parameters are specified and the data is read from stdin then the data is
+arguments are specified and so the data is read from stdin then the data is
 written to stdout and no files are written.
 .Pp
 Items with a timestamp from the last day compared to the system time at the
 time of formatting are counted and marked as new.
+Items are marked as new with the prefix "N".
 .Sh ENVIRONMENT
 .Bl -tag -width Ds
 .It Ev SFEED_GOPHER_PATH
@@ -46,6 +48,11 @@ The default is "70".
 .El
 .Sh EXIT STATUS
 .Ex -std
+.Sh EXAMPLES
+.Bd -literal
+SFEED_GOPHER_HOST="codemadness.org" SFEED_GOPHER_PATH="/feeds/" \\
+	sfeed_gopher ~/.sfeed/feeds/*
+.Ed
 .Sh SEE ALSO
 .Xr sfeed 1 ,
 .Xr sfeed 5

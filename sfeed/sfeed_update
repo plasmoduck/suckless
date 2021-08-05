@@ -14,18 +14,20 @@ maxjobs=8
 loadconfig() {
 	# allow to specify config via argv[1].
 	if [ "$1" != "" ]; then
-		# get absolute path of config file.
-		config=$(readlink -f "$1")
+		# get absolute path of config file required for including.
+		config="$1"
+		path=$(readlink -f "${config}" 2>/dev/null)
 	else
 		# default config location.
 		config="$HOME/.sfeed/sfeedrc"
+		path="${config}"
 	fi
 
 	# config is loaded here to be able to override $sfeedpath or functions.
-	if [ -r "${config}" ]; then
-		. "${config}"
+	if [ -r "${path}" ]; then
+		. "${path}"
 	else
-		echo "Configuration file \"${config}\" does not exist or is not readable." >&2
+		echo "Configuration file \"${config}\" cannot be read." >&2
 		echo "See sfeedrc.example for an example." >&2
 		exit 1
 	fi
@@ -45,14 +47,20 @@ fetch() {
 }
 
 # convert encoding from one encoding to another.
-# convertencoding(from, to)
+# convertencoding(name, from, to)
 convertencoding() {
-	if [ "$1" != "" ] && [ "$2" != "" ] && [ "$1" != "$2" ]; then
-		iconv -cs -f "$1" -t "$2" 2> /dev/null
+	if [ "$2" != "" ] && [ "$3" != "" ] && [ "$2" != "$3" ]; then
+		iconv -cs -f "$2" -t "$3" 2> /dev/null
 	else
-		# else no convert, just output
+		# else no convert, just output.
 		cat
 	fi
+}
+
+# parse and convert input, by default XML to the sfeed(5) TSV format.
+# parse(name, feedurl, basesiteurl)
+parse() {
+	sfeed "$3"
 }
 
 # filter fields.
@@ -73,24 +81,20 @@ order() {
 	sort -t '	' -k1rn,1
 }
 
-# fetch and parse feed.
-# feed(name, feedurl, [basesiteurl], [encoding])
-feed() {
-	# wait until ${maxjobs} are finished: will stall the queue if an item
-	# is slow, but it is portable.
-	[ ${signo} -ne 0 ] && return
-	[ $((curjobs % maxjobs)) -eq 0 ] && wait
-	[ ${signo} -ne 0 ] && return
-	curjobs=$((curjobs + 1))
-
-	(name="$1"
-	filename="$(printf '%s' "$1" | tr '/' '_')"
+# internal handler to fetch and process a feed.
+# _feed(name, feedurl, [basesiteurl], [encoding])
+_feed() {
+	name="$1"
 	feedurl="$2"
 	basesiteurl="$3"
 	encoding="$4"
 
+	filename="$(printf '%s' "${name}" | tr '/' '_')"
 	sfeedfile="${sfeedpath}/${filename}"
 	tmpfeedfile="${sfeedtmpdir}/${filename}"
+
+	# if file does not exist yet create it.
+	[ -e "${sfeedfile}" ] || touch "${sfeedfile}" 2>/dev/null
 
 	if ! fetch "${name}" "${feedurl}" "${sfeedfile}" > "${tmpfeedfile}.fetch"; then
 		log "${name}" "FAIL (FETCH)"
@@ -100,14 +104,15 @@ feed() {
 	# try to detect encoding (if not specified). if detecting the encoding fails assume utf-8.
 	[ "${encoding}" = "" ] && encoding=$(sfeed_xmlenc < "${tmpfeedfile}.fetch")
 
-	if ! convertencoding "${encoding}" "utf-8" < "${tmpfeedfile}.fetch" > "${tmpfeedfile}.utf8"; then
+	if ! convertencoding "${name}" "${encoding}" "utf-8" < "${tmpfeedfile}.fetch" > "${tmpfeedfile}.utf8"; then
 		log "${name}" "FAIL (ENCODING)"
 		return
 	fi
 	rm -f "${tmpfeedfile}.fetch"
 
-	if ! sfeed "${basesiteurl}" < "${tmpfeedfile}.utf8" > "${tmpfeedfile}.tsv"; then
-		log "${name}" "FAIL (CONVERT)"
+	# if baseurl is empty then use feedurl.
+	if ! parse "${name}" "${feedurl}" "${basesiteurl:-${feedurl}}" < "${tmpfeedfile}.utf8" > "${tmpfeedfile}.tsv"; then
+		log "${name}" "FAIL (PARSE)"
 		return
 	fi
 	rm -f "${tmpfeedfile}.utf8"
@@ -124,14 +129,7 @@ feed() {
 		return
 	fi
 
-	# if file does not exist yet "merge" with /dev/null.
-	if [ -e "${sfeedfile}" ]; then
-		oldfile="${sfeedfile}"
-	else
-		oldfile="/dev/null"
-	fi
-
-	if ! merge "${name}" "${oldfile}" "${tmpfeedfile}.filter" > "${tmpfeedfile}.merge"; then
+	if ! merge "${name}" "${sfeedfile}" "${tmpfeedfile}.filter" > "${tmpfeedfile}.merge"; then
 		log "${name}" "FAIL (MERGE)"
 		return
 	fi
@@ -152,7 +150,19 @@ feed() {
 
 	# OK
 	log "${name}" "OK"
-	) &
+}
+
+# fetch and process a feed in parallel.
+# feed(name, feedurl, [basesiteurl], [encoding])
+feed() {
+	# wait until ${maxjobs} are finished: will stall the queue if an item
+	# is slow, but it is portable.
+	[ ${signo} -ne 0 ] && return
+	[ $((curjobs % maxjobs)) -eq 0 ] && wait
+	[ ${signo} -ne 0 ] && return
+	curjobs=$((curjobs + 1))
+
+	_feed "$@" &
 }
 
 cleanup() {
@@ -173,26 +183,30 @@ feeds() {
 	echo "See sfeedrc.example for an example." >&2
 }
 
-# job counter.
-curjobs=0
-# signal number received for parent.
-signo=0
-# SIGINT: signal to interrupt parent.
-trap -- "sighandler 2" "INT"
-# SIGTERM: signal to terminate parent.
-trap -- "sighandler 15" "TERM"
-# load config file.
-loadconfig "$1"
-# fetch feeds and store in temporary directory.
-sfeedtmpdir="$(mktemp -d '/tmp/sfeed_XXXXXX')"
-# make sure path exists.
-mkdir -p "${sfeedpath}"
-# fetch feeds specified in config file.
-feeds
-# wait till all feeds are fetched (concurrently).
-[ ${signo} -eq 0 ] && wait
-# cleanup temporary files etc.
-cleanup
-# on signal SIGINT and SIGTERM exit with signal number + 128.
-[ ${signo} -ne 0 ] && exit $((signo+128))
-exit 0
+main() {
+	# job counter.
+	curjobs=0
+	# signal number received for parent.
+	signo=0
+	# SIGINT: signal to interrupt parent.
+	trap -- "sighandler 2" "INT"
+	# SIGTERM: signal to terminate parent.
+	trap -- "sighandler 15" "TERM"
+	# load config file.
+	loadconfig "$1"
+	# fetch feeds and store in temporary directory.
+	sfeedtmpdir="$(mktemp -d '/tmp/sfeed_XXXXXX')"
+	# make sure path exists.
+	mkdir -p "${sfeedpath}"
+	# fetch feeds specified in config file.
+	feeds
+	# wait till all feeds are fetched (concurrently).
+	[ ${signo} -eq 0 ] && wait
+	# cleanup temporary files etc.
+	cleanup
+	# on signal SIGINT and SIGTERM exit with signal number + 128.
+	[ ${signo} -ne 0 ] && exit $((signo+128))
+	return 0
+}
+
+[ "${SFEED_UPDATE_INCLUDE}" = "1" ] || main "$@"

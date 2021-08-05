@@ -1,4 +1,4 @@
-.Dd September 19, 2020
+.Dd July 29, 2021
 .Dt SFEED 1
 .Os
 .Sh NAME
@@ -11,53 +11,57 @@
 .Nm
 reads RSS or Atom feed data (XML) from stdin.
 It writes the feed data in a TAB-separated format to stdout.
-A
+If the
 .Ar baseurl
-can be specified if the links in the feed are relative urls.
-It is recommended to always have absolute urls in your feeds.
+argument is a valid absolute URL then the relative links or enclosures will be
+made an absolute URL.
 .Sh TAB-SEPARATED FORMAT FIELDS
-The items are output per line in a TSV-like format.
+The items are output per line in a TAB-separated format.
 .Pp
-The fields: title, id, author are not allowed to have newlines and TABs, all
-whitespace characters are replaced by a single space character.
+For the fields title, id and author each whitespace character is replaced by a
+SPACE character.
 Control characters are removed.
 .Pp
-The content field can contain newlines and is escaped.
+The content field can contain newlines and these are escaped.
 TABs, newlines and '\\' are escaped with '\\', so it becomes: '\\t', '\\n'
 and '\\\\'.
 Other whitespace characters except spaces are removed.
 Control characters are removed.
 .Pp
 The order and content of the fields are:
-.Bl -tag -width 12n
-.It timestamp
+.Bl -tag -width 15n
+.It 1. timestamp
 UNIX timestamp in UTC+0, empty if missing or on parse failure.
-.It title
+.It 2. title
 Title text, HTML code in titles is ignored and is treated as plain-text.
-.It link
-Absolute url, unsafe characters are encoded.
-.It content
+.It 3. link
+Link
+.It 4. content
 Content, can have plain-text or HTML code depending on the content-type field.
-.It content-type
-"html" or "plain".
-.It id
+.It 5. content-type
+"html" or "plain" if it has content.
+.It 6. id
 RSS item GUID or Atom id.
-.It author
+.It 7. author
 Item author.
-.It enclosure
+.It 8. enclosure
 Item, first enclosure.
-.It category
+.It 9. category
 Item, categories, multiple values are separated by |.
 .El
 .Sh EXIT STATUS
 .Ex -std
+.Sh EXAMPLES
+.Bd -literal
+curl -s 'https://codemadness.org/atom.xml' | sfeed
+.Ed
 .Sh SEE ALSO
 .Xr sfeed_plain 1 ,
-.Xr sfeed 5
+.Xr sfeed_update 1 ,
+.Xr sfeed 5 ,
+.Xr sfeedrc 5
 .Sh AUTHORS
 .An Hiltjo Posthuma Aq Mt hiltjo@codemadness.org
 .Sh CAVEATS
-If a timezone is not in the RFC-822 or RFC-3339 format it is not supported and
-the UNIX timestamp is interpreted as UTC+0.
-.Pp
-HTML in titles is treated as plain-text.
+If a timezone for the timestamp field is not in the RFC822 or RFC3339 format it
+is not supported and the timezone is interpreted as UTC+0.
