@@ -119,7 +119,7 @@ mbsprint(const char *s, size_t len)
 			continue;
 		}
 		if ((w = wcwidth(wc)) == -1)
-			continue;
+			w= 1;
 		if (col + w > len || (col + w == len && s[i + rl])) {
 			fputs("\xe2\x80\xa6", stdout); /* ellipsis */
 			col++;
@@ -219,9 +219,9 @@ typedisplay(char t)
 {
 	switch (t) {
 	case '0':
-		return "Text+";
+		return " ";
 	case '1':
-		return "Dir +";
+		return " ";
 	case '2':
 		return "CSO |";
 	case '3':
@@ -233,7 +233,7 @@ typedisplay(char t)
 	case '6':
 		return "UUEf+";
 	case '7':
-		return "Find+";
+		return " ";
 	case '8':
 		return "Tlnt+";
 	case '9':
@@ -243,11 +243,11 @@ typedisplay(char t)
 	case 'T':
 		return "IBMt|";
 	case 'g':
-		return "GIF +";
+		return " ";
 	case 'I':
-		return "Img +";
+		return " ";
 	case 'h':
-		return "HTML+";
+		return " ";
 	case 'i':
 		return "    |";
 	default:

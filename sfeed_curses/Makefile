@@ -4,7 +4,7 @@ NAME = sfeed_curses
 VERSION = 0.9.13
 
 # theme, see themes/ directory.
-SFEED_THEME = newsboat
+SFEED_THEME = newsboat_color
 
 # paths
 PREFIX = /usr/local

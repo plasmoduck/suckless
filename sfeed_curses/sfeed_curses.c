@@ -817,16 +817,18 @@ pane_row_draw(struct pane *p, off_t pos, int selected)
 
 	cursorsave();
 	cursormove(p->x, p->y + (pos % p->height));
-
-	if (p->focused)
+        
+        if (p->focused)
 		THEME_ITEM_FOCUS();
 	else
 		THEME_ITEM_NORMAL();
-	if (row && row->bold)
+        if ( p == &panes[PaneFeeds])
+                THEME_PANE_FEEDS();
+        if (row && row->bold)
 		THEME_ITEM_BOLD();
 	if (selected)
 		THEME_ITEM_SELECTED();
-	if (row) {
+        if (row) {
 		printutf8pad(stdout, pane_row_text(p, row), p->width, ' ');
 		fflush(stdout);
 	} else {
@@ -2414,6 +2416,9 @@ openitem:
 				p = &panes[selpane];
 				markread(p, p->pos, p->pos, ch == 'r');
 			}
+			break;
+		case 'S':
+			forkexec((char *[]) { "syncnews.sh", NULL }, 1);
 			break;
 		case 's': /* toggle layout between monocle or non-monocle */
 			setlayout(layout == LayoutMonocle ? prevlayout : LayoutMonocle);

@@ -1,5 +1,11 @@
 #define clear(p)	do { void **_p = (void **)(p); free(*_p); *_p = NULL; } while (0);
 
+#define CYAN   "\x1b[36m"
+#define YELLOW "\x1b[33m"
+#define BOLD   "\x1b[1m"
+#define RED    "\x1b[31m"
+#define RESET  "\x1b[0m"
+
 typedef struct item Item;
 typedef struct dir Dir;
 

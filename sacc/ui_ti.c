@@ -95,8 +95,30 @@ uiprompt(char *fmt, ...)
 static void
 printitem(Item *item)
 {
-	if (snprintf(bufout, sizeof(bufout), "%s %s", typedisplay(item->type),
-	    item->username) >= sizeof(bufout))
+	const char *style = BOLD, *typestyle;
+
+ 	switch (item->type) {
+ 	case 'i':
+ 		style = "";
+ 		typestyle = "";
+ 		break;
+ 	case '0':
+ 		typestyle = _text_color;
+ 		break;
+ 	case '1':
+ 		typestyle = _dir_color;
+ 		break;
+ 	case 'h':
+		typestyle = _html_color;
+		break;
+	default:
+ 		style = BOLD;
+ 		typestyle = BOLD;
+ 	}
+
+ 	if (snprintf(bufout, sizeof(bufout), "%s%s  " RESET "%s%s" RESET,
+ 		     typestyle, typedisplay(item->type), style, item->username)
+ 	    >= sizeof(bufout))
 		bufout[sizeof(bufout)-1] = '\0';
 	mbsprint(bufout, columns);
 	putchar('\r');
