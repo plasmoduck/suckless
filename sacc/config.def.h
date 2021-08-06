@@ -23,6 +23,7 @@
 #define _dir_color YELLOW BOLD
 #define _text_color CYAN BOLD
 #define _html_color RED BOLD
+#define _search_color BLUE BOLD
 
 /* default plumber */
 static char *plumber = "/home/cjg/bin/openurlsfeed.sh";

@@ -111,7 +111,10 @@ printitem(Item *item)
  	case 'h':
 		typestyle = _html_color;
 		break;
-	default:
+	case '7':
+                typestyle = _search_color;
+                break;
+        default:
  		style = BOLD;
  		typestyle = BOLD;
  	}

@@ -198,7 +198,7 @@ clearitem(Item *item)
 	if (!item)
 		return;
 
-	if (dir = item->dat) {
+	if ((dir = item->dat)) {
 		items = dir->items;
 		for (i = 0; i < dir->nitems; ++i)
 			clearitem(&items[i]);
@@ -219,9 +219,9 @@ typedisplay(char t)
 {
 	switch (t) {
 	case '0':
-		return " ";
+		return "   -";
 	case '1':
-		return " ";
+		return "   -";
 	case '2':
 		return "CSO |";
 	case '3':
@@ -233,7 +233,7 @@ typedisplay(char t)
 	case '6':
 		return "UUEf+";
 	case '7':
-		return " ";
+		return "   -";
 	case '8':
 		return "Tlnt+";
 	case '9':
@@ -243,11 +243,11 @@ typedisplay(char t)
 	case 'T':
 		return "IBMt|";
 	case 'g':
-		return " ";
+		return "   -";
 	case 'I':
-		return " ";
+		return "   -";
 	case 'h':
-		return " ";
+		return "   -";
 	case 'i':
 		return "    |";
 	default:
@@ -268,7 +268,7 @@ printdir(Item *item)
 
 	if (!item || !(dir = item->dat))
 		return;
-
+        
 	items = dir->items;
 	nitems = dir->nitems;
 
@@ -369,7 +369,7 @@ molddiritem(char *raw)
 	Dir *dir;
 	size_t i, n, nitems;
 
-	for (s = nl = raw, nitems = 0; p = strchr(nl, '\n'); ++nitems) {
+	for (s = nl = raw, nitems = 0; (p = strchr(nl, '\n')); ++nitems) {
 		s = nl;
 		nl = p+1;
 	}
@@ -473,7 +473,7 @@ connectto(const char *host, const char *port)
 	sigaddset(&set, SIGWINCH);
 	sigprocmask(SIG_BLOCK, &set, &oset);
 
-	if (r = getaddrinfo(host, port, &hints, &addrs)) {
+	if ((r = getaddrinfo(host, port, &hints, &addrs))) {
 		diag("Can't resolve hostname \"%s\": %s",
 		     host, gai_strerror(r));
 		goto err;
@@ -552,7 +552,7 @@ downloaditem(Item *item)
 	mode_t mode = S_IRUSR|S_IWUSR|S_IRGRP;
 	int dest;
 
-	if (file = strrchr(item->selector, '/'))
+	if ((file = strrchr(item->selector, '/')))
 		++file;
 	else
 		file = item->selector;
@@ -563,7 +563,7 @@ downloaditem(Item *item)
 	if (!path[0])
 		path = xstrdup(file);
 
-	if (tag = item->tag) {
+	if ((tag = item->tag)) {
 		if (access(tag, R_OK) < 0) {
 			clear(&item->tag);
 		} else if (!strcmp(tag, path)) {
@@ -636,7 +636,7 @@ plumbitem(Item *item)
 	mode_t mode = S_IRUSR|S_IWUSR|S_IRGRP;
 	int dest, plumbitem;
 
-	if (file = strrchr(item->selector, '/'))
+	if ((file = strrchr(item->selector, '/')))
 		++file;
 	else
 		file = item->selector;
@@ -885,7 +885,7 @@ moldentry(char *url)
 	char *p, *host = url, *port = "70", *gopherpath = "1";
 	int parsed, ipv6;
 
-	if (p = strstr(url, "://")) {
+	if ((p = strstr(url, "://"))) {
 		if (strncmp(url, "gopher", p - url))
 			die("Protocol not supported: %.*s", p - url, url);
 		host = p + 3;
@@ -929,7 +929,7 @@ moldentry(char *url)
 	entry->type = gopherpath[0];
 	entry->username = entry->selector = ++gopherpath;
 	if (entry->type == '7') {
-		if (p = strstr(gopherpath, "%09")) {
+		if ((p = strstr(gopherpath, "%09"))) {
 			memmove(p+1, p+3, strlen(p+3)+1);
 			*p = '\t';
 		}
@@ -990,7 +990,7 @@ setup(void)
 
 	if (!mkdtemp(tmpdir))
 		die("mkdir: %s: %s", tmpdir, strerror(errno));
-	if(interactive = isatty(1)) {
+	if((interactive = isatty(1))) {
 		uisetup();
 		sa.sa_handler = uisigwinch;
 		sigaction(SIGWINCH, &sa, NULL);

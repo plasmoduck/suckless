@@ -2143,7 +2143,7 @@ static const char *unicode_info(Vis *vis, const char *keys, const Arg *arg) {
 		size_t res = mbrtowc(&wc, codepoint, len, &ps);
 		bool combining = false;
 		if (res != (size_t)-1 && res != (size_t)-2)
-			combining = (wc != L'\0' && wcwidth(wc) == 0);
+			combining = (wc != L'\0' && wcwidth(wc) == -1);
 		unsigned char ch = *codepoint;
 		if (ch < 128 && !isprint(ch))
 			buffer_appendf(&info, "<^%c> ", ch == 127 ? '?' : ch + 64);
