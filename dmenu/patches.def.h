@@ -71,7 +71,7 @@
 /* This patch causes dmenu to print out the current text each time a key is pressed.
  * https://tools.suckless.org/dmenu/patches/incremental/
  */
-#define INCREMENTAL_PATCH 1
+#define INCREMENTAL_PATCH 0
 
 /* This patch adds an option to provide preselected text.
  * https://tools.suckless.org/dmenu/patches/initialtext/
@@ -245,7 +245,7 @@
 /* Adds extended window manager hints such as _NET_WM_WINDOW_TYPE and _NET_WM_WINDOW_TYPE_DOCK.
  * https://github.com/Baitinq/dmenu/blob/master/patches/dmenu-wm_type.diff
  */
-#define WMTYPE_PATCH 1
+#define WMTYPE_PATCH 0
 
 /* This patch adds the ability to configure dmenu via Xresources. At startup, dmenu will read and
  * apply the resources named below:

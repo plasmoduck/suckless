@@ -114,7 +114,10 @@ printitem(Item *item)
 	case '7':
                 typestyle = _search_color;
                 break;
-        default:
+        case 'I':
+		typestyle = _image_color;
+		break;
+	default:
  		style = BOLD;
  		typestyle = BOLD;
  	}

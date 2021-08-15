@@ -166,3 +166,4 @@ drw_text_align(Drw *drw, int x, int y, unsigned int w, unsigned int h, const cha
 
 	return x;
 }
+

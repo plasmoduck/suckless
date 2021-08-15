@@ -99,3 +99,4 @@ void drw_map(Drw *drw, Window win, int x, int y, unsigned int w, unsigned int h)
 #if SCROLL_PATCH
 #include "patch/scroll.h"
 #endif
+

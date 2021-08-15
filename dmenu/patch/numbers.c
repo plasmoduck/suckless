@@ -14,3 +14,4 @@ recalculatenumbers()
 		denom++;
 	snprintf(numbers, NUMBERSBUFSIZE, "%d/%d", numer, denom);
 }
+
