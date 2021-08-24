@@ -468,3 +468,5 @@ static char ascii_printable[] =
 	"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
 	"`abcdefghijklmnopqrstuvwxyz{|}~";
 
+/* URL Opener */
+static char *url_opener = "$HOME/bin/openurlsfeed.sh";
