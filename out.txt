@@ -1,2 +1,0 @@
-
-make: stopped in /usr/home/cjg/suckless

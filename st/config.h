@@ -123,7 +123,7 @@ unsigned int alpha = 0xff;
  * 6: Bar ("|")
  * 7: Arrow ("")
  */
-static unsigned int cursorshape = 22;
+static unsigned int cursorshape = 2;
 
 /*
  * Default columns and rows numbers
@@ -469,4 +469,4 @@ static char ascii_printable[] =
 	"`abcdefghijklmnopqrstuvwxyz{|}~";
 
 /* URL Opener */
-static char *url_opener = "/home/cjg/bin/openurlsfeed.sh";
+static char *url_opener = "$HOME/bin/openurlsfeed.sh";
