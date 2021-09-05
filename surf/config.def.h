@@ -87,7 +87,7 @@ static WebKitFindOptions findopts = WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE |
 #define SEARCH() { \
         .v = (const char *[]){ "/bin/sh", "-c", \
              "xprop -id $1 -f $2 8s -set $2 \"" \
-             "$(dmenu -p ' Search:' -w $1 < /dev/null)\"", \
+             "$(dmenu -c -p ' Search:' -w $1 < /dev/null)\"", \
              "surf-search", winid, "_SURF_SEARCH", NULL \
         } \
 }
@@ -136,8 +136,8 @@ static WebKitFindOptions findopts = WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE |
 static SiteSpecific styles[] = {
 	/* regexp               file in $styledir */
 	{ ".*",                 "default.css" },
-    { ".wikipedia.org",   "wikipedia.css" },
-    { "192.168.1.1",    "192.168.1.1.css" },
+	{ ".wikipedia.org",   "wikipedia.css" },
+	{ "192.168.1.1",    "192.168.1.1.css" },
 };
 
 /* certificates */

@@ -6,8 +6,7 @@
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
 static char *font = {
-	"JetBrains Mono:pixelsize=18:antialias=true:autohint=true",
-	"siji:pixelsize=10:antialias=true:autohint=true"
+	"JetBrains Mono:pixelsize=18:antialias=true:autohint=true", "siji:pixelsize=10"
 };
 static int borderpx = 10;
 
@@ -468,5 +467,3 @@ static char ascii_printable[] =
 	"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
 	"`abcdefghijklmnopqrstuvwxyz{|}~";
 
-/* URL Opener */
-static char *url_opener = "$HOME/bin/openurlsfeed.sh";

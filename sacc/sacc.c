@@ -233,7 +233,7 @@ typedisplay(char t)
 	case '6':
 		return "UUEf+";
 	case '7':
-		return "   -";
+		return "🔎   -";
 	case '8':
 		return "Tlnt+";
 	case '9':
