@@ -11,10 +11,10 @@ xwallpaper-load_xpm.o: load_xpm.c /usr/include/sys/types.h \
  /usr/include/xlocale/_time.h /usr/local/include/X11/xpm.h \
  /usr/local/include/X11/Xlib.h /usr/local/include/X11/X.h \
  /usr/local/include/X11/Xfuncproto.h /usr/local/include/X11/Xosdefs.h \
- /usr/local/lib/gcc9/gcc/x86_64-portbld-freebsd12.1/9.3.0/include/stddef.h \
+ /usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd12.2/10.3.0/include/stddef.h \
  /usr/local/include/X11/Xutil.h /usr/local/include/X11/keysym.h \
  /usr/local/include/X11/keysymdef.h /usr/local/include/xcb/xcb.h \
- /usr/local/lib/gcc9/gcc/x86_64-portbld-freebsd12.1/9.3.0/include/stdint.h \
+ /usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd12.2/10.3.0/include/stdint.h \
  /usr/include/stdint.h /usr/include/machine/_stdint.h \
  /usr/include/x86/_stdint.h /usr/include/sys/uio.h \
  /usr/include/sys/_iovec.h /usr/include/sys/_uio.h /usr/include/pthread.h \
@@ -26,115 +26,59 @@ xwallpaper-load_xpm.o: load_xpm.c /usr/include/sys/types.h \
  /usr/include/sys/unistd.h functions.h /usr/include/err.h \
  /usr/local/include/pixman-1/pixman.h \
  /usr/local/include/pixman-1/pixman-version.h config.h
-
 /usr/include/sys/types.h:
-
 /usr/include/sys/cdefs.h:
-
 /usr/include/machine/endian.h:
-
 /usr/include/x86/endian.h:
-
 /usr/include/sys/_types.h:
-
 /usr/include/machine/_types.h:
-
 /usr/include/x86/_types.h:
-
 /usr/include/machine/_limits.h:
-
 /usr/include/x86/_limits.h:
-
 /usr/include/sys/_pthreadtypes.h:
-
 /usr/include/sys/_stdint.h:
-
 /usr/include/sys/select.h:
-
 /usr/include/sys/_sigset.h:
-
 /usr/include/sys/_timeval.h:
-
 /usr/include/sys/timespec.h:
-
 /usr/include/sys/_timespec.h:
-
 /usr/include/sys/stat.h:
-
 /usr/include/sys/time.h:
-
 /usr/include/time.h:
-
 /usr/include/sys/_null.h:
-
 /usr/include/xlocale/_time.h:
-
 /usr/local/include/X11/xpm.h:
-
 /usr/local/include/X11/Xlib.h:
-
 /usr/local/include/X11/X.h:
-
 /usr/local/include/X11/Xfuncproto.h:
-
 /usr/local/include/X11/Xosdefs.h:
-
-/usr/local/lib/gcc9/gcc/x86_64-portbld-freebsd12.1/9.3.0/include/stddef.h:
-
+/usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd12.2/10.3.0/include/stddef.h:
 /usr/local/include/X11/Xutil.h:
-
 /usr/local/include/X11/keysym.h:
-
 /usr/local/include/X11/keysymdef.h:
-
 /usr/local/include/xcb/xcb.h:
-
-/usr/local/lib/gcc9/gcc/x86_64-portbld-freebsd12.1/9.3.0/include/stdint.h:
-
+/usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd12.2/10.3.0/include/stdint.h:
 /usr/include/stdint.h:
-
 /usr/include/machine/_stdint.h:
-
 /usr/include/x86/_stdint.h:
-
 /usr/include/sys/uio.h:
-
 /usr/include/sys/_iovec.h:
-
 /usr/include/sys/_uio.h:
-
 /usr/include/pthread.h:
-
 /usr/include/sched.h:
-
 /usr/local/include/xcb/xproto.h:
-
 /usr/local/include/xcb/xcb.h:
-
 /usr/local/include/xcb/xcb_aux.h:
-
 /usr/include/stdio.h:
-
 /usr/include/stdlib.h:
-
 /usr/include/string.h:
-
 /usr/include/strings.h:
-
 /usr/include/xlocale/_strings.h:
-
 /usr/include/xlocale/_string.h:
-
 /usr/include/unistd.h:
-
 /usr/include/sys/unistd.h:
-
 functions.h:
-
 /usr/include/err.h:
-
 /usr/local/include/pixman-1/pixman.h:
-
 /usr/local/include/pixman-1/pixman-version.h:
-
 config.h:

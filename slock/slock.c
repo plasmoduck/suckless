@@ -1,5 +1,6 @@
 /* See LICENSE file for license details. */
 #define _XOPEN_SOURCE 500
+#define LENGTH(X) (sizeof X / sizeof X[0])
 #if HAVE_SHADOW_H
 #include <shadow.h>
 #endif
@@ -13,43 +14,111 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <time.h>
 #include <sys/types.h>
 #include <X11/extensions/Xrandr.h>
-#include <X11/extensions/Xinerama.h>
-#include <X11/extensions/dpms.h>
 #include <X11/keysym.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
-#include <Imlib2.h>
-#include <X11/XF86keysym.h>
+
+#include "patches.h"
+#if ALPHA_PATCH
+#include <X11/Xatom.h>
+#endif // ALPHA_PATCH
+#if KEYPRESS_FEEDBACK_PATCH
+#include <time.h>
+#endif // KEYPRESS_FEEDBACK_PATCH
+#if CAPSCOLOR_PATCH
 #include <X11/XKBlib.h>
+#endif // CAPSCOLOR_PATCH
+#if MEDIAKEYS_PATCH
+#include <X11/XF86keysym.h>
+#endif // MEDIAKEYS_PATCH
+#if QUICKCANCEL_PATCH || AUTO_TIMEOUT_PATCH
+#include <time.h>
+#endif // QUICKCANCEL_PATCH / AUTO_TIMEOUT_PATCH
+#if DPMS_PATCH
+#include <X11/extensions/dpms.h>
+#endif // DPMS_PATCH
+#ifdef XINERAMA
+#include <X11/extensions/Xinerama.h>
+#endif
 
 #include "arg.h"
 #include "util.h"
 
 char *argv0;
+#if FAILURE_COMMAND_PATCH
+int failtrack = 0;
+#endif // FAILURE_COMMAND_PATCH
 
+#if AUTO_TIMEOUT_PATCH
+static time_t lasttouched;
+int runflag = 0;
+#endif // AUTO_TIMEOUT_PATCH
+#if QUICKCANCEL_PATCH
 static time_t locktime;
-
-/* global count to prevent repeated error messages */
-int count_error = 0;
+#endif // QUICKCANCEL_PATCH
 
 enum {
+	#if DWM_LOGO_PATCH && !BLUR_PIXELATED_SCREEN_PATCH
+	BACKGROUND,
+	#endif // DWM_LOGO_PATCH
 	INIT,
 	INPUT,
 	FAILED,
-    CAPS,
-    NUMCOLS
+	#if CAPSCOLOR_PATCH
+	CAPS,
+	#endif // CAPSCOLOR_PATCH
+	#if PAMAUTH_PATCH
+	PAM,
+	#endif // PAMAUTH_PATCH
+	#if KEYPRESS_FEEDBACK_PATCH
+	BLOCKS,
+	#endif // KEYPRESS_FEEDBACK_PATCH
+	NUMCOLS
 };
+
+#if XRESOURCES_PATCH
+/* Xresources preferences */
+enum resource_type {
+	STRING = 0,
+	INTEGER = 1,
+	FLOAT = 2
+};
+
+typedef struct {
+	char *name;
+	enum resource_type type;
+	void *dst;
+} ResourcePref;
+#endif // XRESOURCES_PATCH
+
+#include "config.h"
 
 struct lock {
 	int screen;
 	Window root, win;
 	Pixmap pmap;
+	#if BLUR_PIXELATED_SCREEN_PATCH
 	Pixmap bgmap;
+	#endif // BLUR_PIXELATED_SCREEN_PATCH
 	unsigned long colors[NUMCOLS];
+	#if DWM_LOGO_PATCH
+	unsigned int x, y;
+	unsigned int xoff, yoff, mw, mh;
+	Drawable drawable;
+	GC gc;
+	XRectangle rectangles[LENGTH(rectangles)];
+	#endif // DWM_LOGO_PATCH
 };
+
+#if SECRET_PASSWORD_PATCH
+typedef struct secretpass secretpass;
+struct secretpass {
+	char *pass;
+	char *command;
+};
+#endif // SECRET_PASSWORD_PATCH
 
 struct xrandr {
 	int active;
@@ -57,9 +126,7 @@ struct xrandr {
 	int errbase;
 };
 
-#include "config.h"
-
-Imlib_Image image;
+#include "patch/include.h"
 
 static void
 die(const char *errstr, ...)
@@ -71,6 +138,8 @@ die(const char *errstr, ...)
 	va_end(ap);
 	exit(1);
 }
+
+#include "patch/include.c"
 
 #ifdef __linux__
 #include <fcntl.h>
@@ -97,98 +166,6 @@ dontkillme(void)
 	}
 }
 #endif
-
-static void
-writemessage(Display *dpy, Window win, int screen)
-{
-	int len, line_len, width, height, s_width, s_height, i, j, k, tab_replace, tab_size;
-	XGCValues gr_values;
-	XFontStruct *fontinfo;
-	XColor color, dummy;
-	XineramaScreenInfo *xsi;
-	GC gc;
-	fontinfo = XLoadQueryFont(dpy, font_name);
-
-	if (fontinfo == NULL) {
-		if (count_error == 0) {
-			fprintf(stderr, "slock: Unable to load font \"%s\"\n", font_name);
-			fprintf(stderr, "slock: Try listing fonts with 'slock -f'\n");
-			count_error++;
-		}
-		return;
-	}
-
-	tab_size = 8 * XTextWidth(fontinfo, " ", 1);
-
-	XAllocNamedColor(dpy, DefaultColormap(dpy, screen),
-		 text_color, &color, &dummy);
-
-	gr_values.font = fontinfo->fid;
-	gr_values.foreground = color.pixel;
-	gc=XCreateGC(dpy,win,GCFont+GCForeground, &gr_values);
-
-	/*  To prevent "Uninitialized" warnings. */
-	xsi = NULL;
-
-	/*
-	 * Start formatting and drawing text
-	 */
-
-	len = strlen(message);
-
-	/* Max max line length (cut at '\n') */
-	line_len = 0;
-	k = 0;
-	for (i = j = 0; i < len; i++) {
-		if (message[i] == '\n') {
-			if (i - j > line_len)
-				line_len = i - j;
-			k++;
-			i++;
-			j = i;
-		}
-	}
-	/* If there is only one line */
-	if (line_len == 0)
-		line_len = len;
-
-	if (XineramaIsActive(dpy)) {
-		xsi = XineramaQueryScreens(dpy, &i);
-		s_width = xsi[0].width;
-		s_height = xsi[0].height;
-	} else {
-		s_width = DisplayWidth(dpy, screen);
-		s_height = DisplayHeight(dpy, screen);
-	}
-
-	height = s_height*3/7 - (k*20)/3;
-	width  = (s_width - XTextWidth(fontinfo, message, line_len))/2;
-
-	/* Look for '\n' and print the text between them. */
-	for (i = j = k = 0; i <= len; i++) {
-		/* i == len is the special case for the last line */
-		if (i == len || message[i] == '\n') {
-			tab_replace = 0;
-			while (message[j] == '\t' && j < i) {
-				tab_replace++;
-				j++;
-			}
-
-			XDrawString(dpy, win, gc, width + tab_size*tab_replace, height + 20*k, message + j, i - j);
-			while (i < len && message[i] == '\n') {
-				i++;
-				j = i;
-				k++;
-			}
-		}
-	}
-
-	/* xsi should not be NULL anyway if Xinerama is active, but to be safe */
-	if (XineramaIsActive(dpy) && xsi != NULL)
-			XFree(xsi);
-}
-
-
 
 static const char *
 gethash(void)
@@ -228,6 +205,10 @@ gethash(void)
 	}
 #endif /* HAVE_SHADOW_H */
 
+	#if PAMAUTH_PATCH
+	/* pam, store user name */
+	hash = pw->pw_name;
+	#endif // PAMAUTH_PATCH
 	return hash;
 }
 
@@ -236,24 +217,55 @@ readpw(Display *dpy, struct xrandr *rr, struct lock **locks, int nscreens,
        const char *hash)
 {
 	XRRScreenChangeNotifyEvent *rre;
+	#if PAMAUTH_PATCH
+	char buf[32];
+	int retval;
+	pam_handle_t *pamh;
+	#else
 	char buf[32], passwd[256], *inputhash;
-    int caps, num, screen, running, failure, oldc;
-	unsigned int len, color, indicators;
-    KeySym ksym;
+	#endif // PAMAUTH_PATCH
+	int num, screen, running, failure, oldc;
+	unsigned int len, color;
+	#if AUTO_TIMEOUT_PATCH
+	time_t currenttime;
+	#endif // AUTO_TIMEOUT_PATCH
+	#if CAPSCOLOR_PATCH
+	int caps;
+	unsigned int indicators;
+	#endif // CAPSCOLOR_PATCH
+	KeySym ksym;
 	XEvent ev;
 
 	len = 0;
-    caps = 0;
-    running = 1;
+	#if CAPSCOLOR_PATCH
+	caps = 0;
+	#endif // CAPSCOLOR_PATCH
+	running = 1;
 	failure = 0;
 	oldc = INIT;
 
-    if (!XkbGetIndicatorState(dpy, XkbUseCoreKbd, &indicators))
+	#if CAPSCOLOR_PATCH
+	if (!XkbGetIndicatorState(dpy, XkbUseCoreKbd, &indicators))
 		caps = indicators & 1;
 
-	while (running && !XNextEvent(dpy, &ev)) {
-	    running = !((time(NULL) - locktime < timetocancel) && (ev.type == MotionNotify));
-        if (ev.type == KeyPress) {
+	#endif // CAPSCOLOR_PATCH
+	#if AUTO_TIMEOUT_PATCH
+	while (running)
+	#else
+	while (running && !XNextEvent(dpy, &ev))
+	#endif // AUTO_TIMEOUT_PATCH
+	{
+		#if AUTO_TIMEOUT_PATCH
+		while (XPending(dpy)) {
+			XNextEvent(dpy, &ev);
+		#endif // AUTO_TIMEOUT_PATCH
+		#if QUICKCANCEL_PATCH
+		running = !((time(NULL) - locktime < timetocancel) && (ev.type == MotionNotify));
+		#endif // QUICKCANCEL_PATCH
+		if (ev.type == KeyPress) {
+			#if AUTO_TIMEOUT_PATCH
+			time(&lasttouched);
+			#endif // AUTO_TIMEOUT_PATCH
 			explicit_bzero(&buf, sizeof(buf));
 			num = XLookupString(&ev.xkey, buf, sizeof(buf), &ksym, 0);
 			if (IsKeypadKey(ksym)) {
@@ -268,29 +280,77 @@ readpw(Display *dpy, struct xrandr *rr, struct lock **locks, int nscreens,
 			    IsPFKey(ksym) ||
 			    IsPrivateKeypadKey(ksym))
 				continue;
+			#if TERMINALKEYS_PATCH
+			if (ev.xkey.state & ControlMask) {
+				switch (ksym) {
+				case XK_u:
+					ksym = XK_Escape;
+					break;
+				case XK_m:
+					ksym = XK_Return;
+					break;
+				case XK_j:
+					ksym = XK_Return;
+					break;
+				case XK_h:
+					ksym = XK_BackSpace;
+					break;
+				}
+			}
+			#endif // TERMINALKEYS_PATCH
 			switch (ksym) {
-      case XF86XK_AudioPlay:
-      case XF86XK_AudioStop:
-      case XF86XK_AudioPrev:
-      case XF86XK_AudioNext:
-      case XF86XK_AudioRaiseVolume:
-      case XF86XK_AudioLowerVolume:
-      case XF86XK_AudioMute:
-      case XF86XK_AudioMicMute:
-      case XF86XK_MonBrightnessDown:
-      case XF86XK_MonBrightnessUp:
-        XSendEvent(dpy, DefaultRootWindow(dpy), True, KeyPressMask, &ev);
-        break;
 			case XK_Return:
 				passwd[len] = '\0';
 				errno = 0;
+
+				#if SECRET_PASSWORD_PATCH
+				for (int i = 0; i < LENGTH(scom); i++) {
+					if (strcmp(scom[i].pass, passwd) == 0) {
+						system(scom[i].command);
+						#if FAILURE_COMMAND_PATCH
+						failtrack = -1;
+						#endif // FAILURE_COMMAND_PATCH
+					}
+				}
+				#endif // SECRET_PASSWORD_PATCH
+
+				#if PAMAUTH_PATCH
+				retval = pam_start(pam_service, hash, &pamc, &pamh);
+				color = PAM;
+				for (screen = 0; screen < nscreens; screen++) {
+					XSetWindowBackground(dpy, locks[screen]->win, locks[screen]->colors[color]);
+					XClearWindow(dpy, locks[screen]->win);
+					XRaiseWindow(dpy, locks[screen]->win);
+				}
+				XSync(dpy, False);
+
+				if (retval == PAM_SUCCESS)
+					retval = pam_authenticate(pamh, 0);
+				if (retval == PAM_SUCCESS)
+					retval = pam_acct_mgmt(pamh, 0);
+
+				running = 1;
+				if (retval == PAM_SUCCESS)
+					running = 0;
+				else
+					fprintf(stderr, "slock: %s\n", pam_strerror(pamh, retval));
+				pam_end(pamh, retval);
+				#else
 				if (!(inputhash = crypt(passwd, hash)))
 					fprintf(stderr, "slock: crypt: %s\n", strerror(errno));
 				else
 					running = !!strcmp(inputhash, hash);
+				#endif // PAMAUTH_PATCH
 				if (running) {
 					XBell(dpy, 100);
 					failure = 1;
+					#if FAILURE_COMMAND_PATCH
+					failtrack++;
+
+					if (failtrack >= failcount && failcount != 0) {
+						system(failcommand);
+					}
+					#endif // FAILURE_COMMAND_PATCH
 				}
 				explicit_bzero(&passwd, sizeof(passwd));
 				len = 0;
@@ -303,27 +363,66 @@ readpw(Display *dpy, struct xrandr *rr, struct lock **locks, int nscreens,
 				if (len)
 					passwd[--len] = '\0';
 				break;
+			#if CAPSCOLOR_PATCH
 			case XK_Caps_Lock:
 				caps = !caps;
 				break;
-            default:
+			#endif // CAPSCOLOR_PATCH
+			#if MEDIAKEYS_PATCH
+			case XF86XK_AudioLowerVolume:
+			case XF86XK_AudioMute:
+			case XF86XK_AudioRaiseVolume:
+			case XF86XK_AudioPlay:
+			case XF86XK_AudioStop:
+			case XF86XK_AudioPrev:
+			case XF86XK_AudioNext:
+				XSendEvent(dpy, DefaultRootWindow(dpy), True, KeyPressMask, &ev);
+				break;
+			#endif // MEDIAKEYS_PATCH
+			default:
+				#if CONTROLCLEAR_PATCH
 				if (controlkeyclear && iscntrl((int)buf[0]))
 					continue;
-				if (num && (len + num < sizeof(passwd))) {
+				if (num && (len + num < sizeof(passwd)))
+				#else
+				if (num && !iscntrl((int)buf[0]) &&
+				    (len + num < sizeof(passwd)))
+				#endif // CONTROLCLEAR_PATCH
+				{
 					memcpy(passwd + len, buf, num);
 					len += num;
 				}
+				#if KEYPRESS_FEEDBACK_PATCH
+				if (blocks_enabled)
+					for (screen = 0; screen < nscreens; screen++)
+						draw_key_feedback(dpy, locks, screen);
+				#endif // KEYPRESS_FEEDBACK_PATCH
 				break;
 			}
+			#if CAPSCOLOR_PATCH
 			color = len ? (caps ? CAPS : INPUT) : (failure || failonclear ? FAILED : INIT);
+			#else
+			color = len ? INPUT : ((failure || failonclear) ? FAILED : INIT);
+			#endif // CAPSCOLOR_PATCH
 			if (running && oldc != color) {
 				for (screen = 0; screen < nscreens; screen++) {
-					if(locks[screen]->bgmap)
-                        XSetWindowBackgroundPixmap(dpy, locks[screen]->win, locks[screen]->bgmap);
-                    else
-                        XSetWindowBackground(dpy, locks[screen]->win, locks[screen]->colors[0]);
+					#if DWM_LOGO_PATCH
+					drawlogo(dpy, locks[screen], color);
+					#elif BLUR_PIXELATED_SCREEN_PATCH
+					if (locks[screen]->bgmap)
+						XSetWindowBackgroundPixmap(dpy, locks[screen]->win, locks[screen]->bgmap);
+					else
+						XSetWindowBackground(dpy, locks[screen]->win, locks[screen]->colors[0]);
 					XClearWindow(dpy, locks[screen]->win);
+					#else
+					XSetWindowBackground(dpy,
+					                     locks[screen]->win,
+					                     locks[screen]->colors[color]);
+					XClearWindow(dpy, locks[screen]->win);
+					#endif // BLUR_PIXELATED_SCREEN_PATCH
+					#if MESSAGE_PATCH || COLOR_MESSAGE_PATCH
 					writemessage(dpy, locks[screen]->win, screen);
+					#endif // MESSAGE_PATCH | COLOR_MESSAGE_PATCH
 				}
 				oldc = color;
 			}
@@ -346,6 +445,20 @@ readpw(Display *dpy, struct xrandr *rr, struct lock **locks, int nscreens,
 			for (screen = 0; screen < nscreens; screen++)
 				XRaiseWindow(dpy, locks[screen]->win);
 		}
+
+		#if AUTO_TIMEOUT_PATCH
+		}
+
+		time(&currenttime);
+
+		if (currenttime >= lasttouched + timeoffset) {
+			if (!runonce || !runflag) {
+				runflag = 1;
+				system(command);
+			}
+			lasttouched = currenttime;
+		}
+		#endif // AUTO_TIMEOUT_PATCH
 	}
 }
 
@@ -358,6 +471,15 @@ lockscreen(Display *dpy, struct xrandr *rr, int screen)
 	XColor color, dummy;
 	XSetWindowAttributes wa;
 	Cursor invisible;
+	#if DWM_LOGO_PATCH
+	#ifdef XINERAMA
+	XineramaScreenInfo *info;
+	int n;
+	#endif
+	#endif // DWM_LOGO_PATCH
+	#if AUTO_TIMEOUT_PATCH
+	time(&lasttouched);
+	#endif // AUTO_TIMEOUT_PATCH
 
 	if (dpy == NULL || screen < 0 || !(lock = malloc(sizeof(struct lock))))
 		return NULL;
@@ -365,39 +487,69 @@ lockscreen(Display *dpy, struct xrandr *rr, int screen)
 	lock->screen = screen;
 	lock->root = RootWindow(dpy, lock->screen);
 
-	if(image) 
-    {
-        lock->bgmap = XCreatePixmap(dpy, lock->root, DisplayWidth(dpy, lock->screen), DisplayHeight(dpy, lock->screen), DefaultDepth(dpy, lock->screen));
-        imlib_context_set_image(image);
-        imlib_context_set_display(dpy);
-        imlib_context_set_visual(DefaultVisual(dpy, lock->screen));
-        imlib_context_set_colormap(DefaultColormap(dpy, lock->screen));
-        imlib_context_set_drawable(lock->bgmap);
-        imlib_render_image_on_drawable(0, 0);
-        imlib_free_image();
-    }
+	#if BLUR_PIXELATED_SCREEN_PATCH
+	render_lock_image(dpy, lock, image);
+	#endif // BLUR_PIXELATED_SCREEN_PATCH
+
 	for (i = 0; i < NUMCOLS; i++) {
 		XAllocNamedColor(dpy, DefaultColormap(dpy, lock->screen),
 		                 colorname[i], &color, &dummy);
 		lock->colors[i] = color.pixel;
 	}
 
+	#if DWM_LOGO_PATCH
+	lock->x = DisplayWidth(dpy, lock->screen);
+	lock->y = DisplayHeight(dpy, lock->screen);
+	#ifdef XINERAMA
+	if ((info = XineramaQueryScreens(dpy, &n))) {
+		lock->xoff = info[0].x_org;
+		lock->yoff = info[0].y_org;
+		lock->mw = info[0].width;
+		lock->mh = info[0].height;
+	} else
+	#endif // XINERAMA
+	{
+		lock->xoff = lock->yoff = 0;
+		lock->mw = lock->x;
+		lock->mh = lock->y;
+	}
+	lock->drawable = XCreatePixmap(dpy, lock->root, lock->x, lock->y, DefaultDepth(dpy, screen));
+	lock->gc = XCreateGC(dpy, lock->root, 0, NULL);
+	XSetLineAttributes(dpy, lock->gc, 1, LineSolid, CapButt, JoinMiter);
+	#endif // DWM_LOGO_PATCH
+
 	/* init */
 	wa.override_redirect = 1;
+	#if DWM_LOGO_PATCH && BLUR_PIXELATED_SCREEN_PATCH
+	#elif DWM_LOGO_PATCH
+	wa.background_pixel = lock->colors[BACKGROUND];
+	#else
 	wa.background_pixel = lock->colors[INIT];
+	#endif // DWM_LOGO_PATCH
 	lock->win = XCreateWindow(dpy, lock->root, 0, 0,
+	                          #if DWM_LOGO_PATCH
+	                          lock->x,
+	                          lock->y,
+	                          #else
 	                          DisplayWidth(dpy, lock->screen),
 	                          DisplayHeight(dpy, lock->screen),
+	                          #endif // DWM_LOGO_PATCH
 	                          0, DefaultDepth(dpy, lock->screen),
 	                          CopyFromParent,
 	                          DefaultVisual(dpy, lock->screen),
 	                          CWOverrideRedirect | CWBackPixel, &wa);
-	if(lock->bgmap)
-        XSetWindowBackgroundPixmap(dpy, lock->win, lock->bgmap);
+	#if BLUR_PIXELATED_SCREEN_PATCH
+	if (lock->bgmap)
+		XSetWindowBackgroundPixmap(dpy, lock->win, lock->bgmap);
+	#endif // BLUR_PIXELATED_SCREEN_PATCH
 	lock->pmap = XCreateBitmapFromData(dpy, lock->win, curs, 8, 8);
 	invisible = XCreatePixmapCursor(dpy, lock->pmap, lock->pmap,
 	                                &color, &color, 0, 0);
 	XDefineCursor(dpy, lock->win, invisible);
+
+	#if DWM_LOGO_PATCH
+	resizerectangles(lock);
+	#endif // DWM_LOGO_PATCH
 
 	/* Try to grab mouse pointer *and* keyboard for 600ms, else fail the lock */
 	for (i = 0, ptgrab = kbgrab = -1; i < 6; i++) {
@@ -405,7 +557,13 @@ lockscreen(Display *dpy, struct xrandr *rr, int screen)
 			ptgrab = XGrabPointer(dpy, lock->root, False,
 			                      ButtonPressMask | ButtonReleaseMask |
 			                      PointerMotionMask, GrabModeAsync,
-			                      GrabModeAsync, None, invisible, CurrentTime);
+			                      GrabModeAsync, None,
+			                      #if UNLOCKSCREEN_PATCH
+			                      None,
+			                      #else
+			                      invisible,
+			                      #endif // UNLOCKSCREEN_PATCH
+			                      CurrentTime);
 		}
 		if (kbgrab != GrabSuccess) {
 			kbgrab = XGrabKeyboard(dpy, lock->root, True,
@@ -414,13 +572,25 @@ lockscreen(Display *dpy, struct xrandr *rr, int screen)
 
 		/* input is grabbed: we can lock the screen */
 		if (ptgrab == GrabSuccess && kbgrab == GrabSuccess) {
+			#if !UNLOCKSCREEN_PATCH
 			XMapRaised(dpy, lock->win);
+			#endif // UNLOCKSCREEN_PATCH
 			if (rr->active)
 				XRRSelectInput(dpy, lock->win, RRScreenChangeNotifyMask);
 
 			XSelectInput(dpy, lock->root, SubstructureNotifyMask);
+			#if QUICKCANCEL_PATCH
 			locktime = time(NULL);
-            return lock;
+			#endif // QUICKCANCEL_PATCH
+			#if DWM_LOGO_PATCH
+			drawlogo(dpy, lock, INIT);
+			#endif // DWM_LOGO_PATCH
+			#if ALPHA_PATCH
+			unsigned int opacity = (unsigned int)(alpha * 0xffffffff);
+			XChangeProperty(dpy, lock->win, XInternAtom(dpy, "_NET_WM_WINDOW_OPACITY", False), XA_CARDINAL, 32, PropModeReplace, (unsigned char *)&opacity, 1L);
+			XSync(dpy, False);
+			#endif // ALPHA_PATCH
+			return lock;
 		}
 
 		/* retry on AlreadyGrabbed but fail on other errors */
@@ -444,7 +614,11 @@ lockscreen(Display *dpy, struct xrandr *rr, int screen)
 static void
 usage(void)
 {
+	#if MESSAGE_PATCH || COLOR_MESSAGE_PATCH
 	die("usage: slock [-v] [-f] [-m message] [cmd [arg ...]]\n");
+	#else
+	die("usage: slock [-v] [cmd [arg ...]]\n");
+	#endif // MESSAGE_PATCH | COLOR_MESSAGE_PATCH
 }
 
 int
@@ -457,15 +631,19 @@ main(int argc, char **argv) {
 	gid_t dgid;
 	const char *hash;
 	Display *dpy;
-	int i, s, nlocks, nscreens;
-	int count_fonts;
-	char **font_names;
+	int s, nlocks, nscreens;
+	#if DPMS_PATCH
 	CARD16 standby, suspend, off;
-	
+	#endif // DPMS_PATCH
+	#if MESSAGE_PATCH || COLOR_MESSAGE_PATCH
+	int i, count_fonts;
+	char **font_names;
+	#endif // MESSAGE_PATCH | COLOR_MESSAGE_PATCH
 	ARGBEGIN {
 	case 'v':
 		fprintf(stderr, "slock-"VERSION"\n");
 		return 0;
+	#if MESSAGE_PATCH || COLOR_MESSAGE_PATCH
 	case 'm':
 		message = EARGF(usage());
 		break;
@@ -477,6 +655,7 @@ main(int argc, char **argv) {
 			fprintf(stderr, "%s\n", *(font_names+i));
 		}
 		return 0;
+	#endif // MESSAGE_PATCH | COLOR_MESSAGE_PATCH
 	default:
 		usage();
 	} ARGEND
@@ -497,10 +676,15 @@ main(int argc, char **argv) {
 	dontkillme();
 #endif
 
+	#if PAMAUTH_PATCH
+	/* the contents of hash are used to transport the current user name */
+	#endif // PAMAUTH_PATCH
 	hash = gethash();
 	errno = 0;
+	#if !PAMAUTH_PATCH
 	if (!crypt("", hash))
 		die("slock: crypt: %s\n", strerror(errno));
+	#endif // PAMAUTH_PATCH
 
 	if (!(dpy = XOpenDisplay(NULL)))
 		die("slock: cannot open display\n");
@@ -513,58 +697,19 @@ main(int argc, char **argv) {
 	if (setuid(duid) < 0)
 		die("slock: setuid: %s\n", strerror(errno));
 
-	/*Create screenshot Image*/
-	Screen *scr = ScreenOfDisplay(dpy, DefaultScreen(dpy));
-	image = imlib_create_image(scr->width,scr->height);
-	imlib_context_set_image(image);
-	imlib_context_set_display(dpy);
-	imlib_context_set_visual(DefaultVisual(dpy,0));
-	imlib_context_set_drawable(RootWindow(dpy,XScreenNumberOfScreen(scr)));	
-	imlib_copy_drawable_to_image(0,0,0,scr->width,scr->height,0,0,1);
+	#if BLUR_PIXELATED_SCREEN_PATCH
+	create_lock_image(dpy);
+	#endif // BLUR_PIXELATED_SCREEN_PATCH
 
-#ifdef BLUR
+	#if XRESOURCES_PATCH
+	config_init(dpy);
+	#endif // XRESOURCES_PATCH
 
-	/*Blur function*/
-	imlib_image_blur(blurRadius);	
-#endif // BLUR	
+	#if KEYPRESS_FEEDBACK_PATCH
+	time_t t;
+	srand((unsigned) time(&t));
+	#endif // KEYPRESS_FEEDBACK_PATCH
 
-#ifdef PIXELATION
-	/*Pixelation*/
-	int width = scr->width;
-	int height = scr->height;
-
-	for(int y = 0; y < height; y += pixelSize)
-	{
-		for(int x = 0; x < width; x += pixelSize)
-		{
-			int red = 0;
-			int green = 0;
-			int blue = 0;
-
-			Imlib_Color pixel; 
-			Imlib_Color* pp;
-			pp = &pixel;
-			for(int j = 0; j < pixelSize && j < height; j++)
-			{
-				for(int i = 0; i < pixelSize && i < width; i++)
-				{
-					imlib_image_query_pixel(x+i,y+j,pp);
-					red += pixel.red;
-					green += pixel.green;
-					blue += pixel.blue;
-				}
-			}
-			red /= (pixelSize*pixelSize);
-			green /= (pixelSize*pixelSize);
-			blue /= (pixelSize*pixelSize);
-			imlib_context_set_color(red,green,blue,pixel.alpha);
-			imlib_image_fill_rectangle(x,y,pixelSize,pixelSize);
-			red = 0;
-			green = 0;
-			blue = 0;
-		}
-	}
-#endif	
 	/* check for Xrandr support */
 	rr.active = XRRQueryExtension(dpy, &rr.evbase, &rr.errbase);
 
@@ -574,7 +719,9 @@ main(int argc, char **argv) {
 		die("slock: out of memory\n");
 	for (nlocks = 0, s = 0; s < nscreens; s++) {
 		if ((locks[s] = lockscreen(dpy, &rr, s)) != NULL) {
+			#if MESSAGE_PATCH || COLOR_MESSAGE_PATCH
 			writemessage(dpy, locks[s]->win, s);
+			#endif // MESSAGE_PATCH | COLOR_MESSAGE_PATCH
 			nlocks++;
 		} else {
 			break;
@@ -586,6 +733,7 @@ main(int argc, char **argv) {
 	if (nlocks != nscreens)
 		return 1;
 
+	#if DPMS_PATCH
 	/* DPMS magic to disable the monitor */
 	if (!DPMSCapable(dpy))
 		die("slock: DPMSCapable failed\n");
@@ -599,6 +747,7 @@ main(int argc, char **argv) {
 		die("slock: DPMSSetTimeouts failed\n");
 
 	XSync(dpy, 0);
+	#endif // DPMS_PATCH
 
 	/* run post-lock command */
 	if (argc > 0) {
@@ -616,10 +765,21 @@ main(int argc, char **argv) {
 
 	/* everything is now blank. Wait for the correct password */
 	readpw(dpy, &rr, locks, nscreens, hash);
-
+	#if DPMS_PATCH
 	/* reset DPMS values to inital ones */
 	DPMSSetTimeouts(dpy, standby, suspend, off);
 	XSync(dpy, 0);
+	#endif // DPMS_PATCH
+
+	#if DWM_LOGO_PATCH
+	for (nlocks = 0, s = 0; s < nscreens; s++) {
+		XFreePixmap(dpy, locks[s]->drawable);
+		XFreeGC(dpy, locks[s]->gc);
+	}
+
+	XSync(dpy, 0);
+	XCloseDisplay(dpy);
+	#endif // DWM_LOGO_PATCH
 
 	return 0;
 }
