@@ -4,7 +4,7 @@ static char *styledir       = "~/.surf/styles/";
 static char *certdir        = "~/.surf/certificates/";
 static char *cachedir       = "~/.surf/cache/";
 static char *cookiefile     = "~/.surf/cookies.txt";
-static char *searchurl      = "google.com/search?q=%s";
+static char *searchurl      = "http://www.duckduckgo.com/?q=%s";
 static char *dldir          = "~/dl/";
 static char *dlstatus       = "~/.surf/dlstatus/";
 static char *scriptfiles[] = {
@@ -70,8 +70,8 @@ static int winsize[] = { 800, 600 };
 static WebKitFindOptions findopts = WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE |
                                     WEBKIT_FIND_OPTIONS_WRAP_AROUND;
 
-#define PROMPT_GO   " Go:"
-#define PROMPT_FIND " Find:"
+#define PROMPT_GO   "🌏 Go:"
+#define PROMPT_FIND "🔍 Find:"
 
 /* SETPROP(readprop, setprop, prompt)*/
 #define SETPROP(r, s, p) { \
@@ -87,7 +87,7 @@ static WebKitFindOptions findopts = WEBKIT_FIND_OPTIONS_CASE_INSENSITIVE |
 #define SEARCH() { \
         .v = (const char *[]){ "/bin/sh", "-c", \
              "xprop -id $1 -f $2 8s -set $2 \"" \
-             "$(dmenu -c -p ' Search:' -w $1 < /dev/null)\"", \
+             "$(dmenu -c -p '🔍 Search:' -w $1 < /dev/null)\"", \
              "surf-search", winid, "_SURF_SEARCH", NULL \
         } \
 }
@@ -212,7 +212,7 @@ static Key keys[] = {
 	{ MODKEY,                GDK_KEY_d,      spawndls,   { 0 } },
 };
 
-static char *searchengine   = "https://google.com/";
+static char *searchengine   = "https://google.com/search?q=%s";
 
 /* button definitions */
 /* target can be OnDoc, OnLink, OnImg, OnMedia, OnEdit, OnBar, OnSel, OnAny */

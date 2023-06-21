@@ -219,9 +219,9 @@ typedisplay(char t)
 {
 	switch (t) {
 	case '0':
-		return "   -";
+		return "📁   -";
 	case '1':
-		return "   -";
+		return "🔗   -";
 	case '2':
 		return "CSO |";
 	case '3':
@@ -247,7 +247,7 @@ typedisplay(char t)
 	case 'I':
 		return "   -";
 	case 'h':
-		return "   -";
+		return "🌏   -";
 	case 'i':
 		return "    |";
 	default:

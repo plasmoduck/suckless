@@ -6,7 +6,7 @@
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
 static char *font = {
-	"JetBrains Mono:pixelsize=18:antialias=true:autohint=true", "siji:pixelsize=10"
+	"JetBrains Mono:pixelsize=14:antialias=true:autohint=true", "siji:pixelsize=10"
 };
 static int borderpx = 10;
 
@@ -18,7 +18,7 @@ static int borderpx = 10;
  * 4: value of shell in /etc/passwd
  * 5: value of shell in config.h
  */
-static char *shell = "/bin/sh";
+static char *shell = "/bin/zsh";
 char *utmp = NULL;
 /* scroll program: to enable use a string like "scroll" */
 char *scroll = NULL;
@@ -111,9 +111,9 @@ char *termname = "st-256color";
 unsigned int tabspaces = 8;
 
 /* bg opacity */
-unsigned int alpha = 0xff;
+unsigned int alpha = 0xee;
 
-#include "colors/gruvbox.h"
+#include "colors/everforest.h"
 
 /*
  * Default shape of cursor
@@ -173,8 +173,7 @@ static MouseShortcut mshortcuts[] = {
 #define MODKEY Mod1Mask
 #define TERMMOD (ControlMask|ShiftMask)
 
-static char *openurlcmd[] = { "/home/cjg/bin/openurl.sh",
-                "externalpipe", NULL };
+static char *openurlcmd[] = { "/home/cjg/bin/openurl.sh", "externalpipe", NULL };
 
 static Shortcut shortcuts[] = {
 	/* mask                 keysym          function        argument */
@@ -194,7 +193,7 @@ static Shortcut shortcuts[] = {
 	{ ShiftMask,            XK_Page_Up,     kscrollup,      {.i = -1} },
 	{ ShiftMask,            XK_Page_Down,   kscrolldown,    {.i = -1} },
 	{ MODKEY,               XK_l,           copyurl,        {.i =  0} },
-	{ MODKEY, 		XK_u, 		externalpipe, 	{ .v = openurlcmd } },
+	{ MODKEY, 		        XK_u, 		    externalpipe, 	{ .v = openurlcmd } },
 };
 
 /*
