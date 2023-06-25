@@ -27,15 +27,22 @@ loadconfig() {
 	if [ -r "${path}" ]; then
 		. "${path}"
 	else
-		echo "Configuration file \"${config}\" cannot be read." >&2
-		echo "See sfeedrc.example for an example." >&2
+		printf "Configuration file \"%s\" cannot be read.\n" "${config}" >&2
+		echo "See the sfeedrc.example file or the sfeedrc(5) man page for an example." >&2
 		exit 1
 	fi
 }
 
 # log(name, s)
 log() {
+	printf '[%s] %-50.50s %s\n' "$(date +'%H:%M:%S')" "$1" "$2"
+}
+
+# log_error(name, s)
+log_error() {
 	printf '[%s] %-50.50s %s\n' "$(date +'%H:%M:%S')" "$1" "$2" >&2
+	# set error exit status indicator for parallel jobs.
+	rm -f "${sfeedtmpdir}/ok"
 }
 
 # fetch a feed via HTTP/HTTPS etc.
@@ -64,7 +71,7 @@ parse() {
 }
 
 # filter fields.
-# filter(name)
+# filter(name, url)
 filter() {
 	cat
 }
@@ -76,7 +83,7 @@ merge() {
 }
 
 # order by timestamp (descending).
-# order(name)
+# order(name, url)
 order() {
 	sort -t '	' -k1rn,1
 }
@@ -91,65 +98,66 @@ _feed() {
 
 	filename="$(printf '%s' "${name}" | tr '/' '_')"
 	sfeedfile="${sfeedpath}/${filename}"
-	tmpfeedfile="${sfeedtmpdir}/${filename}"
+	tmpfeedfile="${sfeedtmpdir}/feeds/${filename}"
 
 	# if file does not exist yet create it.
 	[ -e "${sfeedfile}" ] || touch "${sfeedfile}" 2>/dev/null
 
 	if ! fetch "${name}" "${feedurl}" "${sfeedfile}" > "${tmpfeedfile}.fetch"; then
-		log "${name}" "FAIL (FETCH)"
-		return
+		log_error "${name}" "FAIL (FETCH)"
+		return 1
 	fi
 
 	# try to detect encoding (if not specified). if detecting the encoding fails assume utf-8.
 	[ "${encoding}" = "" ] && encoding=$(sfeed_xmlenc < "${tmpfeedfile}.fetch")
 
 	if ! convertencoding "${name}" "${encoding}" "utf-8" < "${tmpfeedfile}.fetch" > "${tmpfeedfile}.utf8"; then
-		log "${name}" "FAIL (ENCODING)"
-		return
+		log_error "${name}" "FAIL (ENCODING)"
+		return 1
 	fi
 	rm -f "${tmpfeedfile}.fetch"
 
 	# if baseurl is empty then use feedurl.
 	if ! parse "${name}" "${feedurl}" "${basesiteurl:-${feedurl}}" < "${tmpfeedfile}.utf8" > "${tmpfeedfile}.tsv"; then
-		log "${name}" "FAIL (PARSE)"
-		return
+		log_error "${name}" "FAIL (PARSE)"
+		return 1
 	fi
 	rm -f "${tmpfeedfile}.utf8"
 
-	if ! filter "${name}" < "${tmpfeedfile}.tsv" > "${tmpfeedfile}.filter"; then
-		log "${name}" "FAIL (FILTER)"
-		return
+	if ! filter "${name}" "${feedurl}" < "${tmpfeedfile}.tsv" > "${tmpfeedfile}.filter"; then
+		log_error "${name}" "FAIL (FILTER)"
+		return 1
 	fi
 	rm -f "${tmpfeedfile}.tsv"
 
 	# new feed data is empty: no need for below stages.
 	if [ ! -s "${tmpfeedfile}.filter" ]; then
 		log "${name}" "OK"
-		return
+		return 0
 	fi
 
 	if ! merge "${name}" "${sfeedfile}" "${tmpfeedfile}.filter" > "${tmpfeedfile}.merge"; then
-		log "${name}" "FAIL (MERGE)"
-		return
+		log_error "${name}" "FAIL (MERGE)"
+		return 1
 	fi
 	rm -f "${tmpfeedfile}.filter"
 
-	if ! order "${name}" < "${tmpfeedfile}.merge" > "${tmpfeedfile}.order"; then
-		log "${name}" "FAIL (ORDER)"
-		return
+	if ! order "${name}" "${feedurl}" < "${tmpfeedfile}.merge" > "${tmpfeedfile}.order"; then
+		log_error "${name}" "FAIL (ORDER)"
+		return 1
 	fi
 	rm -f "${tmpfeedfile}.merge"
 
 	# copy
 	if ! cp "${tmpfeedfile}.order" "${sfeedfile}"; then
-		log "${name}" "FAIL (COPY)"
-		return
+		log_error "${name}" "FAIL (COPY)"
+		return 1
 	fi
 	rm -f "${tmpfeedfile}.order"
 
 	# OK
 	log "${name}" "OK"
+	return 0
 }
 
 # fetch and process a feed in parallel.
@@ -174,12 +182,12 @@ sighandler() {
 	signo="$1"
 	# ignore TERM signal for myself.
 	trap -- "" TERM
-	# kill all running childs >:D
+	# kill all running children >:D
 	kill -TERM -$$
 }
 
 feeds() {
-	echo "Configuration file \"${config}\" is invalid or does not contain a \"feeds\" function." >&2
+	printf "Configuration file \"%s\" is invalid or does not contain a \"feeds\" function.\n" "${config}" >&2
 	echo "See sfeedrc.example for an example." >&2
 }
 
@@ -195,18 +203,23 @@ main() {
 	# load config file.
 	loadconfig "$1"
 	# fetch feeds and store in temporary directory.
-	sfeedtmpdir="$(mktemp -d '/tmp/sfeed_XXXXXX')"
+	sfeedtmpdir="$(mktemp -d '/tmp/sfeed_XXXXXX')" || exit 1
+	mkdir -p "${sfeedtmpdir}/feeds"
+	touch "${sfeedtmpdir}/ok" || exit 1
 	# make sure path exists.
 	mkdir -p "${sfeedpath}"
 	# fetch feeds specified in config file.
 	feeds
 	# wait till all feeds are fetched (concurrently).
 	[ ${signo} -eq 0 ] && wait
+	# check error exit status indicator for parallel jobs.
+	[ -f "${sfeedtmpdir}/ok" ]
+	status=$?
 	# cleanup temporary files etc.
 	cleanup
 	# on signal SIGINT and SIGTERM exit with signal number + 128.
 	[ ${signo} -ne 0 ] && exit $((signo+128))
-	return 0
+	exit ${status}
 }
 
 [ "${SFEED_UPDATE_INCLUDE}" = "1" ] || main "$@"

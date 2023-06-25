@@ -26,9 +26,16 @@ is empty.
 .Pp
 Items with a timestamp from the last day compared to the system time at the
 time of formatting are counted and marked as new.
+This value might be overridden through environment variables.
 Items are marked as new using a bold markup.
 .Pp
 There is an example style.css stylesheet file included in the distribution.
+.Sh ENVIRONMENT VARIABLES
+.Bl -tag -width Ds
+.It Ev SFEED_NEW_AGE
+Overwrite the maximum age in seconds to mark feeds as new.
+By default this is 86400, which equals one day.
+.El
 .Sh EXIT STATUS
 .Ex -std
 .Sh EXAMPLES

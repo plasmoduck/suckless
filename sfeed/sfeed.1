@@ -1,4 +1,4 @@
-.Dd July 29, 2021
+.Dd January 7, 2023
 .Dt SFEED 1
 .Os
 .Sh NAME
@@ -23,15 +23,15 @@ SPACE character.
 Control characters are removed.
 .Pp
 The content field can contain newlines and these are escaped.
-TABs, newlines and '\\' are escaped with '\\', so it becomes: '\\t', '\\n'
-and '\\\\'.
+TABs, newlines and '\e' are escaped with '\e', so it becomes: '\et', '\en'
+and '\e\e'.
 Other whitespace characters except spaces are removed.
 Control characters are removed.
 .Pp
 The order and content of the fields are:
 .Bl -tag -width 15n
 .It 1. timestamp
-UNIX timestamp in UTC+0, empty if missing or on parse failure.
+UNIX timestamp in UTC+0, empty if missing or on a parse failure.
 .It 2. title
 Title text, HTML code in titles is ignored and is treated as plain-text.
 .It 3. link
@@ -43,11 +43,11 @@ Content, can have plain-text or HTML code depending on the content-type field.
 .It 6. id
 RSS item GUID or Atom id.
 .It 7. author
-Item author.
+Item, first author.
 .It 8. enclosure
 Item, first enclosure.
 .It 9. category
-Item, categories, multiple values are separated by |.
+Item, categories, multiple values are separated by the '|' character.
 .El
 .Sh EXIT STATUS
 .Ex -std
@@ -55,7 +55,55 @@ Item, categories, multiple values are separated by |.
 .Bd -literal
 curl -s 'https://codemadness.org/atom.xml' | sfeed
 .Ed
+.Pp
+To convert the character set from a feed that is not UTF-8 encoded the
+.Xr iconv 1
+tool can be used:
+.Bd -literal
+curl -s 'https://codemadness.org/some_iso-8859-1_feed.xml' | \e
+iconv -f iso-8859-1 -t utf-8 | \e
+sfeed
+.Ed
+.Sh EXAMPLE SETUP
+1. Create a directory for the sfeedrc configuration and the feeds:
+.Bd -literal
+	mkdir -p ~/.sfeed/feeds
+.Ed
+.Pp
+2. Copy the example
+.Xr sfeedrc 5
+configuration:
+.Bd -literal
+	cp sfeedrc.example ~/.sfeed/sfeedrc
+	$EDITOR ~/.sfeed/sfeedrc
+.Ed
+.Pp
+Or import existing OPML subscriptions using
+.Xr sfeed_opml_import 1 :
+.Bd -literal
+	sfeed_opml_import < file.opml > ~/.sfeed/sfeedrc
+.Ed
+.Pp
+3. To update feeds and merge the new items with existing items:
+.Bd -literal
+	sfeed_update
+.Ed
+.Pp
+4. Format feeds to a plain-text list:
+.Bd -literal
+	sfeed_plain ~/.sfeed/feeds/*
+.Ed
+.Pp
+Or format feeds to a curses interface:
+.Bd -literal
+	sfeed_curses ~/.sfeed/feeds/*
+.Ed
+.Pp
+There are also other formatting programs included.
+The README file has more examples.
 .Sh SEE ALSO
+.Xr sfeed_curses 1 ,
+.Xr sfeed_opml_import 1 ,
 .Xr sfeed_plain 1 ,
 .Xr sfeed_update 1 ,
 .Xr sfeed 5 ,
@@ -63,5 +111,5 @@ curl -s 'https://codemadness.org/atom.xml' | sfeed
 .Sh AUTHORS
 .An Hiltjo Posthuma Aq Mt hiltjo@codemadness.org
 .Sh CAVEATS
-If a timezone for the timestamp field is not in the RFC822 or RFC3339 format it
-is not supported and the timezone is interpreted as UTC+0.
+If a timezone for the timestamp field is not in the RFC 822 or RFC 3339 format
+it is not supported and the timezone is interpreted as UTC+0.

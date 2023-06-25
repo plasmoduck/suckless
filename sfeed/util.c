@@ -1,4 +1,3 @@
-#include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -46,19 +45,51 @@ errx(int exitstatus, const char *fmt, ...)
 	exit(exitstatus);
 }
 
-/* check if string has a non-empty scheme / protocol part */
+/* Handle read or write errors for a FILE * stream */
+void
+checkfileerror(FILE *fp, const char *name, int mode)
+{
+	if (mode == 'r' && ferror(fp))
+		errx(1, "read error: %s", name);
+	else if (mode == 'w' && (fflush(fp) || ferror(fp)))
+		errx(1, "write error: %s", name);
+}
+
+/* strcasestr() included for portability */
+char *
+strcasestr(const char *h, const char *n)
+{
+	size_t i;
+
+	if (!n[0])
+		return (char *)h;
+
+	for (; *h; ++h) {
+		for (i = 0; n[i] && TOLOWER((unsigned char)n[i]) ==
+		            TOLOWER((unsigned char)h[i]); ++i)
+			;
+		if (n[i] == '\0')
+			return (char *)h;
+	}
+
+	return NULL;
+}
+
+/* Check if string has a non-empty scheme / protocol part. */
 int
 uri_hasscheme(const char *s)
 {
 	const char *p = s;
 
-	for (; isalpha((unsigned char)*p) || isdigit((unsigned char)*p) ||
+	for (; ISALPHA((unsigned char)*p) || ISDIGIT((unsigned char)*p) ||
 		       *p == '+' || *p == '-' || *p == '.'; p++)
 		;
 	/* scheme, except if empty and starts with ":" then it is a path */
 	return (*p == ':' && p != s);
 }
 
+/* Parse URI string `s` into an uri structure `u`.
+   Returns 0 on success or -1 on failure */
 int
 uri_parse(const char *s, struct uri *u)
 {
@@ -77,7 +108,7 @@ uri_parse(const char *s, struct uri *u)
 	}
 
 	/* scheme / protocol part */
-	for (; isalpha((unsigned char)*p) || isdigit((unsigned char)*p) ||
+	for (; ISALPHA((unsigned char)*p) || ISDIGIT((unsigned char)*p) ||
 		       *p == '+' || *p == '-' || *p == '.'; p++)
 		;
 	/* scheme, except if empty and starts with ":" then it is a path */
@@ -278,12 +309,31 @@ strtotime(const char *s, time_t *t)
 	l = strtoll(s, &e, 10);
 	if (errno || *s == '\0' || *e)
 		return -1;
-	/* NOTE: assumes time_t is 64-bit on 64-bit platforms:
-	         long long (at least 32-bit) to time_t. */
+
+	/* NOTE: the type long long supports the 64-bit range. If time_t is
+	   64-bit it is "2038-ready", otherwise it is truncated/wrapped. */
 	if (t)
 		*t = (time_t)l;
 
 	return 0;
+}
+
+time_t
+getcomparetime(void)
+{
+	time_t now, t;
+	char *p;
+
+	if ((now = time(NULL)) == (time_t)-1)
+		return (time_t)-1;
+
+	if ((p = getenv("SFEED_NEW_AGE"))) {
+		if (strtotime(p, &t) == -1)
+			return (time_t)-1;
+		return now - t;
+	}
+
+	return now - 86400; /* 1 day is old news */
 }
 
 /* Escape characters below as HTML 2.0 / XML 1.0. */
@@ -302,7 +352,7 @@ xmlencode(const char *s, FILE *fp)
 	}
 }
 
-/* print `len' columns of characters. If string is shorter pad the rest with
+/* print `len` columns of characters. If string is shorter pad the rest with
  * characters `pad`. */
 void
 printutf8pad(FILE *fp, const char *s, size_t len, int pad)
@@ -331,11 +381,11 @@ printutf8pad(FILE *fp, const char *s, size_t len, int pad)
 			}
 
 			if (col + w > len || (col + w == len && s[i + inc])) {
-				fputs("\xe2\x80\xa6", fp); /* ellipsis */
+				fputs(PAD_TRUNCATE_SYMBOL, fp); /* ellipsis */
 				col++;
 				break;
 			} else if (rl < 0) {
-				fputs("\xef\xbf\xbd", fp); /* replacement */
+				fputs(UTF_INVALID_SYMBOL, fp); /* replacement */
 				col++;
 				continue;
 			}
@@ -344,7 +394,7 @@ printutf8pad(FILE *fp, const char *s, size_t len, int pad)
 		} else {
 			/* optimization: simple ASCII character */
 			if (col + 1 > len || (col + 1 == len && s[i + 1])) {
-				fputs("\xe2\x80\xa6", fp); /* ellipsis */
+				fputs(PAD_TRUNCATE_SYMBOL, fp); /* ellipsis */
 				col++;
 				break;
 			}

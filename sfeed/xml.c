@@ -1,10 +1,12 @@
-#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "xml.h"
+
+#define ISALPHA(c) ((((unsigned)c) | 32) - 'a' < 26)
+#define ISSPACE(c) ((c) == ' ' || ((((unsigned)c) - '\t') < 5))
 
 static void
 xml_parseattrs(XMLParser *x)
@@ -13,7 +15,7 @@ xml_parseattrs(XMLParser *x)
 	int c, endsep, endname = 0, valuestart = 0;
 
 	while ((c = GETNEXT()) != EOF) {
-		if (isspace(c)) {
+		if (ISSPACE(c)) {
 			if (namelen)
 				endname = 1;
 			continue;
@@ -23,7 +25,7 @@ xml_parseattrs(XMLParser *x)
 			x->name[namelen] = '\0';
 			valuestart = 1;
 			endname = 1;
-		} else if (namelen && ((endname && !valuestart && isalpha(c)) || (c == '>' || c == '/'))) {
+		} else if (namelen && ((endname && !valuestart && ISALPHA(c)) || (c == '>' || c == '/'))) {
 			/* attribute without value */
 			x->name[namelen] = '\0';
 			if (x->xmlattrstart)
@@ -44,7 +46,7 @@ xml_parseattrs(XMLParser *x)
 			if (c == '\'' || c == '"') {
 				endsep = c;
 			} else {
-				endsep = ' '; /* isspace() */
+				endsep = ' '; /* ISSPACE() */
 				goto startvalue;
 			}
 
@@ -58,7 +60,7 @@ startvalue:
 					x->data[0] = c;
 					valuelen = 1;
 					while ((c = GETNEXT()) != EOF) {
-						if (c == endsep || (endsep == ' ' && (c == '>' || isspace(c))))
+						if (c == endsep || (endsep == ' ' && (c == '>' || ISSPACE(c))))
 							break;
 						if (valuelen < sizeof(x->data) - 1)
 							x->data[valuelen++] = c;
@@ -79,7 +81,7 @@ startvalue:
 							break;
 						}
 					}
-				} else if (c != endsep && !(endsep == ' ' && (c == '>' || isspace(c)))) {
+				} else if (c != endsep && !(endsep == ' ' && (c == '>' || ISSPACE(c)))) {
 					if (valuelen < sizeof(x->data) - 1) {
 						x->data[valuelen++] = c;
 					} else {
@@ -90,7 +92,7 @@ startvalue:
 						valuelen = 1;
 					}
 				}
-				if (c == endsep || (endsep == ' ' && (c == '>' || isspace(c)))) {
+				if (c == endsep || (endsep == ' ' && (c == '>' || ISSPACE(c)))) {
 					x->data[valuelen] = '\0';
 					if (x->xmlattr)
 						x->xmlattr(x, x->tag, x->taglen, x->name, namelen, x->data, valuelen);
@@ -290,7 +292,7 @@ xml_parse(XMLParser *x)
 			if ((c = GETNEXT()) == EOF)
 				return;
 
-			if (c == '!') { /* cdata and comments */
+			if (c == '!') { /* CDATA and comments */
 				for (tagdatalen = 0; (c = GETNEXT()) != EOF;) {
 					/* NOTE: sizeof(x->data) must be at least sizeof("[CDATA[") */
 					if (tagdatalen <= sizeof("[CDATA[") - 1)
@@ -328,7 +330,7 @@ xml_parse(XMLParser *x)
 				while ((c = GETNEXT()) != EOF) {
 					if (c == '/')
 						x->isshorttag = 1; /* short tag */
-					else if (c == '>' || isspace(c)) {
+					else if (c == '>' || ISSPACE(c)) {
 						x->tag[x->taglen] = '\0';
 						if (isend) { /* end tag, starts with </ */
 							if (x->xmltagend)
@@ -339,7 +341,7 @@ xml_parse(XMLParser *x)
 							/* start tag */
 							if (x->xmltagstart)
 								x->xmltagstart(x, x->tag, x->taglen);
-							if (isspace(c))
+							if (ISSPACE(c))
 								xml_parseattrs(x);
 							if (x->xmltagstartparsed)
 								x->xmltagstartparsed(x, x->tag, x->taglen, x->isshorttag);

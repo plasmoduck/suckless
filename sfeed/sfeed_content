@@ -1,0 +1,55 @@
+#!/bin/sh
+# Content viewer for sfeed(5) lines.
+
+# The locale is set to "C" for performance. The input is always UTF-8.
+LC_ALL=C awk -F '\t' '
+function unescape(s) {
+	# use the character "\x01" as a temporary replacement for "\".
+	gsub("\\\\\\\\", "\x01", s);
+	gsub("\\\\n", "\n", s);
+	gsub("\\\\t", "\t", s);
+	gsub("\x01", "\\", s); # restore "\x01" to "\".
+	return s;
+}
+BEGIN {
+	htmlconv = ENVIRON["SFEED_HTMLCONV"];
+	if (!length(htmlconv))
+		htmlconv = "lynx -stdin -dump " \
+			"-underline_links -image_links " \
+			"-display_charset=\"utf-8\" -assume_charset=\"utf-8\" ";
+}
+{
+	if (previtem)
+		print "\f";
+	previtem = 1;
+
+	print "Title:     " $2;
+	if (length($7))
+		print "Author:    " $7;
+	if (length($9)) {
+		categories = $9;
+		gsub("\\|", ", ", categories);
+		print "Category:  " categories;
+	}
+	if (length($3))
+		print "Link:      " $3;
+	if (length($8))
+		print "Enclosure: " $8;
+	if (!length($4))
+		next;
+	print "";
+	if ($5 == "html") {
+		# use the link of the item as the base URL for relative URLs in
+		# HTML content.
+		base = $3;
+		if (length(base)) {
+			gsub("\"", "%22", base); # encode quotes.
+			base = "<base href=\"" base "\"/>\n";
+		}
+		print base unescape($4) | htmlconv;
+		close(htmlconv);
+	} else {
+		print unescape($4);
+	}
+}' "$@" | \
+${PAGER:-less -R}

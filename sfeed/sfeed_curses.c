@@ -1,10 +1,7 @@
 #include <sys/ioctl.h>
 #include <sys/select.h>
-#include <sys/time.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 
-#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <locale.h>
@@ -18,6 +15,8 @@
 #include <unistd.h>
 #include <wchar.h>
 
+#include "util.h"
+
 /* curses */
 #ifndef SFEED_MINICURSES
 #include <curses.h>
@@ -30,12 +29,17 @@
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
-#define PAD_TRUNCATE_SYMBOL    "\xe2\x80\xa6" /* symbol: "ellipsis" */
+#ifndef SFEED_DUMBTERM
 #define SCROLLBAR_SYMBOL_BAR   "\xe2\x94\x82" /* symbol: "light vertical" */
 #define SCROLLBAR_SYMBOL_TICK  " "
 #define LINEBAR_SYMBOL_BAR     "\xe2\x94\x80" /* symbol: "light horizontal" */
 #define LINEBAR_SYMBOL_RIGHT   "\xe2\x94\xa4" /* symbol: "light vertical and left" */
-#define UTF_INVALID_SYMBOL     "\xef\xbf\xbd" /* symbol: "replacement" */
+#else
+#define SCROLLBAR_SYMBOL_BAR   "|"
+#define SCROLLBAR_SYMBOL_TICK  " "
+#define LINEBAR_SYMBOL_BAR     "-"
+#define LINEBAR_SYMBOL_RIGHT   "|"
+#endif
 
 /* color-theme */
 #ifndef SFEED_THEME
@@ -52,12 +56,6 @@ enum Layout {
 };
 
 enum Pane { PaneFeeds, PaneItems, PaneLast };
-
-enum {
-	FieldUnixTimestamp = 0, FieldTitle, FieldLink, FieldContent,
-	FieldContentType, FieldId, FieldAuthor, FieldEnclosure,
-	FieldCategory, FieldLast
-};
 
 struct win {
 	int width; /* absolute width of the window */
@@ -83,7 +81,7 @@ struct pane {
 	int hidden; /* is visible or not */
 	int dirty; /* needs draw update */
 	/* (optional) callback functions */
-	struct row *(*row_get)(struct pane *, off_t pos);
+	struct row *(*row_get)(struct pane *, off_t);
 	char *(*row_format)(struct pane *, struct row *);
 	int (*row_match)(struct pane *, struct row *, const char *);
 };
@@ -129,18 +127,16 @@ struct item {
 	off_t offset; /* line offset in file for lazyload */
 };
 
-struct items {
-	struct item *items;     /* array of items */
-	size_t len;             /* amount of items */
-	size_t cap;             /* available capacity */
+struct urls {
+	char **items; /* array of URLs */
+	size_t len;   /* amount of items */
+	size_t cap;   /* available capacity */
 };
 
-struct feed {
-	char         *name;     /* feed name */
-	char         *path;     /* path to feed or NULL for stdin */
-	unsigned long totalnew; /* amount of new items per feed */
-	unsigned long total;    /* total items */
-	FILE *fp;               /* file pointer */
+struct items {
+	struct item *items; /* array of items */
+	size_t len;         /* amount of items */
+	size_t cap;         /* available capacity */
 };
 
 void alldirty(void);
@@ -152,9 +148,9 @@ void pane_draw(struct pane *);
 void sighandler(int);
 void updategeom(void);
 void updatesidebar(void);
-void urls_free(void);
-int urls_isnew(const char *);
-void urls_read(void);
+void urls_free(struct urls *);
+int urls_hasmatch(struct urls *, const char *);
+void urls_read(struct urls *, const char *);
 
 static struct linebar linebar;
 static struct statusbar statusbar;
@@ -177,12 +173,13 @@ static struct feed *feeds;
 static struct feed *curfeed;
 static size_t nfeeds; /* amount of feeds */
 static time_t comparetime;
-static char *urlfile, **urls;
-static size_t nurls;
+static struct urls urls;
+static char *urlfile;
 
-volatile sig_atomic_t sigstate = 0;
+volatile sig_atomic_t state_sigchld = 0, state_sighup = 0, state_sigint = 0;
+volatile sig_atomic_t state_sigterm = 0, state_sigwinch = 0;
 
-static char *plumbercmd = "/home/cjg/bin/openurlsfeed.sh"; /* env variable: $SFEED_PLUMBER */
+static char *plumbercmd = "xdg-open"; /* env variable: $SFEED_PLUMBER */
 static char *pipercmd = "sfeed_content"; /* env variable: $SFEED_PIPER */
 static char *yankercmd = "xclip -r"; /* env variable: $SFEED_YANKER */
 static char *markreadcmd = "sfeed_markread read"; /* env variable: $SFEED_MARK_READ */
@@ -215,12 +212,7 @@ ttywrite(const char *s)
 	return write(1, s, strlen(s));
 }
 
-/* hint for compilers and static analyzers that a function exits */
-#ifndef __dead
-#define __dead
-#endif
-
-/* print to stderr, call cleanup() and _exit(). */
+/* Print to stderr, call cleanup() and _exit(). */
 __dead void
 die(const char *fmt, ...)
 {
@@ -236,8 +228,8 @@ die(const char *fmt, ...)
 
 	if (saved_errno)
 		fprintf(stderr, ": %s", strerror(saved_errno));
+	putc('\n', stderr);
 	fflush(stderr);
-	write(2, "\n", 1);
 
 	_exit(1);
 }
@@ -272,78 +264,18 @@ estrdup(const char *s)
 	return p;
 }
 
-/* wrapper for tparm which allows NULL parameter for str. */
+/* Wrapper for tparm() which allows NULL parameter for str. */
 char *
-tparmnull(const char *str, long p1, long p2, long p3, long p4, long p5,
-          long p6, long p7, long p8, long p9)
+tparmnull(const char *str, long p1, long p2, long p3, long p4, long p5, long p6,
+          long p7, long p8, long p9)
 {
 	if (!str)
 		return NULL;
-	return tparm(str, p1, p2, p3, p4, p5, p6, p7, p8, p9);
+	/* some tparm() implementations have char *, some have const char * */
+	return tparm((char *)str, p1, p2, p3, p4, p5, p6, p7, p8, p9);
 }
 
-/* strcasestr() included for portability */
-#undef strcasestr
-char *
-strcasestr(const char *h, const char *n)
-{
-	size_t i;
-
-	if (!n[0])
-		return (char *)h;
-
-	for (; *h; ++h) {
-		for (i = 0; n[i] && tolower((unsigned char)n[i]) ==
-		            tolower((unsigned char)h[i]); ++i)
-			;
-		if (n[i] == '\0')
-			return (char *)h;
-	}
-
-	return NULL;
-}
-
-/* Splits fields in the line buffer by replacing TAB separators with NUL ('\0')
-   terminators and assign these fields as pointers. If there are less fields
-   than expected then the field is an empty string constant. */
-void
-parseline(char *line, char *fields[FieldLast])
-{
-	char *prev, *s;
-	size_t i;
-
-	for (prev = line, i = 0;
-	    (s = strchr(prev, '\t')) && i < FieldLast - 1;
-	    i++) {
-		*s = '\0';
-		fields[i] = prev;
-		prev = s + 1;
-	}
-	fields[i++] = prev;
-	/* make non-parsed fields empty. */
-	for (; i < FieldLast; i++)
-		fields[i] = "";
-}
-
-/* Parse time to time_t, assumes time_t is signed, ignores fractions. */
-int
-strtotime(const char *s, time_t *t)
-{
-	long long l;
-	char *e;
-
-	errno = 0;
-	l = strtoll(s, &e, 10);
-	if (errno || *s == '\0' || *e)
-		return -1;
-	/* NOTE: assumes time_t is 64-bit on 64-bit platforms:
-	         long long (at least 32-bit) to time_t. */
-	if (t)
-		*t = (time_t)l;
-
-	return 0;
-}
-
+/* Counts column width of character string. */
 size_t
 colw(const char *s)
 {
@@ -364,7 +296,7 @@ colw(const char *s)
 				inc = 1; /* invalid, seek next byte */
 				w = 1; /* replacement char is one width */
 			} else if ((w = wcwidth(wc)) == -1) {
-				w = 1;
+				continue;
 			}
 			col += w;
 		} else {
@@ -374,7 +306,7 @@ colw(const char *s)
 	return col;
 }
 
-/* Format `len' columns of characters. If string is shorter pad the rest
+/* Format `len` columns of characters. If string is shorter pad the rest
    with characters `pad`. */
 int
 utf8pad(char *buf, size_t bufsiz, const char *s, size_t len, int pad)
@@ -403,8 +335,8 @@ utf8pad(char *buf, size_t bufsiz, const char *s, size_t len, int pad)
 			inc = 1; /* invalid, seek next byte */
 			w = 1; /* replacement char is one width */
 		} else if ((w = wcwidth(wc)) == -1) {
-		        w = 1;
-                }
+			continue;
+		}
 
 		if (col + w > len || (col + w == len && s[i + inc])) {
 			if (siz + 4 >= bufsiz)
@@ -439,61 +371,6 @@ utf8pad(char *buf, size_t bufsiz, const char *s, size_t len, int pad)
 	buf[siz] = '\0';
 
 	return 0;
-}
-
-/* print `len' columns of characters. If string is shorter pad the rest with
- * characters `pad`. */
-void
-printutf8pad(FILE *fp, const char *s, size_t len, int pad)
-{
-	wchar_t wc;
-	size_t col = 0, i, slen;
-	int inc, rl, w;
-
-	if (!len)
-		return;
-
-	slen = strlen(s);
-	for (i = 0; i < slen; i += inc) {
-		inc = 1; /* next byte */
-		if ((unsigned char)s[i] < 32) {
-			continue; /* skip control characters */
-		} else if ((unsigned char)s[i] >= 127) {
-			rl = mbtowc(&wc, s + i, slen - i < 4 ? slen - i : 4);
-			inc = rl;
-			if (rl < 0) {
-				mbtowc(NULL, NULL, 0); /* reset state */
-				inc = 1; /* invalid, seek next byte */
-				w = 1; /* replacement char is one width */
-			} else if ((w = wcwidth(wc)) == -1) {
-				w = 1;
-			}
-
-			if (col + w > len || (col + w == len && s[i + inc])) {
-				fputs("\xe2\x80\xa6", fp); /* ellipsis */
-				col++;
-				break;
-			} else if (rl < 0) {
-				fputs("\xef\xbf\xbd", fp); /* replacement */
-				col++;
-				continue;
-			}
-			fwrite(&s[i], 1, rl, fp);
-			col += w;
-		} else {
-			/* optimization: simple ASCII character */
-			if (col + 1 > len || (col + 1 == len && s[i + 1])) {
-				fputs("\xe2\x80\xa6", fp); /* ellipsis */
-				col++;
-				break;
-			}
-			putc(s[i], fp);
-			col++;
-		}
-
-	}
-	for (; col < len; ++col)
-		putc(pad, fp);
 }
 
 void
@@ -671,12 +548,13 @@ init(void)
 	cursormode(0);
 
 	if (usemouse)
-		mousemode(usemouse);
+		mousemode(1);
 
 	memset(&sa, 0, sizeof(sa));
 	sigemptyset(&sa.sa_mask);
 	sa.sa_flags = SA_RESTART; /* require BSD signal semantics */
 	sa.sa_handler = sighandler;
+	sigaction(SIGCHLD, &sa, NULL);
 	sigaction(SIGHUP, &sa, NULL);
 	sigaction(SIGINT, &sa, NULL);
 	sigaction(SIGTERM, &sa, NULL);
@@ -686,25 +564,28 @@ init(void)
 void
 processexit(pid_t pid, int interactive)
 {
-	pid_t wpid;
 	struct sigaction sa;
 
-	memset(&sa, 0, sizeof(sa));
-	sigemptyset(&sa.sa_mask);
-	sa.sa_flags = SA_RESTART; /* require BSD signal semantics */
-	sa.sa_handler = SIG_IGN;
-	sigaction(SIGINT, &sa, NULL);
-
 	if (interactive) {
-		while ((wpid = wait(NULL)) >= 0 && wpid != pid)
-			;
+		memset(&sa, 0, sizeof(sa));
+		sigemptyset(&sa.sa_mask);
+		sa.sa_flags = SA_RESTART; /* require BSD signal semantics */
+
+		/* ignore SIGINT (^C) in parent for interactive applications */
+		sa.sa_handler = SIG_IGN;
+		sigaction(SIGINT, &sa, NULL);
+
+		sa.sa_flags = 0; /* SIGTERM: interrupt waitpid(), no SA_RESTART */
+		sa.sa_handler = sighandler;
+		sigaction(SIGTERM, &sa, NULL);
+
+		/* wait for process to change state, ignore errors */
+		waitpid(pid, NULL, 0);
+
 		init();
 		updatesidebar();
 		updategeom();
 		updatetitle();
-	} else {
-		sa.sa_handler = sighandler;
-		sigaction(SIGINT, &sa, NULL);
 	}
 }
 
@@ -728,8 +609,8 @@ pipeitem(const char *cmd, struct item *item, int field, int interactive)
 		die("fork");
 	case 0:
 		if (!interactive) {
-			dup2(devnullfd, 1);
-			dup2(devnullfd, 2);
+			dup2(devnullfd, 1); /* stdout */
+			dup2(devnullfd, 2); /* stderr */
 		}
 
 		errno = 0;
@@ -766,8 +647,9 @@ forkexec(char *argv[], int interactive)
 		die("fork");
 	case 0:
 		if (!interactive) {
-			dup2(devnullfd, 1);
-			dup2(devnullfd, 2);
+			dup2(devnullfd, 0); /* stdin */
+			dup2(devnullfd, 1); /* stdout */
+			dup2(devnullfd, 2); /* stderr */
 		}
 		if (execvp(argv[0], argv) == -1)
 			_exit(1);
@@ -817,18 +699,16 @@ pane_row_draw(struct pane *p, off_t pos, int selected)
 
 	cursorsave();
 	cursormove(p->x, p->y + (pos % p->height));
-        
-        if (p->focused)
+
+	if (p->focused)
 		THEME_ITEM_FOCUS();
 	else
 		THEME_ITEM_NORMAL();
-        if ( p == &panes[PaneFeeds])
-                THEME_PANE_FEEDS();
-        if (row && row->bold)
+	if (row && row->bold)
 		THEME_ITEM_BOLD();
 	if (selected)
 		THEME_ITEM_SELECTED();
-        if (row) {
+	if (row) {
 		printutf8pad(stdout, pane_row_text(p, row), p->width, ' ');
 		fflush(stdout);
 	} else {
@@ -1075,8 +955,10 @@ readch(void)
 	fd_set readfds;
 	struct timeval tv;
 
-	if (cmdenv && *cmdenv)
-		return *(cmdenv++);
+	if (cmdenv && *cmdenv) {
+		b = *(cmdenv++); /* $SFEED_AUTOCMD */
+		return (int)b;
+	}
 
 	for (;;) {
 		FD_ZERO(&readfds);
@@ -1107,8 +989,10 @@ lineeditor(void)
 	size_t cap = 0, nchars = 0;
 	int ch;
 
+	if (usemouse)
+		mousemode(0);
 	for (;;) {
-		if (nchars + 1 >= cap) {
+		if (nchars + 2 >= cap) {
 			cap = cap ? cap * 2 : 32;
 			input = erealloc(input, cap);
 		}
@@ -1121,26 +1005,33 @@ lineeditor(void)
 			if (!nchars)
 				continue;
 			input[--nchars] = '\0';
-			write(1, "\b \b", 3); /* back, blank, back */
-			continue;
+			ttywrite("\b \b"); /* back, blank, back */
 		} else if (ch >= ' ') {
 			input[nchars] = ch;
-			write(1, &input[nchars], 1);
+			input[nchars + 1] = '\0';
+			ttywrite(&input[nchars]);
 			nchars++;
 		} else if (ch < 0) {
-			switch (sigstate) {
-			case 0:
-			case SIGWINCH:
-				continue; /* process signals later */
-			case SIGINT:
-				sigstate = 0; /* exit prompt, do not quit */
-			case SIGTERM:
-				break; /* exit prompt and quit */
+			if (state_sigchld) {
+				state_sigchld = 0;
+				/* wait on child processes so they don't become a zombie */
+				while (waitpid((pid_t)-1, NULL, WNOHANG) > 0)
+					;
 			}
+			if (state_sigint)
+				state_sigint = 0; /* cancel prompt and don't handle this signal */
+			else if (state_sighup || state_sigterm)
+				; /* cancel prompt and handle these signals */
+			else /* no signal, time-out or SIGCHLD or SIGWINCH */
+				continue; /* do not cancel: process signal later */
+
 			free(input);
-			return NULL;
+			input = NULL;
+			break; /* cancel prompt */
 		}
 	}
+	if (usemouse)
+		mousemode(1);
 	return input;
 }
 
@@ -1310,9 +1201,9 @@ feed_items_get(struct feed *f, FILE *fp, struct items *itemsret)
 		if (n <= 0 || feof(fp))
 			break;
 	}
-	itemsret->cap = cap;
 	itemsret->items = items;
 	itemsret->len = nitems;
+	itemsret->cap = cap;
 	free(line);
 }
 
@@ -1325,12 +1216,13 @@ updatenewitems(struct feed *f)
 	size_t i;
 
 	p = &panes[PaneItems];
+	p->dirty = 1;
 	f->totalnew = 0;
 	for (i = 0; i < p->nrows; i++) {
-		row = &(p->rows[i]); /* do not use pane_row_get */
+		row = &(p->rows[i]); /* do not use pane_row_get() */
 		item = row->data;
 		if (urlfile)
-			item->isnew = urls_isnew(item->matchnew);
+			item->isnew = !urls_hasmatch(&urls, item->matchnew);
 		else
 			item->isnew = (item->timeok && item->timestamp >= comparetime);
 		row->bold = item->isnew;
@@ -1355,11 +1247,9 @@ feed_load(struct feed *f, FILE *fp)
 	free(p->rows);
 	p->rows = ecalloc(sizeof(p->rows[0]), items.len + 1);
 	for (i = 0; i < items.len; i++)
-		p->rows[i].data = &(items.items[i]); /* do not use pane_row_get */
+		p->rows[i].data = &(items.items[i]); /* do not use pane_row_get() */
 
 	updatenewitems(f);
-
-	p->dirty = 1;
 }
 
 void
@@ -1378,7 +1268,7 @@ feed_count(struct feed *f, FILE *fp)
 		parseline(line, fields);
 
 		if (urlfile) {
-			f->totalnew += urls_isnew(fields[fields[FieldLink][0] ? FieldLink : FieldId]);
+			f->totalnew += !urls_hasmatch(&urls, fields[fields[FieldLink][0] ? FieldLink : FieldId]);
 		} else {
 			parsedtime = 0;
 			if (!strtotime(fields[FieldUnixTimestamp], &parsedtime))
@@ -1427,10 +1317,9 @@ feeds_load(struct feed *feeds, size_t nfeeds)
 	struct feed *f;
 	size_t i;
 
-	if ((comparetime = time(NULL)) == -1)
-		die("time");
-	/* 1 day is old news */
-	comparetime -= 86400;
+	errno = 0;
+	if ((comparetime = getcomparetime()) == (time_t)-1)
+		die("getcomparetime");
 
 	for (i = 0; i < nfeeds; i++) {
 		f = &feeds[i];
@@ -1496,9 +1385,9 @@ feeds_reloadall(void)
 
 	pos = panes[PaneItems].pos; /* store numeric item position */
 	feeds_set(curfeed); /* close and reopen feed if possible */
-	urls_read();
+	urls_read(&urls, urlfile);
 	feeds_load(feeds, nfeeds);
-	urls_free();
+	urls_free(&urls);
 	/* restore numeric item position */
 	pane_setpos(&panes[PaneItems], pos);
 	updatesidebar();
@@ -1521,10 +1410,10 @@ feed_open_selected(struct pane *p)
 		return;
 	f = row->data;
 	feeds_set(f);
-	urls_read();
+	urls_read(&urls, urlfile);
 	if (f->fp)
 		feed_load(f, f->fp);
-	urls_free();
+	urls_free(&urls);
 	/* redraw row: counts could be changed */
 	updatesidebar();
 	updatetitle();
@@ -1540,12 +1429,16 @@ feed_plumb_selected_item(struct pane *p, int field)
 {
 	struct row *row;
 	struct item *item;
+	char *cmd[3]; /* will have: { plumbercmd, arg, NULL } */
 
 	if (!(row = pane_row_get(p, p->pos)))
 		return;
-	item = row->data;
 	markread(p, p->pos, p->pos, 1);
-	forkexec((char *[]) { plumbercmd, item->fields[field], NULL }, plumberia);
+	item = row->data;
+	cmd[0] = plumbercmd;
+	cmd[1] = item->fields[field]; /* set first argument for plumber */
+	cmd[2] = NULL;
+	forkexec(cmd, plumberia);
 }
 
 void
@@ -1696,14 +1589,11 @@ void
 sighandler(int signo)
 {
 	switch (signo) {
-	case SIGHUP:
-	case SIGINT:
-	case SIGTERM:
-	case SIGWINCH:
-		/* SIGTERM is more important, do not override it */
-		if (sigstate != SIGTERM)
-			sigstate = signo;
-		break;
+	case SIGCHLD:  state_sigchld = 1;  break;
+	case SIGHUP:   state_sighup = 1;   break;
+	case SIGINT:   state_sigint = 1;   break;
+	case SIGTERM:  state_sigterm = 1;  break;
+	case SIGWINCH: state_sigwinch = 1; break;
 	}
 }
 
@@ -1758,7 +1648,8 @@ mousereport(int button, int release, int keymask, int x, int y)
 {
 	struct pane *p;
 	size_t i;
-	int changedpane, dblclick, pos;
+	off_t pos;
+	int changedpane, dblclick;
 
 	if (!usemouse || release || button == -1)
 		return;
@@ -1795,7 +1686,7 @@ mousereport(int button, int release, int keymask, int x, int y)
 		selpane = i;
 		/* relative position on screen */
 		pos = y - p->y + p->pos - (p->pos % p->height);
-		dblclick = (pos == p->pos); /* clicking the same row twice */
+		dblclick = (pos == p->pos); /* clicking the already selected row */
 
 		switch (button) {
 		case 0: /* left-click */
@@ -1896,6 +1787,7 @@ item_row_get(struct pane *p, off_t pos)
 		if ((linelen = getline(&line, &linesize, f->fp)) <= 0) {
 			if (ferror(f->fp))
 				die("getline: %s", f->path);
+			free(line);
 			return NULL;
 		}
 
@@ -1951,7 +1843,7 @@ markread(struct pane *p, off_t from, off_t to, int isread)
 	FILE *fp;
 	off_t i;
 	const char *cmd;
-	int isnew = !isread, pid, wpid, status, visstart;
+	int isnew = !isread, pid, status = -1, visstart;
 
 	if (!urlfile || !p->nrows)
 		return;
@@ -1962,15 +1854,15 @@ markread(struct pane *p, off_t from, off_t to, int isread)
 	case -1:
 		die("fork");
 	case 0:
-		dup2(devnullfd, 1);
-		dup2(devnullfd, 2);
+		dup2(devnullfd, 1); /* stdout */
+		dup2(devnullfd, 2); /* stderr */
 
 		errno = 0;
 		if (!(fp = popen(cmd, "w")))
 			die("popen: %s", cmd);
 
 		for (i = from; i <= to && i < p->nrows; i++) {
-			/* do not use pane_row_get: no need for lazyload */
+			/* do not use pane_row_get(): no need for lazyload */
 			row = &(p->rows[i]);
 			item = row->data;
 			if (item->isnew != isnew) {
@@ -1982,11 +1874,9 @@ markread(struct pane *p, off_t from, off_t to, int isread)
 		status = WIFEXITED(status) ? WEXITSTATUS(status) : 127;
 		_exit(status);
 	default:
-		while ((wpid = wait(&status)) >= 0 && wpid != pid)
-			;
-
-		/* fail: exit statuscode was non-zero */
-		if (status)
+		/* waitpid() and block on process status change,
+		   fail if exit statuscode was unavailable or non-zero */
+		if (waitpid(pid, &status, 0) <= 0 || status)
 			break;
 
 		visstart = p->pos - (p->pos % p->height); /* visible start */
@@ -2014,31 +1904,35 @@ urls_cmp(const void *v1, const void *v2)
 	return strcmp(*((char **)v1), *((char **)v2));
 }
 
+void
+urls_free(struct urls *urls)
+{
+	while (urls->len > 0) {
+		urls->len--;
+		free(urls->items[urls->len]);
+	}
+	free(urls->items);
+	urls->items = NULL;
+	urls->len = 0;
+	urls->cap = 0;
+}
+
 int
-urls_isnew(const char *url)
+urls_hasmatch(struct urls *urls, const char *url)
 {
-	return bsearch(&url, urls, nurls, sizeof(char *), urls_cmp) == NULL;
+	return (urls->len &&
+	       bsearch(&url, urls->items, urls->len, sizeof(char *), urls_cmp));
 }
 
 void
-urls_free(void)
-{
-	while (nurls > 0)
-		free(urls[--nurls]);
-	free(urls);
-	urls = NULL;
-	nurls = 0;
-}
-
-void
-urls_read(void)
+urls_read(struct urls *urls, const char *urlfile)
 {
 	FILE *fp;
 	char *line = NULL;
-	size_t linesiz = 0, cap = 0;
+	size_t linesiz = 0;
 	ssize_t n;
 
-	urls_free();
+	urls_free(urls);
 
 	if (!urlfile)
 		return;
@@ -2048,18 +1942,19 @@ urls_read(void)
 	while ((n = getline(&line, &linesiz, fp)) > 0) {
 		if (line[n - 1] == '\n')
 			line[--n] = '\0';
-		if (nurls + 1 >= cap) {
-			cap = cap ? cap * 2 : 16;
-			urls = erealloc(urls, cap * sizeof(char *));
+		if (urls->len + 1 >= urls->cap) {
+			urls->cap = urls->cap ? urls->cap * 2 : 16;
+			urls->items = erealloc(urls->items, urls->cap * sizeof(char *));
 		}
-		urls[nurls++] = estrdup(line);
+		urls->items[urls->len++] = estrdup(line);
 	}
 	if (ferror(fp))
 		die("getline: %s", urlfile);
 	fclose(fp);
 	free(line);
 
-	qsort(urls, nurls, sizeof(char *), urls_cmp);
+	if (urls->len > 0)
+		qsort(urls->items, urls->len, sizeof(char *), urls_cmp);
 }
 
 int
@@ -2068,10 +1963,9 @@ main(int argc, char *argv[])
 	struct pane *p;
 	struct feed *f;
 	struct row *row;
-	size_t i;
 	char *name, *tmp;
 	char *search = NULL; /* search text */
-	int button, ch, fd, keymask, release, x, y;
+	int button, ch, fd, i, keymask, release, x, y;
 	off_t pos;
 
 #ifdef __OpenBSD__
@@ -2128,9 +2022,9 @@ main(int argc, char *argv[])
 		nfeeds = argc - 1;
 	}
 	feeds_set(&feeds[0]);
-	urls_read();
+	urls_read(&urls, urlfile);
 	feeds_load(feeds, nfeeds);
-	urls_free();
+	urls_free(&urls);
 
 	if (!isatty(0)) {
 		if ((fd = open("/dev/tty", O_RDONLY)) == -1)
@@ -2222,45 +2116,52 @@ main(int argc, char *argv[])
 
 				mousereport(button, release, keymask, x - 1, y - 1);
 				break;
+			/* DEC/SUN: ESC O char, HP: ESC char or SCO: ESC [ char */
 			case 'A': goto keyup;    /* arrow up */
 			case 'B': goto keydown;  /* arrow down */
-			case 'C': goto keyright; /* arrow left */
-			case 'D': goto keyleft;  /* arrow right */
+			case 'C': goto keyright; /* arrow right */
+			case 'D': goto keyleft;  /* arrow left */
 			case 'F': goto endpos;   /* end */
+			case 'G': goto nextpage; /* page down */
 			case 'H': goto startpos; /* home */
-			case '4': /* end */
-				if ((ch = readch()) < 0)
-					goto event;
-				if (ch == '~')
-					goto endpos;
-				continue;
-			case '5': /* page up */
-				if ((ch = readch()) < 0)
-					goto event;
-				if (ch == '~')
-					goto prevpage;
-				continue;
-			case '6': /* page down */
-				if ((ch = readch()) < 0)
-					goto event;
-				if (ch == '~')
-					goto nextpage;
-				continue;
+			case 'I': goto prevpage; /* page up */
+			default:
+				if (!(ch >= '0' && ch <= '9'))
+					break;
+				for (i = ch - '0'; ;) {
+					if ((ch = readch()) < 0) {
+						goto event;
+					} else if (ch >= '0' && ch <= '9') {
+						i = (i * 10) + (ch - '0');
+						continue;
+					} else if (ch == '~') { /* DEC: ESC [ num ~ */
+						switch (i) {
+						case 1: goto startpos; /* home */
+						case 4: goto endpos;   /* end */
+						case 5: goto prevpage; /* page up */
+						case 6: goto nextpage; /* page down */
+						case 7: goto startpos; /* home: urxvt */
+						case 8: goto endpos;   /* end: urxvt */
+						}
+					} else if (ch == 'z') { /* SUN: ESC [ num z */
+						switch (i) {
+						case 214: goto startpos; /* home */
+						case 216: goto prevpage; /* page up */
+						case 220: goto endpos;   /* end */
+						case 222: goto nextpage; /* page down */
+						}
+					}
+					break;
+				}
 			}
 			break;
 keyup:
 		case 'k':
-		case 'K':
 			pane_scrolln(&panes[selpane], -1);
-			if (ch == 'K')
-				goto openitem;
 			break;
 keydown:
 		case 'j':
-		case 'J':
 			pane_scrolln(&panes[selpane], +1);
-			if (ch == 'J')
-				goto openitem;
 			break;
 keyleft:
 		case 'h':
@@ -2277,6 +2178,28 @@ keyright:
 			selpane = PaneItems;
 			if (layout == LayoutMonocle)
 				updategeom();
+			break;
+		case 'K':
+			p = &panes[selpane];
+			if (!p->nrows)
+				break;
+			for (pos = p->pos - 1; pos >= 0; pos--) {
+				if ((row = pane_row_get(p, pos)) && row->bold) {
+					pane_setpos(p, pos);
+					break;
+				}
+			}
+			break;
+		case 'J':
+			p = &panes[selpane];
+			if (!p->nrows)
+				break;
+			for (pos = p->pos + 1; pos < p->nrows; pos++) {
+				if ((row = pane_row_get(p, pos)) && row->bold) {
+					pane_setpos(p, pos);
+					break;
+				}
+			}
 			break;
 		case '\t':
 			selpane = selpane == PaneFeeds ? PaneItems : PaneFeeds;
@@ -2385,7 +2308,6 @@ nextpage:
 			break;
 		case 'o': /* feeds: load, items: plumb URL */
 		case '\n':
-openitem:
 			if (selpane == PaneFeeds && panes[selpane].nrows)
 				feed_open_selected(&panes[selpane]);
 			else if (selpane == PaneItems && panes[selpane].nrows)
@@ -2436,23 +2358,35 @@ openitem:
 event:
 		if (ch == EOF)
 			goto end;
-		else if (ch == -3 && sigstate == 0)
+		else if (ch == -3 && !state_sigchld && !state_sighup &&
+		         !state_sigint && !state_sigterm && !state_sigwinch)
 			continue; /* just a time-out, nothing to do */
 
-		switch (sigstate) {
-		case SIGHUP:
-			feeds_reloadall();
-			sigstate = 0;
-			break;
-		case SIGINT:
-		case SIGTERM:
+		/* handle signals in a particular order */
+		if (state_sigchld) {
+			state_sigchld = 0;
+			/* wait on child processes so they don't become a zombie,
+			   do not block the parent process if there is no status,
+			   ignore errors */
+			while (waitpid((pid_t)-1, NULL, WNOHANG) > 0)
+				;
+		}
+		if (state_sigterm) {
 			cleanup();
-			_exit(128 + sigstate);
-		case SIGWINCH:
+			_exit(128 + SIGTERM);
+		}
+		if (state_sigint) {
+			cleanup();
+			_exit(128 + SIGINT);
+		}
+		if (state_sighup) {
+			state_sighup = 0;
+			feeds_reloadall();
+		}
+		if (state_sigwinch) {
+			state_sigwinch = 0;
 			resizewin();
 			updategeom();
-			sigstate = 0;
-			break;
 		}
 
 		draw();

@@ -1,4 +1,4 @@
-.Dd August 3, 2021
+.Dd December 15, 2022
 .Dt SFEED_UPDATE 1
 .Os
 .Sh NAME
@@ -54,18 +54,25 @@ can be sourced as a script, but it won't run the
 .Fn main
 entry-point.
 .El
+.Sh LOGGING
+When processing a feed it will log failures to stderr and non-failures to
+stdout in the format:
+.Bd -literal
+[HH:MM:SS] feedname message
+.Ed
 .Sh EXIT STATUS
 .Ex -std
+If any of the feeds failed to update then the exit status is non-zero.
 .Sh EXAMPLES
 To update your feeds and format them in various formats:
 .Bd -literal
-# Update
+# Update feeds
 sfeed_update "configfile"
-# Plain-text list
+# Format to a plain-text list
 sfeed_plain ~/.sfeed/feeds/* > ~/.sfeed/feeds.txt
-# HTML
+# Format to HTML
 sfeed_html ~/.sfeed/feeds/* > ~/.sfeed/feeds.html
-# HTML with frames
+# Format to HTML with frames
 mkdir -p somedir && cd somedir && sfeed_frames ~/.sfeed/feeds/*
 .Ed
 .Sh SEE ALSO

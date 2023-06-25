@@ -28,7 +28,7 @@ Supports
 
 - Tags in short-form (<img src="lolcat.jpg" title="Meow" />).
 - Tag attributes.
-- Short attributes without an explicity set value (<input type="checkbox" checked />).
+- Short attributes without an explicitly set value (<input type="checkbox" checked />).
 - Comments
 - CDATA sections.
 - Helper function (xml_entitytostr) to convert XML 1.0 / HTML 2.0 named entities
@@ -55,7 +55,7 @@ Caveats
 - The XML specification has no limits on tag and attribute names. For
   simplicity/sanity sake this XML parser takes some liberties. Tag and
   attribute names are truncated if they are excessively long.
-- Entity expansions are not parsed aswell as DOCTYPE, ATTLIST etc.
+- Entity expansions are not parsed as well as DOCTYPE, ATTLIST etc.
 
 
 Files used

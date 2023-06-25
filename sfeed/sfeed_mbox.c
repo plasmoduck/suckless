@@ -11,8 +11,8 @@ static size_t linesize;
 static char host[256], *user, dtimebuf[32], mtimebuf[32];
 static int usecontent = 0; /* env variable: $SFEED_MBOX_CONTENT */
 
-static unsigned long
-djb2(unsigned char *s, unsigned long hash)
+static unsigned long long
+djb2(unsigned char *s, unsigned long long hash)
 {
 	int c;
 
@@ -22,33 +22,35 @@ djb2(unsigned char *s, unsigned long hash)
 }
 
 /* Unescape / decode fields printed by string_print_encoded()
- * "\\" to "\", "\t", to TAB, "\n" to newline. Unrecognised escape sequences
- * are ignored: "\z" etc. Mangle "From " in mboxrd style (always prefix >). */
+ * "\\" to "\", "\t", to TAB, "\n" to newline. Other escape sequences are
+ * ignored: "\z" etc. Mangle "From " in mboxrd style (always prefix >). */
 static void
 printcontent(const char *s, FILE *fp)
 {
 escapefrom:
 	for (; *s == '>'; s++)
-		fputc('>', fp);
+		putc('>', fp);
 	/* escape "From ", mboxrd-style. */
 	if (!strncmp(s, "From ", 5))
-		fputc('>', fp);
+		putc('>', fp);
 
 	for (; *s; s++) {
 		switch (*s) {
 		case '\\':
+			if (*(s + 1) == '\0')
+				break;
 			s++;
 			switch (*s) {
 			case 'n':
-				fputc('\n', fp);
+				putc('\n', fp);
 				s++;
 				goto escapefrom;
-			case '\\': fputc('\\', fp); break;
-			case 't':  fputc('\t', fp); break;
+			case '\\': putc('\\', fp); break;
+			case 't':  putc('\t', fp); break;
 			}
 			break;
 		default:
-			fputc(*s, fp); break;
+			putc(*s, fp); break;
 		}
 	}
 }
@@ -59,14 +61,15 @@ printfeed(FILE *fp, const char *feedname)
 	char *fields[FieldLast], timebuf[32];
 	struct tm parsedtm, *tm;
 	time_t parsedtime;
-	unsigned long hash;
+	unsigned long long hash;
 	ssize_t linelen;
 	int ishtml;
 
-	while ((linelen = getline(&line, &linesize, fp)) > 0) {
+	while ((linelen = getline(&line, &linesize, fp)) > 0 &&
+	       !ferror(stdout)) {
 		if (line[linelen - 1] == '\n')
 			line[--linelen] = '\0';
-		hash = djb2((unsigned char *)line, 5381UL);
+		hash = djb2((unsigned char *)line, 5381ULL);
 		parseline(line, fields);
 
 		/* mbox + mail header */
@@ -81,10 +84,10 @@ printfeed(FILE *fp, const char *feedname)
 			printf("Date: %s\n", dtimebuf); /* invalid/missing: use current time */
 		}
 
-		printf("From: %s <sfeed@>\n", fields[FieldAuthor][0] ? fields[FieldAuthor] : feedname);
+		printf("From: %s <anonymous@>\n", fields[FieldAuthor][0] ? fields[FieldAuthor] : feedname);
 		printf("To: %s <%s@%s>\n", user, user, host);
 		printf("Subject: %s\n", fields[FieldTitle]);
-		printf("Message-ID: <%s%s%lu@%s>\n",
+		printf("Message-ID: <%s%s%llu@%s>\n",
 		       fields[FieldUnixTimestamp],
 		       fields[FieldUnixTimestamp][0] ? "." : "",
 		       hash, feedname);
@@ -104,14 +107,14 @@ printfeed(FILE *fp, const char *feedname)
 				fputs("Link: <a href=\"", stdout);
 				xmlencode(fields[FieldLink], stdout);
 				fputs("\">", stdout);
-				fputs(fields[FieldLink], stdout);
+				xmlencode(fields[FieldLink], stdout);
 				fputs("</a><br/>\n", stdout);
 			}
 			if (fields[FieldEnclosure][0]) {
 				fputs("Enclosure: <a href=\"", stdout);
 				xmlencode(fields[FieldEnclosure], stdout);
 				fputs("\">", stdout);
-				fputs(fields[FieldEnclosure], stdout);
+				xmlencode(fields[FieldEnclosure], stdout);
 				fputs("</a><br/>\n", stdout);
 			}
 			fputs("</p>\n", stdout);
@@ -123,6 +126,11 @@ printfeed(FILE *fp, const char *feedname)
 		}
 		if (usecontent) {
 			fputs("\n", stdout);
+			if (ishtml && fields[FieldLink][0]) {
+				fputs("<base href=\"", stdout);
+				xmlencode(fields[FieldLink], stdout);
+				fputs("\"/>\n", stdout);
+			}
 			printcontent(fields[FieldContent], stdout);
 		}
 		fputs("\n\n", stdout);
@@ -147,8 +155,8 @@ main(int argc, char *argv[])
 		user = "you";
 	if (gethostname(host, sizeof(host)) == -1)
 		err(1, "gethostname");
-	if ((now = time(NULL)) == -1)
-		err(1, "time");
+	if ((now = time(NULL)) == (time_t)-1)
+		errx(1, "time");
 	if (!gmtime_r(&now, &tmnow))
 		err(1, "gmtime_r: can't get current time");
 	if (!strftime(mtimebuf, sizeof(mtimebuf), "%a %b %d %H:%M:%S %Y", &tmnow))
@@ -158,17 +166,20 @@ main(int argc, char *argv[])
 
 	if (argc == 1) {
 		printfeed(stdin, "");
+		checkfileerror(stdin, "<stdin>", 'r');
 	} else {
 		for (i = 1; i < argc; i++) {
 			if (!(fp = fopen(argv[i], "r")))
 				err(1, "fopen: %s", argv[i]);
 			name = ((name = strrchr(argv[i], '/'))) ? name + 1 : argv[i];
 			printfeed(fp, name);
-			if (ferror(fp))
-				err(1, "ferror: %s", argv[i]);
+			checkfileerror(fp, argv[i], 'r');
+			checkfileerror(stdout, "<stdout>", 'w');
 			fclose(fp);
 		}
 	}
+
+	checkfileerror(stdout, "<stdout>", 'w');
 
 	return 0;
 }

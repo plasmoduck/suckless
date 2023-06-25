@@ -1,4 +1,4 @@
-.Dd August 3, 2021
+.Dd December 20, 2022
 .Dt SFEED_CURSES 1
 .Os
 .Sh NAME
@@ -30,8 +30,10 @@ arguments are specified then the data is read from stdin and the feed name is
 .Pp
 Items with a timestamp from the last day compared to the system time at the
 time of loading the feed are marked as new and bold.
+This value might be overridden through environment variables.
 There is also an alternative mode available to mark items as read by matching
 it against a list of URLs from a plain-text file.
+Items with an enclosure are marked with a @ symbol.
 .Pp
 .Nm
 aligns the output.
@@ -49,9 +51,9 @@ Go one row up.
 .It j, ARROW DOWN
 Go one row down.
 .It K
-Go one row up and open the item.
+Go to the previous bold row.
 .It J
-Go one row down and open the item.
+Go to the next bold row.
 .It h, ARROW LEFT
 Focus feeds pane.
 .It l, ARROW RIGHT
@@ -70,18 +72,21 @@ Scroll one page down.
 Prompt for a new search and search forward (case-insensitive).
 .It ?
 Prompt for a new search and search backward (case-insensitive).
-.It \&[
-Go to the previous feed in the feeds pane and open it.
-.It ]
-Go to the next feed in the feeds pane and open it.
 .It n
 Search forward with the previously set search term.
 .It N
 Search backward with the previously set search term.
+.It \&[
+Go to the previous feed in the feeds pane and open it.
+.It ]
+Go to the next feed in the feeds pane and open it.
 .It CTRL-L
 Redraw screen.
 .It R
 Reload all feed files which were specified as arguments on startup.
+If
+.Ev SFEED_URL_FILE
+is set, it will reload the URLs from this file also.
 .It m
 Toggle mouse-mode.
 It supports xterm X10 and extended SGR encoding.
@@ -94,11 +99,11 @@ height by 1 column.
 Use a fixed sidebar size for the current layout and increase the fixed width or
 height by 1 column.
 .It =
-Reset the sidebar size to automaticly adjust for the current layout.
+Reset the sidebar size to automatically adjust for the current layout.
 With the vertical layout the width is the longest feed name with the item
 counts right-aligned.
 With the horizontal layout the height is half of the window height (minus the
-statusbar) or otherwise the total amount of visible feeds, whichever fits the
+status bar) or otherwise the total amount of visible feeds, whichever fits the
 best.
 .It t
 Toggle showing only feeds with new items in the sidebar.
@@ -153,7 +158,7 @@ Set the current layout to a horizontal mode.
 Showing a feeds sidebar on the top and the feed items on the bottom.
 .It 3
 Set the current layout to a monocle mode.
-Showing either a feeds or an feed items pane.
+Showing either a feeds or a feed items pane.
 .It q, EOF
 Quit
 .El
@@ -181,38 +186,43 @@ Switch to the feeds pane.
 .Bl -tag -width Ds
 .It SIGHUP
 Reload all feed files which were specified as arguments on startup.
-.It SIGINT, SIGTERM
+If
+.Ev SFEED_URL_FILE
+is set, it will reload the URLs from this file also.
+Cancels the line editor and handles the signal if received during a search.
+.It SIGINT
+Interrupt: quit.
+When searching, it only cancels the line editor and doesn't quit.
+.It SIGTERM
 Quit
 .It SIGWINCH
 Resize the pane dimensions relative to the terminal size.
+When searching, it handles the signal after closing the line editor.
 .El
+.Pp
+Signals are handled in the following order: SIGCHLD, SIGTERM, SIGINT, SIGHUP,
+SIGWINCH.
 .Sh ENVIRONMENT VARIABLES
 .Bl -tag -width Ds
 .It Ev SFEED_AUTOCMD
 Read and process a sequence of keys as input commands from this environment
-variable first, afterwards read from stdin as usual.
+variable first, afterwards it reads from the tty as usual.
 This can be useful to automate certain actions at the start.
+.It Ev SFEED_NEW_AGE
+Overwrite the maximum age in seconds to mark feeds as new.
+By default this is 86400, which equals one day.
 .It Ev SFEED_PIPER
 A program where the whole TAB-Separated Value line is piped to.
 By default this is "sfeed_content".
 .It Ev SFEED_PIPER_INTERACTIVE
 Handle the program interactively in the same terminal or not.
-If set to "1" then before execution it restores the terminal attributes and
-.Nm
-will wait until the program is finished.
-If set to "0" then it will suppress stdout and stderr output.
 By default this is set to "1".
 .It Ev SFEED_PLUMBER
-A program that received the link URL or enclosure URL as a parameter.
+A program that receives the link URL or enclosure URL as a parameter.
 By default this is "xdg-open".
 .It Ev SFEED_PLUMBER_INTERACTIVE
 Handle the program interactively in the same terminal or not.
-If set to "1" then before execution it restores the terminal attributes and
-.Nm
-will wait until the program is finished.
-If set to "0" then it will suppress stdout and stderr output.
-For example this option is useful to open a text-mode browser in the same
-terminal.
+This option can be useful to open a text-mode browser in the same terminal.
 By default this is set to "0".
 .It Ev SFEED_YANKER
 A program where the URL or enclosure field is piped to, to copy it to a
@@ -220,10 +230,6 @@ clipboard.
 By default this is "xclip -r".
 .It Ev SFEED_YANKER_INTERACTIVE
 Handle the program interactively in the same terminal or not.
-If set to "1" then before execution it restores the terminal attributes and
-.Nm
-will wait until the program is finished.
-If set to "0" then it will suppress stdout and stderr output.
 By default this is set to "0".
 .It Ev SFEED_URL_FILE
 If this variable is set then a different mode is used to mark items as read,
@@ -258,10 +264,10 @@ It can also cause a race-condition issue if the feed data on disk is changed
 while having the UI open and offsets for the lines are different.
 A workaround for the race-condition issue is by sending the SIGHUP signal to
 .Nm
-directly after the data was updated.
-This forces
+after the data was updated.
+This makes
 .Nm
-to reload the latest feed data and update the correct line offsets.
+reload the latest feed data and update the correct line offsets.
 By default this is set to "0".
 .It Ev SFEED_FEED_PATH
 This variable is set by
@@ -270,12 +276,67 @@ when a feed is loaded.
 If the data was read from stdin this variable is unset.
 It can be used by the plumb or pipe program for scripting purposes.
 .El
+.Sh INTERACTIVE AND NON-INTERACTIVE PROGRAMS
+.Nm
+can pipe content, plumb and yank interactively or in a non-interactive manner.
+In interactive mode
+.Nm
+waits until the process exits.
+Stdout and stderr of the program are written as output.
+It stores and restores the terminal attributes before and after executing the
+program.
+The signals SIGHUP and SIGWINCH will be handled after
+.Nm
+has waited on the program.
+SIGINT is ignored while waiting on the program.
+.Pp
+In non-interactive mode
+.Nm
+doesn't wait until the process exits.
+Stdout and stderr of the program are not written as output.
+When plumbing an URL then stdin is closed also.
 .Sh EXIT STATUS
 .Ex -std
+The exit status is 130 on SIGINT and 143 on SIGTERM.
 .Sh EXAMPLES
 .Bd -literal
 sfeed_curses ~/.sfeed/feeds/*
 .Ed
+.Pp
+Another example which shows some of the features
+.Nm
+has:
+.Bd -literal
+export SFEED_AUTOCMD="2tgo"
+export SFEED_URL_FILE="$HOME/.sfeed/urls"
+[ -f "$SFEED_URL_FILE" ] || touch "$SFEED_URL_FILE"
+sfeed_curses ~/.sfeed/feeds/*
+.Ed
+.Pp
+Which does the following:
+.Bl -enum
+.It
+Set commands to execute automatically:
+.Pp
+Set the current layout to a horizontal mode ('2' keybind').
+Showing a feeds sidebar on the top and the feed items on the bottom.
+.Pp
+Toggle showing only feeds with new items in the sidebar ('t' keybind).
+.Pp
+Go to the first row in the current panel ('g' keybind).
+.Pp
+Load the current selected feed ('o' keybind').
+.It
+Set a file to use for managing read and unread items.
+This is a plain-text file containing a list of read URLs, one URL per line.
+.It
+Check if this file for managing the read and unread items exists.
+If it doesn't exist yet then create an empty file.
+.It
+Start
+.Nm
+and read the specified feed files.
+.El
 .Sh SEE ALSO
 .Xr sfeed 1 ,
 .Xr sfeed_content 1 ,

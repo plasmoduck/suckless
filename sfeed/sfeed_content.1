@@ -1,4 +1,4 @@
-.Dd July 25, 2021
+.Dd December 22, 2021
 .Dt SFEED_CONTENT 1
 .Os
 .Sh NAME
@@ -28,6 +28,9 @@ to view content.
 .It Ev PAGER
 The pager used to view the content.
 If it is not set it will use "less -R" by default.
+.It Ev SFEED_HTMLCONV
+The program used to convert HTML content to plain-text.
+If it is not set it will use lynx by default.
 .El
 .Sh EXIT STATUS
 .Ex -std

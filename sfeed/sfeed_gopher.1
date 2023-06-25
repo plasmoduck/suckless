@@ -1,4 +1,4 @@
-.Dd July 31, 2021
+.Dd May 14, 2022
 .Dt SFEED_GOPHER 1
 .Os
 .Sh NAME
@@ -32,7 +32,8 @@ written to stdout and no files are written.
 .Pp
 Items with a timestamp from the last day compared to the system time at the
 time of formatting are counted and marked as new.
-Items are marked as new with the prefix "N".
+This value might be overridden through environment variables.
+Items are marked as new with the prefix "N" at the start of the line.
 .Sh ENVIRONMENT
 .Bl -tag -width Ds
 .It Ev SFEED_GOPHER_PATH
@@ -45,12 +46,15 @@ The default is "127.0.0.1".
 .It Ev SFEED_GOPHER_PORT
 This environment variable can be used as the Gopher Port field.
 The default is "70".
+.It Ev SFEED_NEW_AGE
+Overwrite the maximum age in seconds to mark feeds as new.
+By default this is 86400, which equals one day.
 .El
 .Sh EXIT STATUS
 .Ex -std
 .Sh EXAMPLES
 .Bd -literal
-SFEED_GOPHER_HOST="codemadness.org" SFEED_GOPHER_PATH="/feeds/" \\
+SFEED_GOPHER_HOST="codemadness.org" SFEED_GOPHER_PATH="/feeds/" \e
 	sfeed_gopher ~/.sfeed/feeds/*
 .Ed
 .Sh SEE ALSO

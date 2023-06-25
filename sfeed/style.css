@@ -57,3 +57,12 @@ body.frame {
 body.frame #sidebar br {
 	display: none;
 }
+@media (prefers-color-scheme: dark) {
+	body {
+		background-color: #000;
+		color: #bdbdbd;
+	}
+	a {
+		color: #56c8ff;
+	}
+}

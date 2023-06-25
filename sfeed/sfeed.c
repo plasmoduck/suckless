@@ -1,6 +1,3 @@
-#include <sys/types.h>
-
-#include <ctype.h>
 #include <errno.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -103,7 +100,7 @@ static FeedTag * gettag(enum FeedType, const char *, size_t);
 static long gettzoffset(const char *);
 static int  isattr(const char *, size_t, const char *, size_t);
 static int  istag(const char *, size_t, const char *, size_t);
-static int  parsetime(const char *, time_t *);
+static int  parsetime(const char *, long long *);
 static void printfields(void);
 static void string_append(String *, const char *, size_t);
 static void string_buffer_realloc(String *, size_t);
@@ -129,7 +126,7 @@ static void xmltagstartparsed(XMLParser *, const char *, size_t, int);
 
 /* map tag name to TagId type */
 /* RSS, must be alphabetical order */
-static FeedTag rsstags[] = {
+static const FeedTag rsstags[] = {
 	{ STRP("author"),            RSSTagAuthor            },
 	{ STRP("category"),          RSSTagCategory          },
 	{ STRP("content:encoded"),   RSSTagContentEncoded    },
@@ -146,7 +143,7 @@ static FeedTag rsstags[] = {
 };
 
 /* Atom, must be alphabetical order */
-static FeedTag atomtags[] = {
+static const FeedTag atomtags[] = {
 	{ STRP("author"),            AtomTagAuthor           },
 	{ STRP("category"),          AtomTagCategory         },
 	{ STRP("content"),           AtomTagContent          },
@@ -163,14 +160,14 @@ static FeedTag atomtags[] = {
 };
 
 /* special case: nested <author><name> */
-static FeedTag atomtagauthor = { STRP("author"), AtomTagAuthor };
-static FeedTag atomtagauthorname = { STRP("name"), AtomTagAuthorName };
+static const FeedTag atomtagauthor = { STRP("author"), AtomTagAuthor };
+static const FeedTag atomtagauthorname = { STRP("name"), AtomTagAuthorName };
 
 /* reference to no / unknown tag */
-static FeedTag notag = { STRP(""), TagUnknown };
+static const FeedTag notag = { STRP(""), TagUnknown };
 
 /* map TagId type to RSS/Atom field, all tags must be defined */
-static int fieldmap[TagLast] = {
+static const int fieldmap[TagLast] = {
 	[TagUnknown]               = -1,
 	/* RSS */
 	[RSSTagDcdate]             = FeedFieldTime,
@@ -180,8 +177,8 @@ static int fieldmap[TagLast] = {
 	[RSSTagDescription]        = FeedFieldContent,
 	[RSSTagContentEncoded]     = FeedFieldContent,
 	[RSSTagGuid]               = -1,
-	[RSSTagGuidPermalinkTrue]  = FeedFieldId, /* special-case: both a link and an id */
 	[RSSTagGuidPermalinkFalse] = FeedFieldId,
+	[RSSTagGuidPermalinkTrue]  = FeedFieldId, /* special-case: both a link and an id */
 	[RSSTagLink]               = FeedFieldLink,
 	[RSSTagEnclosure]          = FeedFieldEnclosure,
 	[RSSTagAuthor]             = FeedFieldAuthor,
@@ -207,7 +204,7 @@ static int fieldmap[TagLast] = {
 
 static const int FieldSeparator = '\t';
 /* separator for multiple values in a field, separator should be 1 byte */
-static const char *FieldMultiSeparator = "|";
+static const char FieldMultiSeparator[] = "|";
 static struct uri baseuri;
 static const char *baseurl;
 
@@ -215,7 +212,7 @@ static FeedContext ctx;
 static XMLParser parser; /* XML parser state */
 static String attrispermalink, attrrel, attrtype, tmpstr;
 
-int
+static int
 tagcmp(const void *v1, const void *v2)
 {
 	return strcasecmp(((FeedTag *)v1)->name, ((FeedTag *)v2)->name);
@@ -248,7 +245,7 @@ gettag(enum FeedType feedtype, const char *name, size_t namelen)
 static char *
 ltrim(const char *s)
 {
-	for (; isspace((unsigned char)*s); s++)
+	for (; ISSPACE((unsigned char)*s); s++)
 		;
 	return (char *)s;
 }
@@ -258,7 +255,7 @@ rtrim(const char *s)
 {
 	const char *e;
 
-	for (e = s + strlen(s); e > s && isspace((unsigned char)*(e - 1)); e--)
+	for (e = s + strlen(s); e > s && ISSPACE((unsigned char)*(e - 1)); e--)
 		;
 	return (char *)e;
 }
@@ -288,6 +285,7 @@ string_buffer_realloc(String *s, size_t newlen)
 	s->bufsiz = alloclen;
 }
 
+/* Append data to String, s->data and data may not overlap. */
 static void
 string_append(String *s, const char *data, size_t len)
 {
@@ -295,12 +293,11 @@ string_append(String *s, const char *data, size_t len)
 		return;
 
 	if (s->len >= SIZE_MAX - len) {
-		errno = EOVERFLOW;
+		errno = ENOMEM;
 		err(1, "realloc");
 	}
 
-	/* check if allocation is necessary, don't shrink buffer,
-	 * should be more than bufsiz of course. */
+	/* check if allocation is necessary, never shrink the buffer. */
 	if (s->len + len >= s->bufsiz)
 		string_buffer_realloc(s, s->len + len + 1);
 	memcpy(s->data + s->len, data, len);
@@ -323,12 +320,12 @@ string_print_encoded(String *s)
 
 	for (; *p && p != e; p++) {
 		switch (*p) {
-		case '\n': fputs("\\n",  stdout); break;
-		case '\\': fputs("\\\\", stdout); break;
-		case '\t': fputs("\\t",  stdout); break;
+		case '\n': putchar('\\'); putchar('n'); break;
+		case '\\': putchar('\\'); putchar('\\'); break;
+		case '\t': putchar('\\'); putchar('t'); break;
 		default:
 			/* ignore control chars */
-			if (!iscntrl((unsigned char)*p))
+			if (!ISCNTRL((unsigned char)*p))
 				putchar(*p);
 			break;
 		}
@@ -343,9 +340,9 @@ printtrimmed(const char *s)
 	p = ltrim(s);
 	e = rtrim(p);
 	for (; *p && p != e; p++) {
-		if (isspace((unsigned char)*p))
+		if (ISSPACE((unsigned char)*p))
 			putchar(' '); /* any whitespace to space */
-		else if (!iscntrl((unsigned char)*p))
+		else if (!ISCNTRL((unsigned char)*p))
 			/* ignore other control chars */
 			putchar(*p);
 	}
@@ -362,7 +359,8 @@ string_print_trimmed(String *s)
 	printtrimmed(s->data);
 }
 
-void
+/* Print each field with trimmed whitespace, separated by '|'. */
+static void
 string_print_trimmed_multi(String *s)
 {
 	char *p, *e;
@@ -385,8 +383,8 @@ string_print_trimmed_multi(String *s)
 	}
 }
 
-/* print URL, if it's a relative URL then it uses global baseurl */
-void
+/* Print URL, if it is a relative URL then it uses the global `baseurl`. */
+static void
 printuri(char *s)
 {
 	char link[4096], *p, *e;
@@ -411,8 +409,8 @@ printuri(char *s)
 	*e = c; /* restore NUL byte to original character */
 }
 
-/* print URL, if it's a relative URL then it uses global baseurl */
-void
+/* Print URL, if it is a relative URL then it uses the global `baseurl`. */
+static void
 string_print_uri(String *s)
 {
 	if (!s->data || !s->len)
@@ -421,30 +419,36 @@ string_print_uri(String *s)
 	printuri(s->data);
 }
 
-/* print as UNIX timestamp, print nothing if the parsed time is invalid */
-void
+/* Print as UNIX timestamp, print nothing if the time is empty or invalid. */
+static void
 string_print_timestamp(String *s)
 {
-	time_t t;
+	long long t;
 
 	if (!s->data || !s->len)
 		return;
 
 	if (parsetime(s->data, &t) != -1)
-		printf("%lld", (long long)t);
+		printf("%lld", t);
 }
 
-long long
+/* Convert time fields. Returns a signed (at least) 64-bit UNIX timestamp.
+   Parameters should be passed as they are in a struct tm:
+   that is: year = year - 1900, month = month - 1. */
+static long long
 datetounix(long long year, int mon, int day, int hour, int min, int sec)
 {
-	static const int secs_through_month[] = {
+	/* seconds in a month in a regular (non-leap) year */
+	static const long secs_through_month[] = {
 		0, 31 * 86400, 59 * 86400, 90 * 86400,
 		120 * 86400, 151 * 86400, 181 * 86400, 212 * 86400,
 		243 * 86400, 273 * 86400, 304 * 86400, 334 * 86400 };
 	int is_leap = 0, cycles, centuries = 0, leaps = 0, rem;
 	long long t;
 
+	/* optimization: handle common range year 1902 up to and including 2038 */
 	if (year - 2ULL <= 136) {
+		/* amount of leap days relative to 1970: every 4 years */
 		leaps = (year - 68) >> 2;
 		if (!((year - 68) & 3)) {
 			leaps--;
@@ -452,8 +456,11 @@ datetounix(long long year, int mon, int day, int hour, int min, int sec)
 		} else {
 			is_leap = 0;
 		}
-		t = 31536000 * (year - 70) + 86400 * leaps;
+		t = 31536000 * (year - 70) + (86400 * leaps); /* 365 * 86400 = 31536000 */
 	} else {
+		/* general leap year calculation:
+		   leap years occur mostly every 4 years but every 100 years
+		   a leap year is skipped unless the year is divisible by 400 */
 		cycles = (year - 100) / 400;
 		rem = (year - 100) % 400;
 		if (rem < 0) {
@@ -463,20 +470,27 @@ datetounix(long long year, int mon, int day, int hour, int min, int sec)
 		if (!rem) {
 			is_leap = 1;
 		} else {
-			if (rem >= 300)
-				centuries = 3, rem -= 300;
-			else if (rem >= 200)
-				centuries = 2, rem -= 200;
-			else if (rem >= 100)
-				centuries = 1, rem -= 100;
+			if (rem >= 300) {
+				centuries = 3;
+				rem -= 300;
+			} else if (rem >= 200) {
+				centuries = 2;
+				rem -= 200;
+			} else if (rem >= 100) {
+				centuries = 1;
+				rem -= 100;
+			}
 			if (rem) {
 				leaps = rem / 4U;
 				rem %= 4U;
 				is_leap = !rem;
 			}
 		}
-		leaps += 97 * cycles + 24 * centuries - is_leap;
-		t = (year - 100) * 31536000LL + leaps * 86400LL + 946684800 + 86400;
+		leaps += (97 * cycles) + (24 * centuries) - is_leap;
+
+		/* adjust 8 leap days from 1970 up to and including 2000:
+		   ((30 * 365) + 8) * 86400 = 946771200 */
+		t = ((year - 100) * 31536000LL) + (leaps * 86400LL) + 946771200LL;
 	}
 	t += secs_through_month[mon];
 	if (is_leap && mon >= 2)
@@ -490,16 +504,16 @@ datetounix(long long year, int mon, int day, int hour, int min, int sec)
 }
 
 /* Get timezone from string, return time offset in seconds from UTC.
- * NOTE: only parses timezones in RFC-822, many other timezone names are
+ * NOTE: only parses timezones in RFC 822, many other timezone names are
  * ambiguous anyway.
- * ANSI and military zones are defined wrong in RFC822 and are unsupported,
- * see note on RFC2822 4.3 page 32. */
+ * ANSI and military zones are defined wrong in RFC 822 and are unsupported,
+ * see note on RFC 2822 4.3 page 32. */
 static long
 gettzoffset(const char *s)
 {
-	static struct {
+	static const struct {
 		char *name;
-		const int offhour;
+		int offhour;
 	} tzones[] = {
 		{ "CDT", -5 * 3600 },
 		{ "CST", -6 * 3600 },
@@ -514,24 +528,24 @@ gettzoffset(const char *s)
 	long tzhour = 0, tzmin = 0;
 	size_t i;
 
-	for (; isspace((unsigned char)*s); s++)
+	for (; ISSPACE((unsigned char)*s); s++)
 		;
 	switch (*s) {
 	case '-': /* offset */
 	case '+':
-		for (i = 0, p = s + 1; i < 2 && isdigit((unsigned char)*p); i++, p++)
+		for (i = 0, p = s + 1; i < 2 && ISDIGIT((unsigned char)*p); i++, p++)
 			tzhour = (tzhour * 10) + (*p - '0');
 		if (*p == ':')
 			p++;
-		for (i = 0; i < 2 && isdigit((unsigned char)*p); i++, p++)
+		for (i = 0; i < 2 && ISDIGIT((unsigned char)*p); i++, p++)
 			tzmin = (tzmin * 10) + (*p - '0');
 		return ((tzhour * 3600) + (tzmin * 60)) * (s[0] == '-' ? -1 : 1);
 	default: /* timezone name */
-		for (i = 0; isalpha((unsigned char)s[i]); i++)
+		for (i = 0; ISALPHA((unsigned char)s[i]); i++)
 			;
 		if (i != 3)
 			return 0;
-		/* compare tz and adjust offset relative to UTC */
+		/* compare timezone and adjust offset relative to UTC */
 		for (i = 0; i < sizeof(tzones) / sizeof(*tzones); i++) {
 			if (!memcmp(s, tzones[i].name, 3))
 				return tzones[i].offhour;
@@ -540,10 +554,12 @@ gettzoffset(const char *s)
 	return 0;
 }
 
+/* Parse time string `s` into the UNIX timestamp `tp`.
+   Returns 0 on success or -1 on failure. */
 static int
-parsetime(const char *s, time_t *tp)
+parsetime(const char *s, long long *tp)
 {
-	static struct {
+	static const struct {
 		char *name;
 		int len;
 	} mons[] = {
@@ -563,35 +579,35 @@ parsetime(const char *s, time_t *tp)
 	int va[6] = { 0 }, i, j, v, vi;
 	size_t m;
 
-	for (; isspace((unsigned char)*s); s++)
+	for (; ISSPACE((unsigned char)*s); s++)
 		;
-	if (!isdigit((unsigned char)*s) && !isalpha((unsigned char)*s))
+	if (!ISDIGIT((unsigned char)*s) && !ISALPHA((unsigned char)*s))
 		return -1;
 
-	if (isdigit((unsigned char)s[0]) &&
-	    isdigit((unsigned char)s[1]) &&
-	    isdigit((unsigned char)s[2]) &&
-	    isdigit((unsigned char)s[3])) {
+	if (ISDIGIT((unsigned char)s[0]) &&
+	    ISDIGIT((unsigned char)s[1]) &&
+	    ISDIGIT((unsigned char)s[2]) &&
+	    ISDIGIT((unsigned char)s[3])) {
 		/* formats "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S" or "%Y%m%d%H%M%S" */
 		vi = 0;
 	} else {
 		/* format: "[%a, ]%d %b %Y %H:%M:%S" */
 		/* parse "[%a, ]%d %b %Y " part, then use time parsing as above */
-		for (; isalpha((unsigned char)*s); s++)
+		for (; ISALPHA((unsigned char)*s); s++)
 			;
-		for (; isspace((unsigned char)*s); s++)
+		for (; ISSPACE((unsigned char)*s); s++)
 			;
 		if (*s == ',')
 			s++;
-		for (; isspace((unsigned char)*s); s++)
+		for (; ISSPACE((unsigned char)*s); s++)
 			;
-		for (v = 0, i = 0; i < 2 && isdigit((unsigned char)*s); s++, i++)
+		for (v = 0, i = 0; i < 2 && ISDIGIT((unsigned char)*s); s++, i++)
 			v = (v * 10) + (*s - '0');
 		va[2] = v; /* day */
-		for (; isspace((unsigned char)*s); s++)
+		for (; ISSPACE((unsigned char)*s); s++)
 			;
 		/* end of word month */
-		for (j = 0; isalpha((unsigned char)s[j]); j++)
+		for (j = 0; ISALPHA((unsigned char)s[j]); j++)
 			;
 		/* check month name */
 		if (j < 3 || j > 9)
@@ -607,15 +623,15 @@ parsetime(const char *s, time_t *tp)
 		}
 		if (m >= 12)
 			return -1; /* no month found */
-		for (; isspace((unsigned char)*s); s++)
+		for (; ISSPACE((unsigned char)*s); s++)
 			;
-		for (v = 0, i = 0; i < 4 && isdigit((unsigned char)*s); s++, i++)
+		for (v = 0, i = 0; i < 4 && ISDIGIT((unsigned char)*s); s++, i++)
 			v = (v * 10) + (*s - '0');
-		/* obsolete short year: RFC2822 4.3 */
-		if (i <= 3)
-			v += (v >= 0 && v <= 49) ? 2000 : 1900;
+		/* obsolete short year: RFC 2822 4.3 */
+		if (i == 2 || i == 3)
+			v += (i == 2 && v >= 0 && v <= 49) ? 2000 : 1900;
 		va[0] = v; /* year */
-		for (; isspace((unsigned char)*s); s++)
+		for (; ISSPACE((unsigned char)*s); s++)
 			;
 		/* parse only regular time part, see below */
 		vi = 3;
@@ -624,20 +640,20 @@ parsetime(const char *s, time_t *tp)
 	/* parse time parts (and possibly remaining date parts) */
 	for (; *s && vi < 6; vi++) {
 		for (i = 0, v = 0; i < ((vi == 0) ? 4 : 2) &&
-		                   isdigit((unsigned char)*s); s++, i++) {
+		                   ISDIGIT((unsigned char)*s); s++, i++) {
 			v = (v * 10) + (*s - '0');
 		}
 		va[vi] = v;
 
 		if ((vi < 2 && *s == '-') ||
-		    (vi == 2 && (*s == 'T' || isspace((unsigned char)*s))) ||
+		    (vi == 2 && (*s == 'T' || ISSPACE((unsigned char)*s))) ||
 		    (vi > 2 && *s == ':'))
 			s++;
 	}
 
 	/* skip milliseconds in for example: "%Y-%m-%dT%H:%M:%S.000Z" */
 	if (*s == '.') {
-		for (s++; isdigit((unsigned char)*s); s++)
+		for (s++; ISDIGIT((unsigned char)*s); s++)
 			;
 	}
 
@@ -647,12 +663,12 @@ parsetime(const char *s, time_t *tp)
 	    va[2] < 1 || va[2] > 31 ||
 	    va[3] < 0 || va[3] > 23 ||
 	    va[4] < 0 || va[4] > 59 ||
-	    va[5] < 0 || va[5] > 59)
+	    va[5] < 0 || va[5] > 60) /* allow leap second */
 		return -1;
 
-	if (tp)
-		*tp = datetounix(va[0] - 1900, va[1] - 1, va[2], va[3], va[4], va[5]) -
-		      gettzoffset(s);
+	*tp = datetounix(va[0] - 1900, va[1] - 1, va[2], va[3], va[4], va[5]) -
+	      gettzoffset(s);
+
 	return 0;
 }
 
@@ -677,6 +693,9 @@ printfields(void)
 	putchar(FieldSeparator);
 	string_print_trimmed_multi(&ctx.fields[FeedFieldCategory].str);
 	putchar('\n');
+
+	if (ferror(stdout)) /* check for errors but do not flush */
+		checkfileerror(stdout, "<stdout>", 'w');
 }
 
 static int
@@ -739,7 +758,7 @@ static void
 xmlattrentity(XMLParser *p, const char *t, size_t tl, const char *n, size_t nl,
               const char *data, size_t datalen)
 {
-	char buf[16];
+	char buf[8];
 	int len;
 
 	/* handles transforming inline XML to data */
@@ -753,7 +772,7 @@ xmlattrentity(XMLParser *p, const char *t, size_t tl, const char *n, size_t nl,
 		return;
 
 	/* try to translate entity, else just pass as data to
-	 * xmldata handler. */
+	 * xmlattr handler. */
 	if ((len = xml_entitytostr(data, buf, sizeof(buf))) > 0)
 		xmlattr(p, t, tl, n, nl, buf, (size_t)len);
 	else
@@ -801,8 +820,6 @@ xmlattrstart(XMLParser *p, const char *t, size_t tl, const char *n, size_t nl)
 		string_clear(&tmpstr); /* use the last value for multiple attribute values */
 }
 
-/* NOTE: this handler can be called multiple times if the data in this
- *       block is bigger than the buffer. */
 static void
 xmldata(XMLParser *p, const char *s, size_t len)
 {
@@ -818,7 +835,7 @@ xmldata(XMLParser *p, const char *s, size_t len)
 static void
 xmldataentity(XMLParser *p, const char *data, size_t datalen)
 {
-	char buf[16];
+	char buf[8];
 	int len;
 
 	if (!ctx.field)
@@ -835,7 +852,7 @@ xmldataentity(XMLParser *p, const char *data, size_t datalen)
 static void
 xmltagstart(XMLParser *p, const char *t, size_t tl)
 {
-	FeedTag *f;
+	const FeedTag *f;
 
 	if (ISINCONTENT(ctx)) {
 		if (ctx.contenttype == ContentTypeHTML) {
@@ -894,7 +911,7 @@ xmltagstartparsed(XMLParser *p, const char *t, size_t tl, int isshort)
 		return;
 	}
 
-	/* set tag type based on it's attribute value */
+	/* set tag type based on its attribute value */
 	if (ctx.tag.id == RSSTagGuid) {
 		/* if empty the default is "true" */
 		if (!attrispermalink.len ||
@@ -964,7 +981,7 @@ xmltagend(XMLParser *p, const char *t, size_t tl, int isshort)
 		return;
 
 	if (ISINCONTENT(ctx)) {
-		/* not close content field */
+		/* not a closed content field */
 		if (!istag(ctx.tag.name, ctx.tag.len, t, tl)) {
 			if (!isshort && ctx.contenttype == ContentTypeHTML) {
 				xmldata(p, "</", 2);
@@ -976,7 +993,7 @@ xmltagend(XMLParser *p, const char *t, size_t tl, int isshort)
 	} else if (ctx.tag.id && istag(ctx.tag.name, ctx.tag.len, t, tl)) {
 		/* matched tag end: close it */
 		/* copy also to the link field if the attribute isPermaLink="true"
-		   and it is not set by a tag with higher prio. */
+		   and it is not set by a tag with higher priority. */
 		if (ctx.tag.id == RSSTagGuidPermalinkTrue && ctx.field &&
 		    ctx.tag.id > ctx.fields[FeedFieldLink].tagid) {
 			string_clear(&ctx.fields[FeedFieldLink].str);
@@ -1005,7 +1022,7 @@ xmltagend(XMLParser *p, const char *t, size_t tl, int isshort)
 	}
 
 	/* temporary string: for fields that cannot be processed
-	   directly and need more context, for example by it's tag
+	   directly and need more context, for example by its tag
 	   attributes, like the Atom link rel="alternate|enclosure". */
 	if (tmpstr.len && ctx.field) {
 		if (ISFEEDFIELDMULTI(fieldmap[ctx.tag.id])) {
@@ -1058,6 +1075,9 @@ main(int argc, char *argv[])
 
 	/* NOTE: getnext is defined in xml.h for inline optimization */
 	xml_parse(&parser);
+
+	checkfileerror(stdin, "<stdin>", 'r');
+	checkfileerror(stdout, "<stdout>", 'w');
 
 	return 0;
 }

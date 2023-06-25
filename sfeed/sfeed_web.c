@@ -1,4 +1,3 @@
-#include <ctype.h>
 #include <stdio.h>
 #include <strings.h>
 
@@ -16,7 +15,7 @@ static void
 printvalue(const char *s)
 {
 	for (; *s; s++)
-		if (!iscntrl((unsigned char)*s))
+		if (!ISCNTRL((unsigned char)*s))
 			putchar(*s);
 }
 
@@ -104,7 +103,7 @@ static void
 xmlattrentity(XMLParser *p, const char *t, size_t tl, const char *a, size_t al,
               const char *v, size_t vl)
 {
-	char buf[16];
+	char buf[8];
 	int len;
 
 	if (!ishrefattr && !istypeattr)
@@ -135,6 +134,9 @@ main(int argc, char *argv[])
 
 	/* NOTE: getnext is defined in xml.h for inline optimization */
 	xml_parse(&parser);
+
+	checkfileerror(stdin, "<stdin>", 'r');
+	checkfileerror(stdout, "<stdout>", 'w');
 
 	return 0;
 }

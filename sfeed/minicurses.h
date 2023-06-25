@@ -1,5 +1,3 @@
-#include <sys/ioctl.h>
-
 #undef  OK
 #define OK  (0)
 
@@ -25,7 +23,7 @@ setupterm(char *term, int fildes, int *errret)
 }
 
 char *
-tparm(const char *s, long p1, long p2, ...)
+tparm(char *s, long p1, long p2, ...)
 {
 	static char buf[32];
 
@@ -34,5 +32,5 @@ tparm(const char *s, long p1, long p2, ...)
 		return buf;
 	}
 
-	return (char *)s;
+	return s;
 }

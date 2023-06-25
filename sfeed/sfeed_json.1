@@ -1,0 +1,48 @@
+.Dd March 8, 2023
+.Dt SFEED_JSON 1
+.Os
+.Sh NAME
+.Nm sfeed_json
+.Nd format feed data to JSON Feed
+.Sh SYNOPSIS
+.Nm
+.Op Ar
+.Sh DESCRIPTION
+.Nm
+formats feed data (TSV) from
+.Xr sfeed 1
+from stdin or for each
+.Ar file
+to stdout as JSON Feed data.
+If one or more
+.Ar file
+arguments are specified then the basename of the
+.Ar file
+is used as the feed name in the output.
+If no
+.Ar file
+arguments are specified and so the data is read from stdin then the feed name
+is empty.
+If
+.Nm
+is reading from one or more
+.Ar file
+arguments it will prefix the entry title with "[feed name] ".
+.Sh EXIT STATUS
+.Ex -std
+.Sh EXAMPLES
+.Bd -literal
+curl -s 'https://codemadness.org/atom.xml' | sfeed | sfeed_json
+.Ed
+.Sh SEE ALSO
+.Xr sfeed 1 ,
+.Xr sfeed_atom 1 ,
+.Xr sfeed 5
+.Sh STANDARDS
+.Rs
+.%T JSON Feed Version 1.1
+.%U https://www.jsonfeed.org/version/1.1/
+.%D Nov, 2022
+.Re
+.Sh AUTHORS
+.An Hiltjo Posthuma Aq Mt hiltjo@codemadness.org

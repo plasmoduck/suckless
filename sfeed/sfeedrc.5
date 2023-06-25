@@ -1,4 +1,4 @@
-.Dd August 3, 2021
+.Dd June 9, 2023
 .Dt SFEEDRC 5
 .Os
 .Sh NAME
@@ -40,7 +40,7 @@ they will be replaced with '_'.
 .It Fa feedurl
 URL to fetch the RSS/Atom data from, usually a HTTP or HTTPS URL.
 .It Op Fa basesiteurl
-Baseurl of the feed links.
+Base URL of the feed links.
 This argument allows to fix relative item links.
 .Pp
 According to the RSS and Atom specification feeds should always have absolute
@@ -59,12 +59,12 @@ is a shellscript each function can be overridden to change its behaviour,
 notable functions are:
 .Bl -tag -width Ds
 .It Fn fetch "name" "url" "feedfile"
-Fetch feed from URL and writes data to stdout, its arguments are:
+Fetch feed from URL and write the data to stdout, its arguments are:
 .Bl -tag -width Ds
 .It Fa name
 Specified name in configuration file (useful for logging).
 .It Fa url
-Url to fetch.
+URL to fetch.
 .It Fa feedfile
 Used feedfile (useful for comparing modification times).
 .El
@@ -73,8 +73,9 @@ By default the tool
 .Xr curl 1
 is used.
 .It Fn convertencoding "name" "from" "to"
-Convert from text-encoding to another and writes it to stdout, its arguments
-are:
+Convert data from stdin from one text-encoding to another and write it to
+stdout,
+its arguments are:
 .Bl -tag -width Ds
 .It Fa name
 Feed name.
@@ -88,28 +89,32 @@ By default the tool
 .Xr iconv 1
 is used.
 .It Fn parse "name" "feedurl" "basesiteurl"
-Parse and convert RSS/Atom XML to the
+Read RSS/Atom XML data from stdin, convert and write it as
 .Xr sfeed 5
-TSV format.
+data to stdout.
 .Bl -tag -width Ds
 .It Fa name
 Name of the feed.
 .It Fa feedurl
 URL of the feed.
 .It Fa basesiteurl
-Baseurl of the feed links.
+Base URL of the feed links.
 This argument allows to fix relative item links.
 .El
-.It Fn filter "name"
+.It Fn filter "name" "url"
 Filter
 .Xr sfeed 5
-data from stdin, write to stdout, its arguments are:
+data from stdin and write it to stdout, its arguments are:
 .Bl -tag -width Ds
 .It Fa name
 Feed name.
+.It Fa url
+URL of the feed.
 .El
 .It Fn merge "name" "oldfile" "newfile"
-Merge data of oldfile with newfile and writes it to stdout, its arguments are:
+Merge
+.Xr sfeed 5
+data of oldfile with newfile and write it to stdout, its arguments are:
 .Bl -tag -width Ds
 .It Fa name
 Feed name.
@@ -118,13 +123,15 @@ Old file.
 .It Fa newfile
 New file.
 .El
-.It Fn order "name"
+.It Fn order "name" "url"
 Sort
 .Xr sfeed 5
-data from stdin, write to stdout, its arguments are:
+data from stdin and write it to stdout, its arguments are:
 .Bl -tag -width Ds
 .It Fa name
 Feed name.
+.It Fa url
+URL of the feed.
 .El
 .El
 .Sh EXAMPLES
@@ -136,7 +143,7 @@ shown below:
 # list of feeds to fetch:
 feeds() {
 	# feed <name> <feedurl> [basesiteurl] [encoding]
-	feed "codemadness" "https://www.codemadness.nl/atom.xml"
+	feed "codemadness" "https://www.codemadness.org/atom_content.xml"
 	feed "explosm" "http://feeds.feedburner.com/Explosm"
 	feed "golang github releases" "https://github.com/golang/go/releases.atom"
 	feed "linux kernel" "https://www.kernel.org/feeds/kdist.xml" "https://www.kernel.org"
@@ -159,8 +166,8 @@ file:
 .Bd -literal
 # fetch(name, url, feedfile)
 fetch() {
-	# allow for 1 redirect, hide User-Agent, timeout is 15 seconds.
-	curl -L --max-redirs 1 -H "User-Agent:" -f -s -m 15 \\
+	# allow for 1 redirect, set User-Agent, timeout is 15 seconds.
+	curl -L --max-redirs 1 -H "User-Agent: sfeed" -f -s -m 15 \e
 		"$2" 2>/dev/null
 }
 .Ed

@@ -16,6 +16,19 @@ $ make
 # make install
 
 
+To build sfeed without sfeed_curses set SFEED_CURSES to an empty string:
+
+$ make SFEED_CURSES=""
+# make SFEED_CURSES="" install
+
+
+To change the theme for sfeed_curses you can set SFEED_THEME.  See the themes/
+directory for the theme names.
+
+$ make SFEED_THEME="templeos"
+# make SFEED_THEME="templeos" install
+
+
 Usage
 -----
 
@@ -25,7 +38,7 @@ Initial setup:
 	cp sfeedrc.example "$HOME/.sfeed/sfeedrc"
 
 Edit the sfeedrc(5) configuration file and change any RSS/Atom feeds. This file
-is included and evaluated as a shellscript for sfeed_update, so it's functions
+is included and evaluated as a shellscript for sfeed_update, so its functions
 and behaviour can be overridden:
 
 	$EDITOR "$HOME/.sfeed/sfeedrc"
@@ -63,6 +76,7 @@ HTML view (no frames), copy style.css for a default style:
 HTML view with the menu as frames, copy style.css for a default style:
 
 	mkdir -p "$HOME/.sfeed/frames"
+	cp style.css "$HOME/.sfeed/frames/style.css"
 	cd "$HOME/.sfeed/frames" && sfeed_frames $HOME/.sfeed/feeds/*
 
 To automatically update your feeds periodically and format them in a way you
@@ -79,9 +93,6 @@ Gopher, SSH, etc.
 See the section "Usage and examples" below and the man-pages for more
 information how to use sfeed(1) and the additional tools.
 
-A separate curses UI front-end called sfeed_curses is available at:
-https://codemadness.org/sfeed_curses.html
-
 
 Dependencies
 ------------
@@ -93,11 +104,11 @@ Dependencies
 Optional dependencies
 ---------------------
 
-- POSIX make(1) for Makefile.
+- POSIX make(1) for the Makefile.
 - POSIX sh(1),
   used by sfeed_update(1) and sfeed_opml_export(1).
 - POSIX utilities such as awk(1) and sort(1),
-  used by sfeed_update(1).
+  used by sfeed_content(1), sfeed_markread(1) and sfeed_update(1).
 - curl(1) binary: https://curl.haxx.se/ ,
   used by sfeed_update(1), but can be replaced with any tool like wget(1),
   OpenBSD ftp(1) or hurl(1): https://git.codemadness.org/hurl/
@@ -106,27 +117,62 @@ Optional dependencies
   encoded then you don't need this. For a minimal iconv implementation:
   https://git.etalabs.net/cgit/noxcuse/tree/src/iconv.c
 - mandoc for documentation: https://mdocml.bsd.lv/
+- curses (typically ncurses), otherwise see minicurses.h,
+  used by sfeed_curses(1).
+- a terminal (emulator) supporting UTF-8 and the used capabilities,
+  used by sfeed_curses(1).
+
+
+Optional run-time dependencies for sfeed_curses
+-----------------------------------------------
+
+- xclip for yanking the URL or enclosure. See $SFEED_YANKER to change it.
+- xdg-open, used as a plumber by default. See $SFEED_PLUMBER to change it.
+- awk, used by the sfeed_content and sfeed_markread script.
+  See the ENVIRONMENT VARIABLES section in the man page to change it.
+- lynx, used by the sfeed_content script to convert HTML content.
+  See the ENVIRONMENT VARIABLES section in the man page to change it.
+
+
+Formats supported
+-----------------
+
+sfeed supports a subset of XML 1.0 and a subset of:
+
+- Atom 1.0 (RFC 4287): https://datatracker.ietf.org/doc/html/rfc4287
+- Atom 0.3 (draft, historic).
+- RSS 0.90+.
+- RDF (when used with RSS).
+- MediaRSS extensions (media:).
+- Dublin Core extensions (dc:).
+
+Other formats like JSON Feed, twtxt or certain RSS/Atom extensions are
+supported by converting them to RSS/Atom or to the sfeed(5) format directly.
 
 
 OS tested
 ---------
 
-- Linux (compilers: clang, cproc, gcc, lacc, pcc, tcc, libc: glibc, musl).
+- Linux,
+  compilers: clang, gcc, chibicc, cproc, lacc, pcc, scc, tcc,
+  libc: glibc, musl.
 - OpenBSD (clang, gcc).
-- NetBSD
+- NetBSD (with NetBSD curses).
 - FreeBSD
 - DragonFlyBSD
-- Windows (cygwin gcc, mingw).
+- GNU/Hurd
+- Illumos (OpenIndiana).
+- Windows (cygwin gcc + mintty, mingw).
 - HaikuOS
 - SerenityOS
-- FreeDOS (djgpp).
-- FUZIX (sdcc -mz80).
+- FreeDOS (djgpp, Open Watcom).
+- FUZIX (sdcc -mz80, with the sfeed parser program).
 
 
 Architectures tested
 --------------------
 
-amd64, ARM, aarch64, HPPA, i386, MIPS32-BE, SPARC64, Z80.
+amd64, ARM, aarch64, HPPA, i386, MIPS32-BE, RISCV64, SPARC64, Z80.
 
 
 Files
@@ -135,11 +181,15 @@ Files
 sfeed             - Read XML RSS or Atom feed data from stdin. Write feed data
                     in TAB-separated format to stdout.
 sfeed_atom        - Format feed data (TSV) to an Atom feed.
+sfeed_content     - View item content, for use with sfeed_curses.
+sfeed_curses      - Format feed data (TSV) to a curses interface.
 sfeed_frames      - Format feed data (TSV) to HTML file(s) with frames.
 sfeed_gopher      - Format feed data (TSV) to Gopher files.
 sfeed_html        - Format feed data (TSV) to HTML.
+sfeed_json        - Format feed data (TSV) to JSON Feed.
 sfeed_opml_export - Generate an OPML XML file from a sfeedrc config file.
 sfeed_opml_import - Generate a sfeedrc config file from an OPML XML file.
+sfeed_markread    - Mark items as read/unread, for use with sfeed_curses.
 sfeed_mbox        - Format feed data (TSV) to mbox.
 sfeed_plain       - Format feed data (TSV) to a plain-text list.
 sfeed_twtxt       - Format feed data (TSV) to a twtxt feed.
@@ -197,13 +247,13 @@ Find RSS/Atom feed URLs from a webpage:
 
 output example:
 
-	https://codemadness.org/blog/rss.xml	application/rss+xml
-	https://codemadness.org/blog/atom.xml	application/atom+xml
+	https://codemadness.org/atom.xml	application/atom+xml
+	https://codemadness.org/atom_content.xml	application/atom+xml
 
 - - -
 
-Make sure your sfeedrc config file exists, see sfeedrc.example. To update your
-feeds (configfile argument is optional):
+Make sure your sfeedrc config file exists, see the sfeedrc.example file. To
+update your feeds (configfile argument is optional):
 
 	sfeed_update "configfile"
 
@@ -223,6 +273,35 @@ View formatted output in your browser:
 View formatted output in your editor:
 
 	$EDITOR "$HOME/.sfeed/feeds.txt"
+
+- - -
+
+View formatted output in a curses interface.  The interface has a look inspired
+by the mutt mail client.  It has a sidebar panel for the feeds, a panel with a
+listing of the items and a small statusbar for the selected item/URL. Some
+functions like searching and scrolling are integrated in the interface itself.
+
+Just like the other format programs included in sfeed you can run it like this:
+
+	sfeed_curses ~/.sfeed/feeds/*
+
+... or by reading from stdin:
+
+	sfeed_curses < ~/.sfeed/feeds/xkcd
+
+By default sfeed_curses marks the items of the last day as new/bold. This limit
+might be overridden by setting the environment variable $SFEED_NEW_AGE to the
+desired maximum in seconds. To manage read/unread items in a different way a
+plain-text file with a list of the read URLs can be used. To enable this
+behaviour the path to this file can be specified by setting the environment
+variable $SFEED_URL_FILE to the URL file:
+
+	export SFEED_URL_FILE="$HOME/.sfeed/urls"
+	[ -f "$SFEED_URL_FILE" ] || touch "$SFEED_URL_FILE"
+	sfeed_curses ~/.sfeed/feeds/*
+
+It then uses the shellscript "sfeed_markread" to process the read and unread
+items.
 
 - - -
 
@@ -257,7 +336,7 @@ filtering items per feed. It can be used to shorten URLs, filter away
 advertisements, strip tracking parameters and more.
 
 	# filter fields.
-	# filter(name)
+	# filter(name, url)
 	filter() {
 		case "$1" in
 		"tweakers")
@@ -503,7 +582,7 @@ procmail_maildirs.sh file:
 	mkdir -p "${maildir}/.cache"
 
 	if ! test -r "${procmailconfig}"; then
-		echo "Procmail configuration file \"${procmailconfig}\" does not exist or is not readable." >&2
+		printf "Procmail configuration file \"%s\" does not exist or is not readable.\n" "${procmailconfig}" >&2
 		echo "See procmailrc.example for an example." >&2
 		exit 1
 	fi
@@ -600,8 +679,8 @@ additional metadata from the previous request.
 CDNs blocking requests due to a missing HTTP User-Agent request header
 
 sfeed_update will not send the "User-Agent" header by default for privacy
-reasons.  Some CDNs like Cloudflare don't like this and will block such HTTP
-requests.
+reasons.  Some CDNs like Cloudflare or websites like Reddit.com don't like this
+and will block such HTTP requests.
 
 A custom User-Agent can be set by using the curl -H option, like so:
 
@@ -666,13 +745,140 @@ sfeed_update_xargs shellscript:
 	}
 	
 	# fetch feeds and store in temporary directory.
-	sfeedtmpdir="$(mktemp -d '/tmp/sfeed_XXXXXX')"
+	sfeedtmpdir="$(mktemp -d '/tmp/sfeed_XXXXXX')" || exit 1
+	mkdir -p "${sfeedtmpdir}/feeds"
+	touch "${sfeedtmpdir}/ok" || exit 1
 	# make sure path exists.
 	mkdir -p "${sfeedpath}"
 	# print feeds for parallel processing with xargs.
 	feeds | SFEED_UPDATE_CHILD="1" xargs -r -0 -P "${maxjobs}" -L 6 "$(readlink -f "$0")"
+	status=$?
+	# check error exit status indicator for parallel jobs.
+	test -f "${sfeedtmpdir}/ok" || status=1
 	# cleanup temporary files etc.
 	cleanup
+	exit ${status}
+
+- - -
+
+Shellscript to handle URLs and enclosures in parallel using xargs -P.
+
+This can be used to download and process URLs for downloading podcasts,
+webcomics, download and convert webpages, mirror videos, etc. It uses a
+plain-text cache file for remembering processed URLs. The match patterns are
+defined in the shellscript fetch() function and in the awk script and can be
+modified to handle items differently depending on their context.
+
+The arguments for the script are files in the sfeed(5) format. If no file
+arguments are specified then the data is read from stdin.
+
+	#!/bin/sh
+	# sfeed_download: downloader for URLs and enclosures in sfeed(5) files.
+	# Dependencies: awk, curl, flock, xargs (-P), yt-dlp.
+	
+	cachefile="${SFEED_CACHEFILE:-$HOME/.sfeed/downloaded_urls}"
+	jobs="${SFEED_JOBS:-4}"
+	lockfile="${HOME}/.sfeed/sfeed_download.lock"
+	
+	# log(feedname, s, status)
+	log() {
+		if [ "$1" != "-" ]; then
+			s="[$1] $2"
+		else
+			s="$2"
+		fi
+		printf '[%s]: %s: %s\n' "$(date +'%H:%M:%S')" "${s}" "$3"
+	}
+	
+	# fetch(url, feedname)
+	fetch() {
+		case "$1" in
+		*youtube.com*)
+			yt-dlp "$1";;
+		*.flac|*.ogg|*.m3u|*.m3u8|*.m4a|*.mkv|*.mp3|*.mp4|*.wav|*.webm)
+			# allow 2 redirects, hide User-Agent, connect timeout is 15 seconds.
+			curl -O -L --max-redirs 2 -H "User-Agent:" -f -s --connect-timeout 15 "$1";;
+		esac
+	}
+	
+	# downloader(url, title, feedname)
+	downloader() {
+		url="$1"
+		title="$2"
+		feedname="${3##*/}"
+	
+		msg="${title}: ${url}"
+	
+		# download directory.
+		if [ "${feedname}" != "-" ]; then
+			mkdir -p "${feedname}"
+			if ! cd "${feedname}"; then
+				log "${feedname}" "${msg}: ${feedname}" "DIR FAIL" >&2
+				return 1
+			fi
+		fi
+	
+		log "${feedname}" "${msg}" "START"
+		if fetch "${url}" "${feedname}"; then
+			log "${feedname}" "${msg}" "OK"
+	
+			# append it safely in parallel to the cachefile on a
+			# successful download.
+			(flock 9 || exit 1
+			printf '%s\n' "${url}" >> "${cachefile}"
+			) 9>"${lockfile}"
+		else
+			log "${feedname}" "${msg}" "FAIL" >&2
+			return 1
+		fi
+		return 0
+	}
+	
+	if [ "${SFEED_DOWNLOAD_CHILD}" = "1" ]; then
+		# Downloader helper for parallel downloading.
+		# Receives arguments: $1 = URL, $2 = title, $3 = feed filename or "-".
+		# It should write the URI to the cachefile if it is successful.
+		downloader "$1" "$2" "$3"
+		exit $?
+	fi
+	
+	# ...else parent mode:
+	
+	tmp="$(mktemp)" || exit 1
+	trap "rm -f ${tmp}" EXIT
+	
+	[ -f "${cachefile}" ] || touch "${cachefile}"
+	cat "${cachefile}" > "${tmp}"
+	echo >> "${tmp}" # force it to have one line for awk.
+	
+	LC_ALL=C awk -F '\t' '
+	# fast prefilter what to download or not.
+	function filter(url, field, feedname) {
+		u = tolower(url);
+		return (match(u, "youtube\\.com") ||
+		        match(u, "\\.(flac|ogg|m3u|m3u8|m4a|mkv|mp3|mp4|wav|webm)$"));
+	}
+	function download(url, field, title, filename) {
+		if (!length(url) || urls[url] || !filter(url, field, filename))
+			return;
+		# NUL-separated for xargs -0.
+		printf("%s%c%s%c%s%c", url, 0, title, 0, filename, 0);
+		urls[url] = 1; # print once
+	}
+	{
+		FILENR += (FNR == 1);
+	}
+	# lookup table from cachefile which contains downloaded URLs.
+	FILENR == 1 {
+		urls[$0] = 1;
+	}
+	# feed file(s).
+	FILENR != 1 {
+		download($3, 3, $2, FILENAME); # link
+		download($8, 8, $2, FILENAME); # enclosure
+	}
+	' "${tmp}" "${@:--}" | \
+	SFEED_DOWNLOAD_CHILD="1" xargs -r -0 -L 3 -P "${jobs}" "$(readlink -f "$0")"
 
 - - -
 
@@ -686,9 +892,7 @@ TSV format.
 	#
 	# Dependencies: sqlite3, awk.
 	#
-	# Usage: create some directory to store the feeds, run this script.
-	#
-	# Assumes feednames are unique and a feed title is set.
+	# Usage: create some directory to store the feeds then run this script.
 	
 	# newsboat cache.db file.
 	cachefile="$HOME/.newsboat/cache.db"
@@ -713,7 +917,7 @@ TSV format.
 	.quit
 	!EOF
 	# convert to sfeed(5) TSV format.
-	awk '
+	LC_ALL=C awk '
 	BEGIN {
 		FS = "\x1f";
 		RS = "\x1e";
@@ -736,9 +940,13 @@ TSV format.
 		gsub("\t", "\\t", s);
 		return s;
 	}
-	function feedname(url, title) {
-		gsub("/", "_", title);
-		return title;
+	function feedname(feedurl, feedtitle) {
+		if (feedtitle == "") {
+			gsub("/", "_", feedurl);
+			return feedurl;
+		}
+		gsub("/", "_", feedtitle);
+		return feedtitle;
 	}
 	{
 		fname = feedname($9, $10);
@@ -763,6 +971,285 @@ TSV format.
 			print $3 > "urls";
 		}
 	}'
+
+- - -
+
+Progress indicator
+------------------
+
+The below sfeed_update wrapper script counts the amount of feeds in a sfeedrc
+config.  It then calls sfeed_update and pipes the output lines to a function
+that counts the current progress. It writes the total progress to stderr.
+Alternative: pv -l -s totallines
+
+	#!/bin/sh
+	# Progress indicator script.
+	
+	# Pass lines as input to stdin and write progress status to stderr.
+	# progress(totallines)
+	progress() {
+		total="$(($1 + 0))" # must be a number, no divide by zero.
+		test "${total}" -le 0 -o "$1" != "${total}" && return
+	LC_ALL=C awk -v "total=${total}" '
+	{
+		counter++;
+		percent = (counter * 100) / total;
+		printf("\033[K") > "/dev/stderr"; # clear EOL
+		print $0;
+		printf("[%s/%s] %.0f%%\r", counter, total, percent) > "/dev/stderr";
+		fflush(); # flush all buffers per line.
+	}
+	END {
+		printf("\033[K") > "/dev/stderr";
+	}'
+	}
+	
+	# Counts the feeds from the sfeedrc config.
+	countfeeds() {
+		count=0
+	. "$1"
+	feed() {
+		count=$((count + 1))
+	}
+		feeds
+		echo "${count}"
+	}
+	
+	config="${1:-$HOME/.sfeed/sfeedrc}"
+	total=$(countfeeds "${config}")
+	sfeed_update "${config}" 2>&1 | progress "${total}"
+
+- - -
+
+Counting unread and total items
+-------------------------------
+
+It can be useful to show the counts of unread items, for example in a
+windowmanager or statusbar.
+
+The below example script counts the items of the last day in the same way the
+formatting tools do:
+
+	#!/bin/sh
+	# Count the new items of the last day.
+	LC_ALL=C awk -F '\t' -v "old=$(($(date +'%s') - 86400))" '
+	{
+		total++;
+	}
+	int($1) >= old {
+		totalnew++;
+	}
+	END {
+		print "New:   " totalnew;
+		print "Total: " total;
+	}' ~/.sfeed/feeds/*
+
+The below example script counts the unread items using the sfeed_curses URL
+file:
+
+	#!/bin/sh
+	# Count the unread and total items from feeds using the URL file.
+	LC_ALL=C awk -F '\t' '
+	# URL file: amount of fields is 1.
+	NF == 1 {
+		u[$0] = 1; # lookup table of URLs.
+		next;
+	}
+	# feed file: check by URL or id.
+	{
+		total++;
+		if (length($3)) {
+			if (u[$3])
+				read++;
+		} else if (length($6)) {
+			if (u[$6])
+				read++;
+		}
+	}
+	END {
+		print "Unread: " (total - read);
+		print "Total:  " total;
+	}' ~/.sfeed/urls ~/.sfeed/feeds/*
+
+- - -
+
+sfeed.c: adding new XML tags or sfeed(5) fields to the parser
+-------------------------------------------------------------
+
+sfeed.c contains definitions to parse XML tags and map them to sfeed(5) TSV
+fields. Parsed RSS and Atom tag names are first stored as a TagId, which is a
+number.  This TagId is then mapped to the output field index.
+
+Steps to modify the code:
+
+* Add a new TagId enum for the tag.
+
+* (optional) Add a new FeedField* enum for the new output field or you can map
+  it to an existing field.
+
+* Add the new XML tag name to the array variable of parsed RSS or Atom
+  tags: rsstags[] or atomtags[].
+
+  These must be defined in alphabetical order, because a binary search is used
+  which uses the strcasecmp() function.
+
+* Add the parsed TagId to the output field in the array variable fieldmap[].
+
+  When another tag is also mapped to the same output field then the tag with
+  the highest TagId number value overrides the mapped field: the order is from
+  least important to high.
+
+* If this defined tag is just using the inner data of the XML tag, then this
+  definition is enough. If it for example has to parse a certain attribute you
+  have to add a check for the TagId to the xmlattr() callback function.
+
+* (optional) Print the new field in the printfields() function.
+
+Below is a patch example to add the MRSS "media:content" tag as a new field:
+
+diff --git a/sfeed.c b/sfeed.c
+--- a/sfeed.c
++++ b/sfeed.c
+@@ -50,7 +50,7 @@ enum TagId {
+ 	RSSTagGuidPermalinkTrue,
+ 	/* must be defined after GUID, because it can be a link (isPermaLink) */
+ 	RSSTagLink,
+-	RSSTagEnclosure,
++	RSSTagMediaContent, RSSTagEnclosure,
+ 	RSSTagAuthor, RSSTagDccreator,
+ 	RSSTagCategory,
+ 	/* Atom */
+@@ -81,7 +81,7 @@ typedef struct field {
+ enum {
+ 	FeedFieldTime = 0, FeedFieldTitle, FeedFieldLink, FeedFieldContent,
+ 	FeedFieldId, FeedFieldAuthor, FeedFieldEnclosure, FeedFieldCategory,
+-	FeedFieldLast
++	FeedFieldMediaContent, FeedFieldLast
+ };
+ 
+ typedef struct feedcontext {
+@@ -137,6 +137,7 @@ static const FeedTag rsstags[] = {
+ 	{ STRP("enclosure"),         RSSTagEnclosure         },
+ 	{ STRP("guid"),              RSSTagGuid              },
+ 	{ STRP("link"),              RSSTagLink              },
++	{ STRP("media:content"),     RSSTagMediaContent      },
+ 	{ STRP("media:description"), RSSTagMediaDescription  },
+ 	{ STRP("pubdate"),           RSSTagPubdate           },
+ 	{ STRP("title"),             RSSTagTitle             }
+@@ -180,6 +181,7 @@ static const int fieldmap[TagLast] = {
+ 	[RSSTagGuidPermalinkFalse] = FeedFieldId,
+ 	[RSSTagGuidPermalinkTrue]  = FeedFieldId, /* special-case: both a link and an id */
+ 	[RSSTagLink]               = FeedFieldLink,
++	[RSSTagMediaContent]       = FeedFieldMediaContent,
+ 	[RSSTagEnclosure]          = FeedFieldEnclosure,
+ 	[RSSTagAuthor]             = FeedFieldAuthor,
+ 	[RSSTagDccreator]          = FeedFieldAuthor,
+@@ -677,6 +679,8 @@ printfields(void)
+ 	string_print_uri(&ctx.fields[FeedFieldEnclosure].str);
+ 	putchar(FieldSeparator);
+ 	string_print_trimmed_multi(&ctx.fields[FeedFieldCategory].str);
++	putchar(FieldSeparator);
++	string_print_trimmed(&ctx.fields[FeedFieldMediaContent].str);
+ 	putchar('\n');
+ 
+ 	if (ferror(stdout)) /* check for errors but do not flush */
+@@ -718,7 +722,7 @@ xmlattr(XMLParser *p, const char *t, size_t tl, const char *n, size_t nl,
+ 	}
+ 
+ 	if (ctx.feedtype == FeedTypeRSS) {
+-		if (ctx.tag.id == RSSTagEnclosure &&
++		if ((ctx.tag.id == RSSTagEnclosure || ctx.tag.id == RSSTagMediaContent) &&
+ 		    isattr(n, nl, STRP("url"))) {
+ 			string_append(&tmpstr, v, vl);
+ 		} else if (ctx.tag.id == RSSTagGuid &&
+
+- - -
+
+Running custom commands inside the sfeed_curses program
+-------------------------------------------------------
+
+Running commands inside the sfeed_curses program can be useful for example to
+sync items or mark all items across all feeds as read. It can be comfortable to
+have a keybind for this inside the program to perform a scripted action and
+then reload the feeds by sending the signal SIGHUP.
+
+In the input handling code you can then add a case:
+
+	case 'M':
+		forkexec((char *[]) { "markallread.sh", NULL }, 0);
+		break;
+
+or
+
+	case 'S':
+		forkexec((char *[]) { "syncnews.sh", NULL }, 1);
+		break;
+
+The specified script should be in $PATH or be an absolute path.
+
+Example of a `markallread.sh` shellscript to mark all URLs as read:
+
+	#!/bin/sh
+	# mark all items/URLs as read.
+	tmp="$(mktemp)" || exit 1
+	(cat ~/.sfeed/urls; cut -f 3 ~/.sfeed/feeds/*) | \
+	awk '!x[$0]++' > "$tmp" &&
+	mv "$tmp" ~/.sfeed/urls &&
+	pkill -SIGHUP sfeed_curses # reload feeds.
+
+Example of a `syncnews.sh` shellscript to update the feeds and reload them:
+
+	#!/bin/sh
+	sfeed_update
+	pkill -SIGHUP sfeed_curses
+
+
+Running programs in a new session
+---------------------------------
+
+By default processes are spawned in the same session and process group as
+sfeed_curses.  When sfeed_curses is closed this can also close the spawned
+process in some cases.
+
+When the setsid command-line program is available the following wrapper command
+can be used to run the program in a new session, for a plumb program:
+
+	setsid -f xdg-open "$@"
+
+Alternatively the code can be changed to call setsid() before execvp().
+
+
+Open an URL directly in the same terminal
+-----------------------------------------
+
+To open an URL directly in the same terminal using the text-mode lynx browser:
+
+	SFEED_PLUMBER=lynx SFEED_PLUMBER_INTERACTIVE=1 sfeed_curses ~/.sfeed/feeds/*
+
+
+Yank to tmux buffer
+-------------------
+
+This changes the yank command to set the tmux buffer, instead of X11 xclip:
+
+	SFEED_YANKER="tmux set-buffer \`cat\`"
+
+
+Known terminal issues
+---------------------
+
+Below lists some bugs or missing features in terminals that are found while
+testing sfeed_curses.  Some of them might be fixed already upstream:
+
+- cygwin + mintty: the xterm mouse-encoding of the mouse position is broken for
+  scrolling.
+- HaikuOS terminal: the xterm mouse-encoding of the mouse button number of the
+  middle-button, right-button is incorrect / reversed.
+- putty: the full reset attribute (ESC c, typically `rs1`) does not reset the
+  window title.
+- Mouse button encoding for extended buttons (like side-buttons) in some
+  terminals are unsupported or map to the same button: for example side-buttons 7
+  and 8 map to the scroll buttons 4 and 5 in urxvt.
 
 
 License

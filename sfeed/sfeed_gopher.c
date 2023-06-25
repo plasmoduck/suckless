@@ -1,6 +1,3 @@
-#include <sys/types.h>
-
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,7 +5,6 @@
 
 #include "util.h"
 
-static struct feed f;
 static char *prefixpath = "/", *host = "127.0.0.1", *port = "70"; /* default */
 static char *line;
 static size_t linesize;
@@ -50,7 +46,8 @@ printfeed(FILE *fpitems, FILE *fpin, struct feed *f)
 		fprintf(fpitems, "i\t\t%s\t%s\r\n", host, port);
 	}
 
-	while ((linelen = getline(&line, &linesize, fpin)) > 0) {
+	while ((linelen = getline(&line, &linesize, fpin)) > 0 &&
+	       !ferror(fpitems)) {
 		if (line[linelen - 1] == '\n')
 			line[--linelen] = '\0';
 		parseline(line, fields);
@@ -64,7 +61,7 @@ printfeed(FILE *fpitems, FILE *fpin, struct feed *f)
 
 		if (fields[FieldLink][0]) {
 			itemtype = 'h';
-			/* if it's a gopher URL then change it into a direntry */
+			/* if it is a gopher URL then change it into a DirEntity */
 			if (!strncmp(fields[FieldLink], "gopher://", 9) &&
 			    uri_parse(fields[FieldLink], &u) != -1) {
 				itemhost = u.host;
@@ -121,9 +118,10 @@ printfeed(FILE *fpitems, FILE *fpin, struct feed *f)
 int
 main(int argc, char *argv[])
 {
+	struct feed f;
 	FILE *fpitems, *fpindex, *fp;
-	char *name, *p, path[PATH_MAX + 1];
-	int i, r;
+	char *name, *p;
+	int i;
 
 	if (argc == 1) {
 		if (pledge("stdio", NULL) == -1)
@@ -137,10 +135,8 @@ main(int argc, char *argv[])
 			err(1, "pledge");
 	}
 
-	if ((comparetime = time(NULL)) == -1)
-		err(1, "time");
-	/* 1 day is old news */
-	comparetime -= 86400;
+	if ((comparetime = getcomparetime()) == (time_t)-1)
+		errx(1, "getcomparetime");
 
 	if ((p = getenv("SFEED_GOPHER_HOST")))
 		host = p;
@@ -150,6 +146,8 @@ main(int argc, char *argv[])
 	if (argc == 1) {
 		f.name = "";
 		printfeed(stdout, stdin, &f);
+		checkfileerror(stdin, "<stdin>", 'r');
+		checkfileerror(stdout, "<stdout>", 'w');
 	} else {
 		if ((p = getenv("SFEED_GOPHER_PATH")))
 			prefixpath = p;
@@ -165,15 +163,11 @@ main(int argc, char *argv[])
 
 			if (!(fp = fopen(argv[i], "r")))
 				err(1, "fopen: %s", argv[i]);
-
-			r = snprintf(path, sizeof(path), "%s", name);
-			if (r < 0 || (size_t)r >= sizeof(path))
-				errx(1, "path truncation: %s", path);
-			if (!(fpitems = fopen(path, "wb")))
+			if (!(fpitems = fopen(name, "wb")))
 				err(1, "fopen");
 			printfeed(fpitems, fp, &f);
-			if (ferror(fp))
-				err(1, "ferror: %s", argv[i]);
+			checkfileerror(fp, argv[i], 'r');
+			checkfileerror(fpitems, name, 'w');
 			fclose(fp);
 			fclose(fpitems);
 
@@ -182,10 +176,11 @@ main(int argc, char *argv[])
 			gophertext(fpindex, name);
 			fprintf(fpindex, " (%lu/%lu)\t", f.totalnew, f.total);
 			gophertext(fpindex, prefixpath);
-			gophertext(fpindex, path);
+			gophertext(fpindex, name);
 			fprintf(fpindex, "\t%s\t%s\r\n", host, port);
 		}
 		fputs(".\r\n", fpindex);
+		checkfileerror(fpindex, "index", 'w');
 		fclose(fpindex);
 	}
 

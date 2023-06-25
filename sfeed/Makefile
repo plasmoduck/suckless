@@ -1,7 +1,10 @@
 .POSIX:
 
 NAME = sfeed
-VERSION = 0.9.25
+VERSION = 1.8
+
+# curses theme, see themes/ directory.
+SFEED_THEME = newsboat
 
 # paths
 PREFIX = /usr/local
@@ -19,12 +22,36 @@ SFEED_CPPFLAGS = -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -D_BSD_SOURCE
 #SFEED_CPPFLAGS = -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -D_BSD_SOURCE \
 #	-DGETNEXT=getchar
 
+# set $SFEED_CURSES to empty to not build sfeed_curses.
+SFEED_CURSES = sfeed_curses
+SFEED_CURSES_CFLAGS = ${CFLAGS}
+SFEED_CURSES_CPPFLAGS = -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -D_BSD_SOURCE \
+	 -DSFEED_THEME=\"themes/${SFEED_THEME}.h\"
+SFEED_CURSES_LDFLAGS = ${LDFLAGS} -lcurses
+
+# Linux: some distros use ncurses and require -lncurses.
+#SFEED_CURSES_LDFLAGS = ${LDFLAGS} -lncurses
+
+# Gentoo Linux: some distros might also require -ltinfo and -D_DEFAULT_SOURCE
+# to prevent warnings about feature test macros.
+#SFEED_CURSES_LDFLAGS = ${LDFLAGS} -lcurses -ltinfo
+
+# FreeBSD: unset feature test macros for SIGWINCH etc.
+#SFEED_CURSES_CPPFLAGS =
+
+# use minicurses with hardcoded escape sequences (not the system curses).
+#SFEED_CURSES_CPPFLAGS = -D_DEFAULT_SOURCE -D_XOPEN_SOURCE=700 -D_BSD_SOURCE \
+#	-DSFEED_THEME=\"themes/${SFEED_THEME}.h\" -DSFEED_MINICURSES
+#SFEED_CURSES_LDFLAGS = ${LDFLAGS}
+
 BIN = \
 	sfeed\
 	sfeed_atom\
+	${SFEED_CURSES}\
 	sfeed_frames\
-	sfeed_gopher \
+	sfeed_gopher\
 	sfeed_html\
+	sfeed_json\
 	sfeed_mbox\
 	sfeed_opml_import\
 	sfeed_plain\
@@ -32,11 +59,14 @@ BIN = \
 	sfeed_web\
 	sfeed_xmlenc
 SCRIPTS = \
+	sfeed_content\
+	sfeed_markread\
 	sfeed_opml_export\
 	sfeed_update
 
 SRC = ${BIN:=.c}
 HDR = \
+	minicurses.h\
 	util.h\
 	xml.h
 
@@ -78,25 +108,31 @@ OBJ = ${SRC:.c=.o} ${LIBXMLOBJ} ${LIBUTILOBJ} ${COMPATOBJ}
 ${OBJ}: ${HDR}
 
 .o:
-	${CC} ${SFEED_LDFLAGS} -o $@ $< ${LIB}
+	${CC} -o $@ $< ${LIB} ${SFEED_LDFLAGS}
 
 .c.o:
-	${CC} ${SFEED_CFLAGS} ${SFEED_CPPFLAGS} -o $@ -c $<
+	${CC} -o $@ -c $< ${SFEED_CFLAGS} ${SFEED_CPPFLAGS}
+
+sfeed_curses.o: sfeed_curses.c themes/${SFEED_THEME}.h
+	${CC} -o $@ -c sfeed_curses.c ${SFEED_CURSES_CFLAGS} ${SFEED_CURSES_CPPFLAGS}
+
+sfeed_curses: ${LIB} sfeed_curses.o
+	${CC} -o $@ sfeed_curses.o ${LIB} ${SFEED_CURSES_LDFLAGS}
 
 ${LIBUTIL}: ${LIBUTILOBJ}
 	${AR} -rc $@ $?
 	${RANLIB} $@
 
 ${LIBXML}: ${LIBXMLOBJ}
-	${AR} rc $@ $?
+	${AR} -rc $@ $?
 	${RANLIB} $@
 
 dist:
 	rm -rf "${NAME}-${VERSION}"
 	mkdir -p "${NAME}-${VERSION}"
-	cp -f ${MAN1} ${MAN5} ${DOC} ${HDR} \
+	cp -fR ${MAN1} ${MAN5} ${DOC} ${HDR} \
 		${SRC} ${LIBXMLSRC} ${LIBUTILSRC} ${COMPATSRC} ${SCRIPTS} \
-		Makefile \
+		themes Makefile \
 		sfeedrc.example style.css \
 		"${NAME}-${VERSION}"
 	# make tarball

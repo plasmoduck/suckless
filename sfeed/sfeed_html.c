@@ -1,5 +1,3 @@
-#include <sys/types.h>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,7 +32,8 @@ printfeed(FILE *fp, struct feed *f)
 	}
 	fputs("<pre>\n", stdout);
 
-	while ((linelen = getline(&line, &linesize, fp)) > 0) {
+	while ((linelen = getline(&line, &linesize, fp)) > 0 &&
+	       !ferror(stdout)) {
 		if (line[linelen - 1] == '\n')
 			line[--linelen] = '\0';
 		parseline(line, fields);
@@ -86,10 +85,8 @@ main(int argc, char *argv[])
 
 	if (!(feeds = calloc(argc, sizeof(struct feed))))
 		err(1, "calloc");
-	if ((comparetime = time(NULL)) == -1)
-		err(1, "time");
-	/* 1 day is old news */
-	comparetime -= 86400;
+	if ((comparetime = getcomparetime()) == (time_t)-1)
+		errx(1, "getcomparetime");
 
 	fputs("<!DOCTYPE HTML>\n"
 	      "<html>\n"
@@ -109,8 +106,7 @@ main(int argc, char *argv[])
 	if (argc == 1) {
 		feeds[0].name = "";
 		printfeed(stdin, &feeds[0]);
-		if (ferror(stdin))
-			err(1, "ferror: <stdin>:");
+		checkfileerror(stdin, "<stdin>", 'r');
 	} else {
 		for (i = 1; i < argc; i++) {
 			name = ((name = strrchr(argv[i], '/'))) ? name + 1 : argv[i];
@@ -118,8 +114,8 @@ main(int argc, char *argv[])
 			if (!(fp = fopen(argv[i], "r")))
 				err(1, "fopen: %s", argv[i]);
 			printfeed(fp, &feeds[i - 1]);
-			if (ferror(fp))
-				err(1, "ferror: %s", argv[i]);
+			checkfileerror(fp, argv[i], 'r');
+			checkfileerror(stdout, "<stdout>", 'w');
 			fclose(fp);
 		}
 	}
@@ -149,6 +145,8 @@ main(int argc, char *argv[])
 
 	fprintf(stdout, "\t</body>\n\t<title>(%lu/%lu) - Newsfeed</title>\n</html>\n",
 	        totalnew, total);
+
+	checkfileerror(stdout, "<stdout>", 'w');
 
 	return 0;
 }

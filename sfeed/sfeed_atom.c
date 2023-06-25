@@ -1,5 +1,3 @@
-#include <sys/types.h>
-
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -22,6 +20,8 @@ printcontent(const char *s)
 		case '&':  fputs("&amp;",  stdout); break;
 		case '"':  fputs("&quot;", stdout); break;
 		case '\\':
+			if (*(s + 1) == '\0')
+				break;
 			s++;
 			switch (*s) {
 			case 'n':  putchar('\n'); break;
@@ -37,12 +37,14 @@ printcontent(const char *s)
 static void
 printfeed(FILE *fp, const char *feedname)
 {
-	char *fields[FieldLast];
+	char *fields[FieldLast], *p, *tmp;
 	struct tm parsedtm, *tm;
 	time_t parsedtime;
 	ssize_t linelen;
+	int c;
 
-	while ((linelen = getline(&line, &linesize, fp)) > 0) {
+	while ((linelen = getline(&line, &linesize, fp)) > 0 &&
+	       !ferror(stdout)) {
 		if (line[linelen - 1] == '\n')
 			line[--linelen] = '\0';
 		parseline(line, fields);
@@ -93,10 +95,20 @@ printfeed(FILE *fp, const char *feedname)
 				/* NOTE: an RSS/Atom viewer may or may not format
 				   whitespace such as newlines.
 				   Workaround: type="html" and <![CDATA[<pre></pre>]]> */
-				fputs("\t<content type=\"text\">", stdout);
+				fputs("\t<content>", stdout);
 			}
 			printcontent(fields[FieldContent]);
 			fputs("</content>\n", stdout);
+		}
+		for (p = fields[FieldCategory]; (tmp = strchr(p, '|')); p = tmp + 1) {
+			c = *tmp;
+			*tmp = '\0'; /* temporary NUL-terminate */
+			if (*p) {
+				fputs("\t<category term=\"", stdout);
+				xmlencode(p, stdout);
+				fputs("\" />\n", stdout);
+			}
+			*tmp = c; /* restore */
 		}
 		fputs("</entry>\n", stdout);
 	}
@@ -113,15 +125,14 @@ main(int argc, char *argv[])
 	if (pledge(argc == 1 ? "stdio" : "stdio rpath", NULL) == -1)
 		err(1, "pledge");
 
-	if ((now = time(NULL)) == -1)
-		err(1, "time");
+	if ((now = time(NULL)) == (time_t)-1)
+		errx(1, "time");
 	if (!(tm = gmtime_r(&now, &tmnow)))
-		err(1, "gmtime_r");
+		err(1, "gmtime_r: can't get current time");
 
 	fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
 	      "<feed xmlns=\"http://www.w3.org/2005/Atom\">\n"
-	      "\t<title type=\"text\">Newsfeed</title>\n"
-	      "\t<author><name>sfeed</name></author>\n", stdout);
+	      "\t<title>Newsfeed</title>\n", stdout);
 	printf("\t<id>urn:newsfeed:%lld</id>\n"
 	       "\t<updated>%04d-%02d-%02dT%02d:%02d:%02dZ</updated>\n",
 	       (long long)now,
@@ -130,19 +141,22 @@ main(int argc, char *argv[])
 
 	if (argc == 1) {
 		printfeed(stdin, "");
+		checkfileerror(stdin, "<stdin>", 'r');
 	} else {
 		for (i = 1; i < argc; i++) {
 			if (!(fp = fopen(argv[i], "r")))
 				err(1, "fopen: %s", argv[i]);
 			name = ((name = strrchr(argv[i], '/'))) ? name + 1 : argv[i];
 			printfeed(fp, name);
-			if (ferror(fp))
-				err(1, "ferror: %s", argv[i]);
+			checkfileerror(fp, argv[i], 'r');
+			checkfileerror(stdout, "<stdout>", 'w');
 			fclose(fp);
 		}
 	}
 
 	fputs("</feed>\n", stdout);
+
+	checkfileerror(stdout, "<stdout>", 'w');
 
 	return 0;
 }

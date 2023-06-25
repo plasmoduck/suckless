@@ -1,4 +1,3 @@
-#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
@@ -26,10 +25,10 @@ xmlattr(XMLParser *p, const char *t, size_t tl, const char *n, size_t nl,
 		return;
 
 	for (; *v; v++) {
-		if (isalpha((unsigned char)*v) ||
-		    isdigit((unsigned char)*v) ||
+		if (ISALPHA((unsigned char)*v) ||
+		    ISDIGIT((unsigned char)*v) ||
 		    *v == '.' || *v == ':' || *v == '-' || *v == '_')
-			putchar(tolower((unsigned char)*v));
+			putchar(TOLOWER((unsigned char)*v));
 	}
 }
 
@@ -55,6 +54,9 @@ main(void)
 
 	/* NOTE: getnext is defined in xml.h for inline optimization */
 	xml_parse(&parser);
+
+	checkfileerror(stdin, "<stdin>", 'r');
+	checkfileerror(stdout, "<stdout>", 'w');
 
 	return 0;
 }
