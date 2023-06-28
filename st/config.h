@@ -113,7 +113,7 @@ unsigned int tabspaces = 8;
 /* bg opacity */
 unsigned int alpha = 0xdd;
 
-#include "colors/gruvbox.h"
+#include "colors/default.h"
 
 /*
  * Default shape of cursor
