@@ -1,6 +1,6 @@
  char *colors[][2] = {
          /*               fg         bg       */
-         [SchemeNorm] = { "#fbf1c7", "#322f2e" },
+         [SchemeNorm] = { "#fbf1c7", "#282828" },
          [SchemeSel]  = { "#fbf1c7", "#665c54" },
          [SchemeOut]  = { "#fb4934", "#312e2d" },
          #if BORDER_PATCH
