@@ -89,7 +89,7 @@ static
 #if !XRESOURCES_PATCH
 const
 #endif // XRESOURCES_PATCH
-#include "colors/gruvbox.h"
+#include "colors/default.h"
 	#if MORECOLOR_PATCH
 	[SchemeMid]  = { "#eeeeee", "#770000" },
 	#endif // MORECOLOR_PATCH
