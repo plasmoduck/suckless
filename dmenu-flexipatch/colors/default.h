@@ -5,5 +5,5 @@
          [SchemeSel]  = { "#eceff4", "#39404f" },
          [SchemeOut]  = { "#fb4934", "#312e2d" },
          #if BORDER_PATCH
-         [SchemeBorder] = { "#7a8478", "#7a8478" },
+         [SchemeBorder] = { "#81a1c1", "#81a1c1" },
          #endif // BORDER_PATCH

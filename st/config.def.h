@@ -6,7 +6,7 @@
  * font: see http://freedesktop.org/software/fontconfig/fontconfig-user.html
  */
 static char *font = {
-	"JetBrains Mono:pixelsize=12:antialias=true:autohint=true", "siji:pixelsize=10"
+	"JetBrains Mono:pixelsize=14:antialias=true:autohint=true", "siji:pixelsize=10"
 };
 static int borderpx = 10;
 
@@ -111,7 +111,7 @@ char *termname = "st-256color";
 unsigned int tabspaces = 8;
 
 /* bg opacity */
-unsigned int alpha = 0xff;
+unsigned int alpha = 0xef;
 
 #include "colors/default.h"
 
