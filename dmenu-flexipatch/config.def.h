@@ -38,7 +38,7 @@ static char *fonts[] =
 static const char *fonts[] =
 #endif // XRESOURCES_PATCH
 {
-	"Jetrains Mono:size=10"
+	"Jetrains Mono:pixelsize=14:antialias=true:autohint=true"
 };
 #endif // PANGO_PATCH
 #if MANAGED_PATCH
